@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Instagram, Linkedin, Facebook, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import LandingHeader from "@/components/LandingHeader";
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
@@ -13,38 +14,7 @@ export default function LandingPage() {
   return (
       <div className="min-h-screen bg-white text-black transition-colors dark:bg-[#050505] dark:text-white">
       {/* ======= NAV ======= */}
-      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:border-white/10 dark:bg-black/40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="text-2xl font-semibold tracking-tight text-green-700 dark:text-green-400">
-            <span>fitt</span>
-            <span className="underline decoration-2 decoration-green-700 underline-offset-[2px] dark:decoration-green-400">in</span>
-            <span>g</span>
-          </Link>
-
-          <nav className="flex items-center gap-2">
-            <Link
-              href="/log-in"
-              className="px-4 py-2 rounded-full border transition hover:bg-black hover:text-white dark:border-white/25 dark:text-white dark:hover:bg-white/10"
-            >
-              log in
-            </Link>
-            <Link
-              href="/sign-up"
-              className="px-4 py-2 rounded-full bg-green-700 text-white transition hover:bg-black dark:bg-green-600 dark:hover:bg-white/10"
-            >
-              sign up
-            </Link>
-            <button
-              type="button"
-              aria-label="Toggle theme"
-              onClick={toggleTheme}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition hover:bg-black hover:text-white dark:border-white/30 dark:text-white dark:hover:bg-white/10"
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-          </nav>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* ======= HERO ======= */}
       <section className="relative overflow-hidden">
@@ -153,6 +123,17 @@ export default function LandingPage() {
             <span className="underline decoration-2 decoration-neutral-600 underline-offset-[2px] dark:decoration-neutral-400">in</span>
             <span>g</span>
           </span>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-neutral-600 dark:text-neutral-400">
+            <Link href="/legal/terms" className="transition hover:text-black dark:hover:text-white">
+              Terms
+            </Link>
+            <Link href="/legal/privacy" className="transition hover:text-black dark:hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/legal/support" className="transition hover:text-black dark:hover:text-white">
+              Support
+            </Link>
+          </div>
           {/* <div className="flex items-center gap-4 text-sm">
             <Link href="/"><Facebook /></Link>
             <Link href="/"><Instagram /></Link>

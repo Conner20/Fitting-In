@@ -10,6 +10,9 @@ const PUBLIC_PATHS = [
     "/forgot-password",
     "/reset-password",
     "/user-onboarding",
+    "/legal/terms",
+    "/legal/privacy",
+    "/legal/support",
 ];
 
 const startsWithAny = (pathname: string, prefixes: string[]) =>
