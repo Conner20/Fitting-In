@@ -12,7 +12,7 @@ export default function TermsPage() {
                 <div className="mx-auto max-w-3xl space-y-8">
                     <header className="space-y-3">
                         <h1 className="text-3xl font-semibold sm:text-4xl">Terms of Service</h1>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Last updated February 23, 2026</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Last updated February 24, 2026</p>
                         <p className="text-base text-neutral-600 dark:text-neutral-300">
                             These Terms of Service govern access to and use of Fitting In, including content, features, and services offered
                             through the platform.
@@ -459,7 +459,8 @@ export default function TermsPage() {
                             </p>
                             <p>
                                 Sections that by their nature should survive termination will survive (including Sections on User Content
-                                license, disclaimers, limitation of liability, indemnification, and governing law/venue).
+                                license, disclaimers, limitation of liability, indemnification, dispute resolution/arbitration, and governing
+                                law/venue).
                             </p>
                         </div>
 
@@ -510,21 +511,37 @@ export default function TermsPage() {
 
                         <div className="space-y-2">
                             <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                                23. Governing Law and Venue
+                                23. Dispute Resolution; Binding Arbitration
+                            </h2>
+                            <p>
+                                To the maximum extent permitted by law, you and Fitting In agree that any dispute, claim, or controversy
+                                arising out of or relating to these Terms or the Services will be resolved by binding arbitration, rather than
+                                in court, except where prohibited by applicable law.
+                            </p>
+                            <p>
+                                The arbitration will be conducted in the District of Columbia, or remotely if permitted, and administered by an
+                                arbitration provider selected by Fitting In. The arbitrator’s decision will be final and binding, and judgment
+                                on the award may be entered in any court of competent jurisdiction.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                                24. Governing Law and Venue
                             </h2>
                             <p>
                                 These Terms are governed by the laws of the <strong>District of Columbia</strong>, without regard to conflict
                                 of law principles.
                             </p>
                             <p>
-                                You agree that disputes arising out of or relating to these Terms or the Services will be brought
-                                exclusively in the state or federal courts located in <strong>Washington, D.C.</strong>, and you consent to
-                                personal jurisdiction there.
+                                Subject to Section 23, you agree that disputes arising out of or relating to these Terms or the Services that
+                                are not required to be arbitrated will be brought exclusively in the state or federal courts located in{' '}
+                                <strong>Washington, D.C.</strong>, and you consent to personal jurisdiction there.
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">24. Miscellaneous</h2>
+                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">25. Miscellaneous</h2>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
                                     <strong>Severability.</strong> If any provision is found unenforceable, the remainder will remain in
@@ -546,7 +563,7 @@ export default function TermsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">25. Contact</h2>
+                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">26. Contact</h2>
                             <p>
                                 Questions about these Terms? Contact:{' '}
                                 <a
