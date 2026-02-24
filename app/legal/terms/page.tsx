@@ -105,6 +105,10 @@ export default function TermsPage() {
                                 to these Terms on your behalf.
                             </p>
                             <p>You may not use the Services if you are prohibited from doing so under applicable law.</p>
+                            <p>
+                                If we learn or reasonably believe that an account belongs to a child under <strong>13</strong>, we may
+                                suspend or terminate the account and remove related content/data as appropriate.
+                            </p>
                         </div>
 
                         <div className="space-y-2">
@@ -170,9 +174,17 @@ export default function TermsPage() {
                                     <strong>Your Responsibilities.</strong> You represent and warrant that:
                                     <ul className="mt-1 list-disc space-y-1 pl-5">
                                         <li>you have all rights needed to submit the User Content,</li>
-                                        <li>your User Content does not violate any law or any person’s rights, and</li>
-                                        <li>your User Content complies with these Terms.</li>
+                                        <li>your User Content does not violate any law or any person’s rights,</li>
+                                        <li>your User Content complies with these Terms, and</li>
+                                        <li>
+                                            you are solely responsible for your User Content and any consequences arising from it, including any
+                                            violations of law, third-party rights, or these Terms.
+                                        </li>
                                     </ul>
+                                </li>
+                                <li>
+                                    <strong>Feedback.</strong> If you submit ideas, suggestions, or feedback about the Services, you agree
+                                    that we may use, modify, and implement that feedback without restriction or compensation to you.
                                 </li>
                             </ol>
                         </div>
@@ -181,7 +193,10 @@ export default function TermsPage() {
                             <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                                 7. Acceptable Use and Prohibited Conduct
                             </h2>
-                            <p>You agree not to do any of the following:</p>
+                            <p>
+                                You agree not to do any of the following. You also agree to follow any community guidelines or similar
+                                platform rules we publish from time to time, which are incorporated into these Terms by reference.
+                            </p>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
                                     <strong>Harassment / Hate / Threats:</strong> harass, bully, threaten, defame, or discriminate against
@@ -191,28 +206,48 @@ export default function TermsPage() {
                                     <strong>Spam / Unsolicited Promotions:</strong> send spam, bulk messages, or unsolicited promotions.
                                 </li>
                                 <li>
-                                    <strong>Impersonation / Fake Accounts:</strong> impersonate any person/entity, create fake accounts, or
-                                    misrepresent affiliations.
+                                    <strong>Impersonation / Fake Accounts:</strong> impersonate any person or entity, create fake accounts,
+                                    or misrepresent affiliations.
+                                </li>
+                                <li>
+                                    <strong>Fraud / Scams / Misrepresentation:</strong> run scams, phishing attempts, deceptive offers, or
+                                    misrepresent qualifications, certifications, licenses, or experience.
                                 </li>
                                 <li>
                                     <strong>Illegal Activity:</strong> use the Services to facilitate unlawful activity or violate
-                                    applicable laws.
+                                    applicable law.
                                 </li>
                                 <li>
-                                    <strong>Content Violations:</strong> post content that is obscene, pornographic, exploitative, or
-                                    otherwise inappropriate; or that infringes intellectual property rights.
+                                    <strong>Content Violations:</strong> post content that is obscene, pornographic, exploitative, infringes
+                                    intellectual property rights, or is otherwise inappropriate.
                                 </li>
                                 <li>
-                                    <strong>Interference / Abuse:</strong> disrupt or interfere with the Services (e.g., scraping, probing,
-                                    attacking, reverse engineering, or bypassing security).
+                                    <strong>Privacy Violations:</strong> share another person’s private or identifying information without
+                                    permission.
+                                </li>
+                                <li>
+                                    <strong>Dangerous Content:</strong> post or promote dangerous activity, unsafe fitness challenges, or
+                                    instructions likely to cause harm.
+                                </li>
+                                <li>
+                                    <strong>Interference / Abuse:</strong> disrupt or interfere with the Services (including scraping,
+                                    probing, attacking, reverse engineering, bypassing security, or unauthorized automation/bots).
+                                </li>
+                                <li>
+                                    <strong>Malicious Content:</strong> distribute malware, malicious code, or harmful/deceptive links or
+                                    files.
                                 </li>
                                 <li>
                                     <strong>Data Misuse:</strong> harvest user data without permission or use it for unsolicited outreach.
                                 </li>
+                                <li>
+                                    <strong>Platform Evasion:</strong> evade enforcement actions, including creating replacement accounts
+                                    after suspension or termination.
+                                </li>
                             </ul>
                             <p>
-                                We may investigate and take appropriate action at our discretion, including removing content, restricting
-                                features, or terminating accounts.
+                                We may investigate suspected violations and take action at our discretion, including removing content,
+                                restricting features, or suspending/terminating accounts.
                             </p>
                         </div>
 
@@ -268,8 +303,16 @@ export default function TermsPage() {
                             <p>
                                 <strong>
                                     The Platform does not provide medical, health, nutrition, or fitness advice. Content on the Platform is
-                                    user-generated and may be inaccurate or inappropriate for you.
+                                    user-generated and may be inaccurate, incomplete, or inappropriate for you.
                                 </strong>
+                            </p>
+                            <p>
+                                Use of the Services does <strong>not</strong> create a doctor-patient, dietitian-client, trainer-client, or
+                                other professional relationship between you and the Platform.
+                            </p>
+                            <p>
+                                We do not guarantee outcomes, results, or the accuracy, safety, or suitability of any workout, nutrition,
+                                wellness content, or user recommendations. Results vary by individual.
                             </p>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
@@ -279,7 +322,15 @@ export default function TermsPage() {
                                 <li>Never disregard professional advice because of something you read on the Platform.</li>
                                 <li>If you believe you may have a medical emergency, call emergency services immediately.</li>
                             </ul>
-                            <p>You use the Services and rely on any content at your own risk.</p>
+                            <p>
+                                Physical exercise, nutrition changes, and training activities carry risks, including injury, illness, or
+                                death. You assume full responsibility for your decisions and activities and for any resulting harm.
+                            </p>
+                            <p>
+                                The Platform and support channels are <strong>not emergency services</strong> and may not be monitored at all
+                                times.
+                            </p>
+                            <p>You use the Services and rely on content at your own risk.</p>
                         </div>
 
                         <div className="space-y-2">
@@ -289,13 +340,12 @@ export default function TermsPage() {
                             <p>Trainers and gyms on the Platform are independent third parties. We do not:</p>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>employ, endorse, certify, or guarantee any trainer or gym,</li>
-                                <li>
-                                    verify professional credentials, insurance, or licensing (unless explicitly stated), or
-                                </li>
-                                <li>supervise or control services offered by trainers/gyms.</li>
+                                <li>verify professional credentials, insurance, or licensing (unless explicitly stated), or</li>
+                                <li>supervise or control services offered by trainers or gyms.</li>
                             </ul>
                             <p>
-                                Any interactions, training services, or business relationships are solely between users.
+                                We are not a party to, and are not responsible for, any agreements, payments, services, conduct, injuries,
+                                disputes, or outcomes arising from interactions between users, trainers, or gyms.
                             </p>
                         </div>
 
@@ -305,11 +355,21 @@ export default function TermsPage() {
                             </h2>
                             <p>You acknowledge and agree that we may, at our discretion:</p>
                             <ul className="list-disc space-y-1 pl-5">
-                                <li>remove or restrict access to any User Content,</li>
+                                <li>remove or restrict access to User Content,</li>
+                                <li>limit messaging or other features,</li>
+                                <li>issue warnings,</li>
                                 <li>suspend or terminate accounts,</li>
-                                <li>change or discontinue any part of the Services,</li>
+                                <li>change or discontinue any part of the Services, and</li>
+                                <li>preserve records as reasonably necessary for safety review, legal compliance, or enforcement.</li>
                             </ul>
-                            <p>for any reason, including to enforce these Terms or to protect the Platform and its users.</p>
+                            <p>
+                                We may take these actions to enforce these Terms, respond to reports, or protect the Platform and its users.
+                                Repeat violations may result in permanent account removal.
+                            </p>
+                            <p>
+                                If you believe content was removed or your account was restricted in error, you may contact support to
+                                request review. A review request does not guarantee reversal.
+                            </p>
                         </div>
 
                         <div className="space-y-2">
@@ -333,15 +393,9 @@ export default function TermsPage() {
                             <p>Your notice should include:</p>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>identification of the copyrighted work,</li>
-                                <li>
-                                    identification of the allegedly infringing material (with URL or sufficient detail),
-                                </li>
-                                <li>
-                                    your contact information (name and email; we may request additional info if needed),
-                                </li>
-                                <li>
-                                    a statement that you have a good-faith belief the use is unauthorized, and
-                                </li>
+                                <li>identification of the allegedly infringing material (with URL or sufficient detail),</li>
+                                <li>your contact information (name and email; we may request additional info if needed),</li>
+                                <li>a statement that you have a good-faith belief the use is unauthorized, and</li>
                                 <li>
                                     a statement under penalty of perjury that the information is accurate and you are the copyright owner (or
                                     authorized agent), plus your signature (typed is OK).
@@ -380,9 +434,9 @@ export default function TermsPage() {
                         <div className="space-y-2">
                             <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">17. Privacy</h2>
                             <p>
-                                We will describe how we collect, use, and share information in a <strong>Privacy Policy</strong> that will be
-                                posted on the Platform. Until then, you acknowledge that we may process information necessary to provide the
-                                Services (e.g., account management, messaging delivery, analytics, security, and support).
+                                Our collection, use, and sharing of information is described in our <strong>Privacy Policy</strong>, which is
+                                incorporated into these Terms by reference. Please review the Privacy Policy carefully before using the
+                                Services.
                             </p>
                         </div>
 
@@ -399,10 +453,13 @@ export default function TermsPage() {
 
                         <div className="space-y-2">
                             <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">19. Termination</h2>
-                            <p>You may stop using the Services at any time. We may suspend or terminate your access at any time for any reason, including suspected violations of these Terms.</p>
+                            <p>
+                                You may stop using the Services at any time. We may suspend or terminate your access at any time for any
+                                reason, including suspected violations of these Terms.
+                            </p>
                             <p>
                                 Sections that by their nature should survive termination will survive (including Sections on User Content
-                                license, disclaimers, limitation of liability, indemnification, and dispute resolution).
+                                license, disclaimers, limitation of liability, indemnification, and governing law/venue).
                             </p>
                         </div>
 
@@ -426,17 +483,14 @@ export default function TermsPage() {
                                 21. Limitation of Liability
                             </h2>
                             <p className="font-medium uppercase tracking-wide text-neutral-800 dark:text-neutral-100">
-                                To the maximum extent permitted by law, in no event will we be liable for indirect, incidental, special,
-                                consequential, or punitive damages, or any loss of profits, data, use, goodwill, or other intangible losses,
-                                arising out of or related to your use of the services.
-                            </p>
-                            <p className="font-medium uppercase tracking-wide text-neutral-800 dark:text-neutral-100">
-                                To the maximum extent permitted by law, our total liability for any claim arising out of or relating to the
-                                services will not exceed $100 USD.
+                                To the maximum extent permitted by law, we will not be liable for any damages of any kind, including direct,
+                                indirect, incidental, special, consequential, exemplary, or punitive damages, or any loss of profits, data,
+                                use, goodwill, or other intangible losses, arising out of or related to your access to or use of (or inability
+                                to access or use) the services, user content, third-party services, or interactions with other users.
                             </p>
                             <p>
-                                (Some jurisdictions do not allow certain limitations; in those cases, these limitations apply to the
-                                greatest extent permitted.)
+                                (Some jurisdictions do not allow certain exclusions or limitations of liability. In those cases, this Section
+                                applies to the greatest extent permitted by law.)
                             </p>
                         </div>
 
@@ -463,9 +517,9 @@ export default function TermsPage() {
                                 of law principles.
                             </p>
                             <p>
-                                You agree that any dispute not subject to arbitration (if adopted) will be brought exclusively in the state
-                                or federal courts located in <strong>Washington, D.C.</strong>, and you consent to personal jurisdiction
-                                there.
+                                You agree that disputes arising out of or relating to these Terms or the Services will be brought
+                                exclusively in the state or federal courts located in <strong>Washington, D.C.</strong>, and you consent to
+                                personal jurisdiction there.
                             </p>
                         </div>
 
@@ -485,8 +539,8 @@ export default function TermsPage() {
                                     operate the Platform).
                                 </li>
                                 <li>
-                                    <strong>Entire Agreement.</strong> These Terms (and the Privacy Policy once posted) are the entire
-                                    agreement between you and us regarding the Services.
+                                    <strong>Entire Agreement.</strong> These Terms and the Privacy Policy are the entire agreement between
+                                    you and us regarding the Services.
                                 </li>
                             </ul>
                         </div>
@@ -501,6 +555,10 @@ export default function TermsPage() {
                                 >
                                     contactfittingin@gmail.com
                                 </a>
+                            </p>
+                            <p>
+                                You may also use this email for support requests, privacy-related requests, abuse reports, and copyright
+                                complaints (use the subject line “Copyright Takedown Request” for copyright notices).
                             </p>
                         </div>
                     </section>

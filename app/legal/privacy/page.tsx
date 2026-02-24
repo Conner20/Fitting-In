@@ -92,8 +92,8 @@ export default function PrivacyPage() {
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
                                     <strong>Account details:</strong> email address, username, display name, password credential (for
-                                    email/password login), profile image URL, bio, role (trainee/trainer/gym), privacy setting (public/private),
-                                    and general location text.
+                                    email/password login), profile image URL, bio, role (trainee/trainer/gym), privacy setting
+                                    (public/private), and general location text.
                                 </li>
                                 <li>
                                     <strong>Email verification data:</strong> email verification status/date and verification token records
@@ -113,7 +113,8 @@ export default function PrivacyPage() {
                             </h3>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
-                                    <strong>Trainee profile data:</strong> goals, bio, city, state, country, and coordinates (latitude/longitude).
+                                    <strong>Trainee profile data:</strong> goals, bio, city, state, country, and coordinates
+                                    (latitude/longitude).
                                 </li>
                                 <li>
                                     <strong>Trainer profile data:</strong> services offered, bio, city/state/country, coordinates
@@ -133,17 +134,19 @@ export default function PrivacyPage() {
                                     <strong>Posts:</strong> title, content, optional image URL, author, and timestamps.
                                 </li>
                                 <li>
-                                    <strong>Comments and replies:</strong> comment content, author, timestamps, and reply/thread relationships.
+                                    <strong>Comments and replies:</strong> comment content, author, timestamps, and reply/thread
+                                    relationships.
                                 </li>
                                 <li>
                                     <strong>Likes:</strong> records of which users liked which posts.
                                 </li>
                                 <li>
-                                    <strong>Follows:</strong> follower/following relationships, follow status (e.g., pending/accepted), and timestamps.
+                                    <strong>Follows:</strong> follower/following relationships, follow status (e.g., pending/accepted), and
+                                    timestamps.
                                 </li>
                                 <li>
-                                    <strong>Ratings/reviews:</strong> star ratings, optional review comments, status (e.g., pending/approved/declined),
-                                    and timestamps for trainer/gym reviews.
+                                    <strong>Ratings/reviews:</strong> star ratings, optional review comments, status (e.g.,
+                                    pending/approved/declined), and timestamps for trainer/gym reviews.
                                 </li>
                                 <li>
                                     <strong>Search gallery images:</strong> image URLs you save/use in search gallery features.
@@ -155,8 +158,8 @@ export default function PrivacyPage() {
                             </h3>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>
-                                    <strong>Conversations:</strong> conversation records, participant membership, optional conversation name,
-                                    direct-message key (if used), and timestamps.
+                                    <strong>Conversations:</strong> conversation records, participant membership, optional conversation
+                                    name, direct-message key (if used), and timestamps.
                                 </li>
                                 <li>
                                     <strong>Messages:</strong> message content, sender, conversation ID, image URLs attached to messages,
@@ -173,8 +176,8 @@ export default function PrivacyPage() {
                                     recipient, actor, optional linked follow record, read status, and timestamps.
                                 </li>
                                 <li>
-                                    <strong>Dashboard sharing permissions:</strong> which users share dashboards with which viewers and whether
-                                    workout, wellness, and/or nutrition dashboard data is shared.
+                                    <strong>Dashboard sharing permissions:</strong> which users share dashboards with which viewers and
+                                    whether workout, wellness, and/or nutrition dashboard data is shared.
                                 </li>
                             </ul>
 
@@ -257,6 +260,7 @@ export default function PrivacyPage() {
                                 <li>respond to support requests and communicate platform updates,</li>
                                 <li>send transactional emails (such as verification and password reset emails),</li>
                                 <li>analyze usage and improve performance, reliability, and user experience,</li>
+                                <li>moderate content and review reports,</li>
                                 <li>detect, prevent, and investigate spam, abuse, fraud, and policy violations, and</li>
                                 <li>comply with legal obligations and enforce our Terms of Service.</li>
                             </ul>
@@ -282,8 +286,9 @@ export default function PrivacyPage() {
                                     analytics providers) may process data on our behalf.
                                 </li>
                                 <li>
-                                    <strong>For legal/safety reasons:</strong> when required by law or when reasonably necessary to protect
-                                    users, the platform, or others; investigate abuse; or enforce our Terms.
+                                    <strong>For legal or safety reasons:</strong> when required by law, legal process, or valid government
+                                    request, or when reasonably necessary to protect users, the platform, or others; investigate abuse or
+                                    fraud; or enforce our Terms.
                                 </li>
                                 <li>
                                     <strong>Business transfer:</strong> if Fitting In is sold, merged, reorganized, or transferred
@@ -291,7 +296,8 @@ export default function PrivacyPage() {
                                 </li>
                             </ul>
                             <p>
-                                We may also use or share aggregated/de-identified information that does not reasonably identify an individual.
+                                We may also use or share aggregated or de-identified information that does not reasonably identify an
+                                individual.
                             </p>
                         </div>
 
@@ -337,12 +343,17 @@ export default function PrivacyPage() {
                                 operations, comply with legal obligations, resolve disputes, and enforce agreements.
                             </p>
                             <p>
-                                Retention periods vary based on the type of information. Some records may be removed when accounts or related
-                                content are deleted, and some related data may be deleted automatically through database relationships.
+                                Retention periods vary by data type. Some records may be removed when accounts or related content are deleted,
+                                and some related data may be deleted automatically through database relationships.
                             </p>
                             <p>
-                                We may retain certain information for longer where necessary for security, fraud prevention, compliance,
-                                auditing, backups, or recordkeeping.
+                                If you request account or data deletion, some information may be deleted promptly while certain records may be
+                                retained for a limited period in backups, logs, moderation/safety records, or internal records for legal,
+                                safety, fraud-prevention, operational, or dispute-resolution reasons.
+                            </p>
+                            <p>
+                                We may retain certain information longer where necessary for security, fraud prevention, compliance, auditing,
+                                backups, or recordkeeping.
                             </p>
                         </div>
 
@@ -387,7 +398,13 @@ export default function PrivacyPage() {
                                 >
                                     contactfittingin@gmail.com
                                 </a>
-                                .
+                                . To help us process your request, please email from the address associated with your account (if possible)
+                                and include your username and a description of your request. We may request additional information to verify
+                                your identity before fulfilling certain requests.
+                            </p>
+                            <p>
+                                We review requests manually. Processing times may vary based on request volume, complexity, and legal or
+                                operational requirements.
                             </p>
                         </div>
 
@@ -433,6 +450,10 @@ export default function PrivacyPage() {
                                 information from children under 13.
                             </p>
                             <p>
+                                If we learn that we have collected personal information from a child under <strong>13</strong>, we may
+                                suspend or terminate the account and take reasonable steps to delete the information as appropriate.
+                            </p>
+                            <p>
                                 If you believe a child under 13 has provided personal information, contact us at{' '}
                                 <a
                                     href="mailto:contactfittingin@gmail.com"
@@ -474,7 +495,7 @@ export default function PrivacyPage() {
                                 If you have questions, requests, or concerns about this Privacy Policy or our privacy practices, contact:
                             </p>
                             <p>
-                                <strong>Email:</strong>{' '}
+                                <strong>Email (general support / privacy requests / abuse reports / copyright notices):</strong>{' '}
                                 <a
                                     href="mailto:contactfittingin@gmail.com"
                                     className="underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100"

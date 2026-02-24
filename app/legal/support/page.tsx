@@ -35,6 +35,11 @@ export default function SupportPage() {
                                 We currently provide support by email only. If you reach out, please include as much detail as possible so we
                                 can help faster.
                             </p>
+                            <p>
+                                For faster routing, you can use a clear subject line such as: <strong>Support Request</strong>,{' '}
+                                <strong>Abuse Report</strong>, <strong>Privacy Request</strong>, or{' '}
+                                <strong>Copyright Takedown Request</strong>.
+                            </p>
                         </div>
 
                         <div className="space-y-2">
@@ -44,7 +49,7 @@ export default function SupportPage() {
                                 <li>Profile issues (trainer/gym/trainee profile setup or updates)</li>
                                 <li>Bugs, errors, broken pages, or features not working as expected</li>
                                 <li>Messaging issues or unexpected behavior</li>
-                                <li>Reporting spam, harassment, fake accounts, or impersonation</li>
+                                <li>Reporting spam, harassment, fake accounts, impersonation, scams/fraud, or abusive content</li>
                                 <li>Questions about posts, comments, reviews, ratings, or moderation decisions</li>
                                 <li>Privacy or data-related questions</li>
                                 <li>General product feedback or feature requests</li>
@@ -84,11 +89,28 @@ export default function SupportPage() {
 
                         <div className="space-y-2">
                             <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                                Emergency and Safety Notice
+                            </h2>
+                            <p>
+                                Support email is <strong>not</strong> an emergency service and may not be monitored at all times.
+                            </p>
+                            <p>
+                                If you are in immediate danger, believe someone is at risk of harm, or are experiencing a medical emergency,
+                                contact local emergency services immediately.
+                            </p>
+                            <p>
+                                Support cannot provide medical, nutrition, or fitness advice. For health or training concerns, consult a
+                                qualified professional.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                                 Reporting Safety or Abuse Issues
                             </h2>
                             <p>
-                                If you need to report harassment, impersonation, spam, or abusive content/behavior, please email support and
-                                include:
+                                If you need to report harassment, impersonation, spam, fraud/scams, dangerous content, or other abusive
+                                behavior, please email support and include:
                             </p>
                             <ul className="list-disc space-y-1 pl-5">
                                 <li>the username(s) involved,</li>
@@ -99,6 +121,10 @@ export default function SupportPage() {
                             <p>
                                 We review reports and may take action under our Terms of Service, including content removal or account
                                 restrictions.
+                            </p>
+                            <p>
+                                If you believe content was removed or your account was restricted in error, you may contact support to
+                                request review. A review request does not guarantee reversal of a moderation decision.
                             </p>
                         </div>
 
@@ -117,7 +143,37 @@ export default function SupportPage() {
                                 and include enough information for us to verify and process your request.
                             </p>
                             <p>
+                                To help us process your request, please email from the address associated with your account (if possible) and
+                                include your username and the specific request (for example: account deletion, data deletion, correction, or
+                                account access issue).
+                            </p>
+                            <p>
+                                We may request additional information to verify your identity before completing certain requests. Some data
+                                may be retained for a limited period in backups, logs, or for legal/safety/operational reasons as described
+                                in our Privacy Policy.
+                            </p>
+                            <p>
                                 For more details on how information is handled, please review our Privacy Policy and Terms of Service.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                                Copyright / Takedown Requests
+                            </h2>
+                            <p>
+                                If you believe content on Fitting In infringes your copyright, email{' '}
+                                <a
+                                    href="mailto:contactfittingin@gmail.com"
+                                    className="underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100"
+                                >
+                                    contactfittingin@gmail.com
+                                </a>{' '}
+                                with the subject line <strong>“Copyright Takedown Request”</strong>.
+                            </p>
+                            <p>
+                                Please include the copyrighted work, the allegedly infringing content (with a URL or enough detail to find
+                                it), your contact information, and the statements described in our Terms of Service.
                             </p>
                         </div>
 
@@ -134,6 +190,10 @@ export default function SupportPage() {
                             </ul>
                             <p>
                                 While we can’t promise every request will be implemented, user feedback helps shape future updates.
+                            </p>
+                            <p>
+                                By submitting feedback, you acknowledge we may use your suggestions to improve the platform without
+                                compensation or obligation to you.
                             </p>
                         </div>
                     </section>
