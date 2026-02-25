@@ -32,7 +32,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-3xl px-1 text-base text-neutral-700 dark:text-neutral-300 sm:text-lg md:text-xl">
-              Build your network. Reach your goals.
+              Build your network. Unlock opportunity.{" "}
+              <span className="inline-block whitespace-nowrap">Reach your goals.</span>
             </p>
 
             <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -60,8 +61,8 @@ export default function LandingPage() {
             icon={<Building2 className="h-5 w-5" />}
             bullets={[
               "Attract more clients",
-              "Recruit trainers with confidence",
-              "Grow your business and revenue",
+              "Recruit trainers",
+              "Grow your business",
             ]}
           />
           <RoleCard
@@ -69,8 +70,8 @@ export default function LandingPage() {
             icon={<Dumbbell className="h-5 w-5" />}
             bullets={[
               "Expand your client base",
-              "Build your brand and credibility",
-              "Connect with gyms and unlock new opportunities",
+              "Build your brand",
+              "Connect with gyms",
             ]}
           />
           <RoleCard
