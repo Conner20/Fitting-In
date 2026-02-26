@@ -97,11 +97,18 @@ export default function SearchPage() {
             const res = await fetch(`/api/search?${params.toString()}`, { cache: 'no-store' });
             if (!res.ok) throw new Error();
             const json: ApiResponse = await res.json();
-            setData(json);
+            const filteredResults = json.results.filter((user) => Boolean(user.role));
+            setData({
+                ...json,
+                results: filteredResults,
+                total: filteredResults.length,
+            });
             setPage(1);
             setMobileView('list');
 
-            setSelectedId((prev) => (prev && json.results.some((r) => r.id === prev) ? prev : json.results[0]?.id ?? null));
+            setSelectedId((prev) =>
+                prev && filteredResults.some((r) => r.id === prev) ? prev : filteredResults[0]?.id ?? null
+            );
         } catch {
             setError('Failed to load results.');
         } finally {
