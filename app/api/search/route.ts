@@ -253,6 +253,14 @@ export async function GET(req: Request) {
                     lng: true,
                     gymStatus: true,
                     trainerStatus: true,
+                    gymName: true,
+                    associatedTrainer: {
+                        select: {
+                            id: true,
+                            username: true,
+                            name: true,
+                        },
+                    },
                 },
             },
             trainerProfile: {
@@ -269,6 +277,7 @@ export async function GET(req: Request) {
                     lat: true,
                     lng: true,
                     gymStatus: true,
+                    gymName: true,
                 },
             },
             gymProfile: {
@@ -368,7 +377,19 @@ export async function GET(req: Request) {
                 state: p.state || null,
                 country: p.country || null,
                 goals: u.traineeProfile?.goals ?? null,
+                traineeTrainerStatus: u.traineeProfile?.trainerStatus ?? null,
+                traineeGymStatus: u.traineeProfile?.gymStatus ?? null,
+                traineeGymName: u.traineeProfile?.gymName ?? null,
+                associatedTrainer: u.traineeProfile?.associatedTrainer
+                    ? {
+                        id: u.traineeProfile.associatedTrainer.id,
+                        username: u.traineeProfile.associatedTrainer.username,
+                        name: u.traineeProfile.associatedTrainer.name,
+                    }
+                    : null,
                 services: u.trainerProfile?.services ?? null,
+                trainerGymStatus: u.trainerProfile?.gymStatus ?? null,
+                trainerGymName: u.trainerProfile?.gymName ?? null,
                 rating: u.role === "GYM" ? u.gymProfile?.rating ?? null : u.trainerProfile?.rating ?? null,
                 clients: u.trainerProfile?.clients ?? null,
                 amenities: u.gymProfile?.amenities ?? null,

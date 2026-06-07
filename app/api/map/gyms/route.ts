@@ -5,10 +5,92 @@ import { authOptions } from "@/lib/auth";
 import { geocodeAddress } from "@/lib/geocoding";
 import { db } from "@/prisma/client";
 
+type Role = "TRAINEE" | "TRAINER" | "GYM";
+
+async function backfillProfileCoordsFromSignupLocation(
+    userId: string,
+    role: Role | null,
+    location: string | null
+) {
+    if (!role || !location?.trim()) return null;
+
+    const geocoded = await geocodeAddress(location);
+    if (!geocoded) return null;
+
+    const geoData = {
+        city: geocoded.city,
+        state: geocoded.state,
+        country: geocoded.country,
+        lat: geocoded.lat,
+        lng: geocoded.lng,
+    };
+
+    if (role === "TRAINEE") {
+        await db.traineeProfile.update({
+            where: { userId },
+            data: geoData,
+        });
+    } else if (role === "TRAINER") {
+        await db.trainerProfile.update({
+            where: { userId },
+            data: geoData,
+        });
+    } else if (role === "GYM") {
+        await db.gymProfile.update({
+            where: { userId },
+            data: geoData,
+        });
+    }
+
+    return geoData;
+}
+
 export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const viewer = await db.user.findUnique({
+        where: { email: session.user.email },
+        select: {
+            id: true,
+            role: true,
+            location: true,
+            traineeProfile: { select: { lat: true, lng: true } },
+            trainerProfile: { select: { lat: true, lng: true } },
+            gymProfile: { select: { lat: true, lng: true } },
+        },
+    });
+
+    let viewerCoords: { lat: number; lng: number } | null = null;
+    const viewerProfileCoords =
+        viewer?.traineeProfile ||
+        viewer?.trainerProfile ||
+        viewer?.gymProfile ||
+        null;
+
+    if (viewerProfileCoords?.lat != null && viewerProfileCoords.lng != null) {
+        viewerCoords = {
+            lat: viewerProfileCoords.lat,
+            lng: viewerProfileCoords.lng,
+        };
+    } else if (viewer?.id && viewer.role && viewer.location?.trim()) {
+        try {
+            const geocoded = await backfillProfileCoordsFromSignupLocation(
+                viewer.id,
+                viewer.role as Role,
+                viewer.location
+            );
+            if (geocoded) {
+                viewerCoords = {
+                    lat: geocoded.lat,
+                    lng: geocoded.lng,
+                };
+            }
+        } catch {
+            // fall back to browser-provided coordinates on the client if lookup fails
+        }
     }
 
     const gymsNeedingCoords = await db.user.findMany({
@@ -64,6 +146,7 @@ export async function GET() {
     const gyms = await db.user.findMany({
         where: {
             role: "GYM",
+            ...(viewer?.id ? { id: { not: viewer.id } } : {}),
             gymProfile: {
                 is: {
                     lat: { not: null },
@@ -148,5 +231,9 @@ export async function GET() {
         };
         });
 
-    return NextResponse.json({ gyms: results });
+    return NextResponse.json({
+        gyms: results,
+        viewerCoords,
+        viewerHasCoords: Boolean(viewerCoords),
+    });
 }

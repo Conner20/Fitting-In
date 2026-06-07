@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search as SearchIcon, ChevronDown, X, MessageSquare, Share2, Star, SquarePen, Link as LinkIcon } from 'lucide-react';
+import { Search as SearchIcon, ChevronDown, X, MessageSquare, Share2, Star, SquarePen, Link as LinkIcon, Navigation } from 'lucide-react';
 import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import MobileHeader from "@/components/MobileHeader";
@@ -29,7 +29,17 @@ type SearchUser = {
     price: number | null;
 
     goals: string[] | null;
+    traineeTrainerStatus?: 'LOOKING' | 'TRAINING_WITH' | null;
+    traineeGymStatus?: 'LOOKING' | 'MEMBER' | null;
+    traineeGymName?: string | null;
+    associatedTrainer?: {
+        id: string;
+        username: string | null;
+        name: string | null;
+    } | null;
     services: string[] | null;
+    trainerGymStatus?: 'LOOKING' | 'TRAINER' | null;
+    trainerGymName?: string | null;
     amenities: string[] | null;
     amenitiesText?: string | null; // NEW: free-form amenities description
     rating: number | null;
@@ -88,7 +98,7 @@ function formatDistanceMiles(distanceKm: number) {
 
 function filterMenuOptionClass(active: boolean, layout: 'button' | 'checkbox' = 'button') {
     return clsx(
-        'inline-flex min-h-[36px] min-w-[96px] self-start whitespace-nowrap rounded-md px-3 py-2 text-sm leading-none transition',
+        'inline-flex min-h-[32px] min-w-[88px] self-start whitespace-nowrap rounded-md px-2.5 py-1.5 text-[13px] leading-none transition',
         layout === 'checkbox' ? 'items-center gap-2 capitalize' : 'items-center text-left capitalize',
         active
             ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
@@ -96,12 +106,12 @@ function filterMenuOptionClass(active: boolean, layout: 'button' | 'checkbox' = 
     );
 }
 
-const filterMenuListClass = 'flex w-fit min-w-max max-w-[calc(100vw-32px)] flex-col gap-1 p-2 text-sm';
-const filterMenuRangeClass = 'space-y-2 p-3 text-sm';
+const filterMenuListClass = 'flex w-fit min-w-max max-w-[calc(100vw-32px)] flex-col gap-0.5 p-1.5 text-[13px]';
+const filterMenuRangeClass = 'space-y-2 p-2.5 text-[13px]';
 const filterMenuNumberInputClass =
-    'flex-1 min-w-[92px] rounded-md border border-zinc-200 bg-transparent px-3 py-2 text-sm focus:border-zinc-300 focus:outline-none dark:border-white/20 dark:text-gray-100 dark:focus:border-white/30';
+    'flex-1 min-w-[84px] rounded-md border border-zinc-200 bg-transparent px-2.5 py-1.5 text-[13px] focus:border-zinc-300 focus:outline-none dark:border-white/20 dark:text-gray-100 dark:focus:border-white/30';
 const filterMenuClearButtonClass =
-    'rounded-md px-2 py-1 text-xs text-gray-500 transition hover:bg-zinc-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white';
+    'rounded-md px-2 py-1 text-[11px] text-gray-500 transition hover:bg-zinc-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white';
 
 export default function SearchPage() {
     const router = useRouter();
@@ -125,6 +135,8 @@ export default function SearchPage() {
     const [mobileView, setMobileView] = useState<'list' | 'details' | 'editor'>('list');
     const pageSize = 10;
     const [page, setPage] = useState(1);
+    const [gymMapResetNonce, setGymMapResetNonce] = useState(0);
+    const [showGymMapPanel, setShowGymMapPanel] = useState(false);
     const listRef = useRef<HTMLDivElement | null>(null);
     const mobileListRef = useRef<HTMLDivElement | null>(null);
     const previousRoleRef = useRef<'ALL' | Role>('ALL');
@@ -235,6 +247,9 @@ export default function SearchPage() {
 
             setSelectedId((prev) => {
                 if (isDesktopViewport && hasActiveSearchFilters) {
+                    if (role === 'GYM') {
+                        return prev && filteredResults.some((r) => r.id === prev) ? prev : null;
+                    }
                     return filteredResults[0]?.id ?? null;
                 }
                 return prev && filteredResults.some((r) => r.id === prev) ? prev : null;
@@ -268,6 +283,7 @@ export default function SearchPage() {
         setGymSortBy('DISTANCE');
         setTrainerSortBy('DISTANCE');
         setPage(1);
+        setShowGymMapPanel(false);
         if (isDesktopViewport) {
             setSelectedId(null);
         }
@@ -356,6 +372,14 @@ export default function SearchPage() {
         previousRoleRef.current = role;
     }, [isDesktopViewport, mobileView, role]);
 
+    useEffect(() => {
+        if (!isDesktopViewport) return;
+        if (previousRoleRef.current !== role && role === 'GYM') {
+            setSelectedId(null);
+        }
+        previousRoleRef.current = role;
+    }, [isDesktopViewport, role]);
+
     // actions
     const handleMessage = (u: SearchUser) => {
         const to = u.username || u.id;
@@ -376,6 +400,7 @@ export default function SearchPage() {
         setQ('');
         if (isDesktopViewport && !hasActiveNonQueryFilters) {
             setSelectedId(null);
+            setShowGymMapPanel(false);
         }
     };
 
@@ -937,6 +962,8 @@ export default function SearchPage() {
     );
 
     const handleMobileSelect = (userId: string) => {
+        const user = data?.results.find((result) => result.id === userId) ?? null;
+        setShowGymMapPanel(user?.role === 'GYM');
         setSelectedId(userId);
         setMobileView('details');
     };
@@ -1000,6 +1027,26 @@ export default function SearchPage() {
     const minBudgetValue = minBudget.trim() === '' ? null : Number(minBudget);
     const maxBudgetValue = maxBudget.trim() === '' ? null : Number(maxBudget);
     const selectedGym = selected?.role === 'GYM' ? selected : null;
+    const sharedGymPanel = (
+        <GymDiscoveryPanel
+            embedded
+            hideList
+            autoSelectFirst={false}
+            showBackToMap={role === 'GYM' || showGymMapPanel || Boolean(selectedGym)}
+            selectedGymIdOverride={selectedGym?.id ?? null}
+            clearSelectionSignal={gymMapResetNonce}
+            onViewAllGyms={() => {
+                setSelectedId(null);
+                setShowGymMapPanel(true);
+                setGymMapResetNonce((current) => current + 1);
+            }}
+            query={q}
+            hiringOnly={role === 'GYM' ? hiringOnly : false}
+            sortBy={role === 'GYM' ? gymSortBy : 'DISTANCE'}
+            minBudget={Number.isFinite(minBudgetValue as number) ? minBudgetValue : null}
+            maxBudget={Number.isFinite(maxBudgetValue as number) ? maxBudgetValue : null}
+        />
+    );
 
     const desktopSearchProfileEditor = (
         <div className="bg-white border rounded-xl p-6 min-h-[calc(100vh-190px)] dark:bg-neutral-900 dark:border-white/10 lg:flex lg:h-[calc(100vh-190px)] lg:flex-col lg:overflow-hidden">
@@ -1025,9 +1072,24 @@ export default function SearchPage() {
         if (isDesktopViewport) return;
         if (role !== 'GYM' && role !== 'TRAINER' && role !== 'TRAINEE') return;
         if (mobileView !== 'details') return;
+        if (role === 'GYM' || showGymMapPanel) return;
         if (selected) return;
         setMobileView('list');
-    }, [isDesktopViewport, mobileView, role, selected]);
+    }, [isDesktopViewport, mobileView, role, selected, showGymMapPanel]);
+
+    useEffect(() => {
+        if (role === 'GYM') {
+            setShowGymMapPanel(true);
+            return;
+        }
+        if (selected?.role === 'GYM') {
+            setShowGymMapPanel(true);
+            return;
+        }
+        if (selected && (selected.role === 'TRAINEE' || selected.role === 'TRAINER')) {
+            setShowGymMapPanel(false);
+        }
+    }, [role, selected]);
 
     const mobileHeaderActions = (
         <button
@@ -1091,7 +1153,7 @@ export default function SearchPage() {
                                     value="gym"
                                     active
                                     menu={
-                                        <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                        <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                             {(['ALL', 'TRAINEE', 'TRAINER', 'GYM'] as const).map((r) => {
                                                 const activeOpt = role === r;
                                                 return (
@@ -1124,7 +1186,7 @@ export default function SearchPage() {
                                     value={`${minBudget || 0}–${maxBudget || '∞'}`}
                                     active={Boolean(minBudget || maxBudget)}
                                     menu={
-                                        <div className={clsx(filterMenuRangeClass, 'w-[16rem] max-w-[calc(100vw-88px)]')}>
+                                        <div className={clsx(filterMenuRangeClass, 'w-[14.5rem] max-w-[calc(100vw-88px)]')}>
                                             <div className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-400">
                                                 gyms monthly
                                             </div>
@@ -1178,7 +1240,7 @@ export default function SearchPage() {
                             value="trainer"
                             active
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                     {(['ALL', 'TRAINEE', 'TRAINER', 'GYM'] as const).map((r) => {
                                         const activeOpt = role === r;
                                         return (
@@ -1200,7 +1262,7 @@ export default function SearchPage() {
                             value={`${minBudget || 0}–${maxBudget || '∞'}`}
                             active={Boolean(minBudget || maxBudget)}
                             menu={
-                                <div className={clsx(filterMenuRangeClass, 'w-[16rem] max-w-[calc(100vw-88px)]')}>
+                                <div className={clsx(filterMenuRangeClass, 'w-[14.5rem] max-w-[calc(100vw-88px)]')}>
                                     <div className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-400">
                                         trainers hourly
                                     </div>
@@ -1252,7 +1314,7 @@ export default function SearchPage() {
                             value={goals.length ? `${goals.length} selected` : 'Any'}
                             active={goals.length > 0}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[11rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[10rem]')}>
                                     {allGoals.map((g) => {
                                         const checked = goals.includes(g);
                                         return (
@@ -1285,7 +1347,7 @@ export default function SearchPage() {
                             value={getStatusLabel(role, statusFilter)}
                             active={statusFilter !== 'ALL'}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                     {trainerStatusOptions.map(([value, label]) => {
                                         const activeOpt = statusFilter === value;
                                         return (
@@ -1309,7 +1371,7 @@ export default function SearchPage() {
                             value="trainee"
                             active
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                     {(['ALL', 'TRAINEE', 'TRAINER', 'GYM'] as const).map((r) => {
                                         const activeOpt = role === r;
                                         return (
@@ -1331,7 +1393,7 @@ export default function SearchPage() {
                             value={getStatusLabel(role, statusFilter)}
                             active={statusFilter !== 'ALL'}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                     {traineeStatusOptions.map(([value, label]) => {
                                         const activeOpt = statusFilter === value;
                                         return (
@@ -1353,7 +1415,7 @@ export default function SearchPage() {
                             value={goals.length ? `${goals.length} selected` : 'Any'}
                             active={goals.length > 0}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[11rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[10rem]')}>
                                     {allGoals.map((g) => {
                                         const checked = goals.includes(g);
                                         return (
@@ -1388,7 +1450,7 @@ export default function SearchPage() {
                             value="All"
                             active={role !== 'ALL'}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                     {(['ALL', 'TRAINEE', 'TRAINER', 'GYM'] as const).map((r) => {
                                         const activeOpt = role === r;
                                         return (
@@ -1410,7 +1472,7 @@ export default function SearchPage() {
                             value={getStatusLabel(role, statusFilter)}
                             active={statusFilter !== 'ALL'}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[9rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[8.5rem]')}>
                                     {generalStatusOptions.map(([value, label]) => {
                                         const activeOpt = statusFilter === value;
                                         return (
@@ -1433,7 +1495,7 @@ export default function SearchPage() {
                             value={`${minBudget || 0}–${maxBudget || '∞'}`}
                             active={Boolean(minBudget || maxBudget)}
                             menu={
-                                <div className={clsx(filterMenuRangeClass, 'w-[16rem] max-w-[calc(100vw-88px)]')}>
+                                <div className={clsx(filterMenuRangeClass, 'w-[14.5rem] max-w-[calc(100vw-88px)]')}>
                                     <div className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-400">
                                         trainers hourly · gyms monthly
                                     </div>
@@ -1479,7 +1541,7 @@ export default function SearchPage() {
                             value={goals.length ? `${goals.length} selected` : 'Any'}
                             active={goals.length > 0}
                             menu={
-                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[11rem]')}>
+                                <div className={clsx(filterMenuListClass, 'w-fit min-w-[10rem]')}>
                                     {allGoals.map((g) => {
                                         const checked = goals.includes(g);
                                         return (
@@ -1578,20 +1640,12 @@ export default function SearchPage() {
                                 <span className="text-lg">&larr;</span> Back
                             </button>
                             <div className="bg-white border rounded-xl p-4 overflow-hidden dark:bg-neutral-900 dark:border-white/10">
-                                {!selected ? (
+                                {role === 'GYM' || showGymMapPanel ? (
+                                    sharedGymPanel
+                                ) : !selected ? (
                                     <div className="text-gray-500 text-sm dark:text-gray-400">Select a result to see details.</div>
                                 ) : selectedGym ? (
-                                    <GymDiscoveryPanel
-                                        embedded
-                                        hideList
-                                        selectedGymIdOverride={selected.id}
-                                        autoSelectFirst={false}
-                                        query={q}
-                                        hiringOnly={role === 'GYM' ? hiringOnly : false}
-                                        sortBy={role === 'GYM' ? gymSortBy : 'DISTANCE'}
-                                        minBudget={Number.isFinite(minBudgetValue as number) ? minBudgetValue : null}
-                                        maxBudget={Number.isFinite(maxBudgetValue as number) ? maxBudgetValue : null}
-                                    />
+                                    sharedGymPanel
                                 ) : (
                                     <UserDetails
                                         u={selected}
@@ -1634,7 +1688,10 @@ export default function SearchPage() {
                                                     return (
                                                         <button
                                                             key={u.id}
-                                                            onClick={() => setSelectedId(u.id)}
+                                                            onClick={() => {
+                                                                setShowGymMapPanel(u.role === 'GYM');
+                                                                setSelectedId(u.id);
+                                                            }}
                                                             className={clsx(
                                                                 'w-full rounded-2xl border px-4 py-3 text-left transition',
                                                                 selectedId === u.id
@@ -1721,27 +1778,20 @@ export default function SearchPage() {
                             </aside>
 
                             <section className="flex-1 min-w-0">
-                                {!selected ? (
+                                {role === 'GYM' || showGymMapPanel || selectedGym ? (
+                                    sharedGymPanel
+                                ) : !selected ? (
                                     desktopSearchProfileEditor
-                                ) : selectedGym ? (
-                                    <GymDiscoveryPanel
-                                        embedded
-                                        hideList
-                                        selectedGymIdOverride={selectedGym.id}
-                                        query={q}
-                                        hiringOnly={role === 'GYM' ? hiringOnly : false}
-                                        sortBy={role === 'GYM' ? gymSortBy : 'DISTANCE'}
-                                        minBudget={Number.isFinite(minBudgetValue as number) ? minBudgetValue : null}
-                                        maxBudget={Number.isFinite(maxBudgetValue as number) ? maxBudgetValue : null}
-                                    />
                                 ) : (
-                                    <div className="bg-white border rounded-xl p-6 min-h-[calc(100vh-190px)] dark:bg-neutral-900 dark:border-white/10">
-                                        <UserDetails
-                                            u={selected}
-                                            onMessage={handleMessage}
-                                            onShare={handleShareProfile}
-                                            onOpenImage={(url) => setLightboxUrl(url)}
-                                        />
+                                    <div className="bg-white border rounded-xl lg:h-[calc(100vh-190px)] lg:flex lg:flex-col dark:bg-neutral-900 dark:border-white/10">
+                                        <div className="overflow-y-auto p-6 lg:flex-1 lg:min-h-0 scrollbar-slim">
+                                            <UserDetails
+                                                u={selected}
+                                                onMessage={handleMessage}
+                                                onShare={handleShareProfile}
+                                                onOpenImage={(url) => setLightboxUrl(url)}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </section>
@@ -1803,62 +1853,67 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
     const actionIconSize = isMobile ? 16 : 16;
     const websiteUrl = typeof u.website === 'string' ? u.website.trim() : '';
     const showWebsiteAction = Boolean((u.role === 'TRAINER' || u.role === 'GYM') && u.showWebsiteButton && websiteUrl);
-    const mobileActionButtonClass = isMobile
-        ? 'flex h-9 w-9 items-center justify-center rounded-full border bg-white p-0 leading-none hover:bg-gray-50 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10'
-        : 'px-3 py-1.5 rounded-full border bg-white text-sm hover:bg-gray-50 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10';
+    const about = u.about?.trim() || '';
+    const goals = (u.goals ?? []).filter(Boolean);
+    const services = (u.services ?? []).filter(Boolean);
+    const amenities = (u.amenities ?? []).map((item) => item.trim()).filter(Boolean);
+    const associatedTrainerLabel = u.associatedTrainer?.name?.trim() || u.associatedTrainer?.username?.trim() || '';
+    const associatedTrainerSlug = u.associatedTrainer?.username || u.associatedTrainer?.id || '';
+    const traineeGymName = u.traineeGymName?.trim() || '';
+    const trainerGymName = u.trainerGymName?.trim() || '';
+    const locationSummary = [u.city, u.state].filter(Boolean).join(', ');
+    const shouldShowTrainerRate = u.role === 'TRAINER' && typeof u.price === 'number' && u.price > 0;
+    const shouldShowTrainerClients = u.role === 'TRAINER';
+    const shouldShowTrainerRating = u.role === 'TRAINER';
+    const shouldShowGymRating = u.role === 'GYM' && u.rating != null;
+    const shouldShowGymHiring = u.role === 'GYM' && Boolean(u.hiringTrainers);
+    const photosTitle =
+        u.role === 'TRAINEE'
+            ? 'Progress Images'
+            : u.role === 'TRAINER'
+                ? 'Training Images'
+                : 'Facility Images';
+    const sectionCardClass = 'mt-5 border-t border-zinc-200/80 pt-4 dark:border-white/10';
+    const sectionHeaderClass = 'mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-gray-400';
+    const mobileActionButtonClass = 'inline-flex h-9 w-9 cursor-default items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2';
 
     return (
-        <div className={clsx("max-w-[820px]", variant === 'mobile' && "max-w-full space-y-4")}>
-            {/* Header: name + actions on the RIGHT */}
+        <div className="w-full max-w-full">
             <div
                 className={clsx(
-                    "flex items-start gap-4",
-                    variant === 'mobile' && "flex-col gap-3"
+                    "rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-white/10 dark:bg-black/20"
                 )}
             >
-                {u.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={u.image} alt="" className="w-16 h-16 rounded-full object-cover border shrink-0 dark:border-white/20" />
-                ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-200 border flex items-center justify-center text-sm font-semibold dark:bg-white/10 dark:border-white/20 dark:text-white">
-                        {(u.name || u.username || 'U').slice(0, 2)}
-                    </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                    <div
-                        className={clsx(
-                            "flex items-center justify-between gap-3",
-                            variant === 'mobile' && "flex-col items-start gap-2"
+                <div className={clsx("flex items-start justify-between gap-4", variant === 'mobile' && "flex-col")}>
+                    <div className="flex min-w-0 items-center gap-3">
+                        {u.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={u.image} alt="" className="h-14 w-14 shrink-0 rounded-full border border-zinc-200 object-cover dark:border-white/20" />
+                        ) : (
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-700 dark:border-white/20 dark:bg-white/10 dark:text-white">
+                                {(u.name || u.username || 'U').slice(0, 2).toUpperCase()}
+                            </div>
                         )}
-                    >
-                        <div className={clsx("font-semibold min-w-0", variant === 'mobile' ? "text-xl" : "text-2xl")}>
+
+                        <div className="min-w-0 space-y-0">
                             <Link
                                 href={`/u/${encodeURIComponent(slug)}`}
                                 className={clsx(
-                                    "hover:underline align-middle",
-                                    variant === 'mobile' ? "break-words" : "truncate"
+                                    "block font-semibold text-zinc-900 hover:underline dark:text-white",
+                                    isMobile ? "break-words text-lg" : "truncate text-lg"
                                 )}
                                 title={display}
                             >
                                 {display}
                             </Link>
-                            <span
-                                className={clsx(
-                                    "text-base text-gray-500 dark:text-gray-400",
-                                    variant === 'mobile' ? "block mt-1" : "ml-3 align-middle"
-                                )}
-                            >
+                            <span className="inline-block rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500 dark:bg-white/10 dark:text-gray-400">
                                 {u.role?.toLowerCase()}
                             </span>
                         </div>
+                    </div>
 
-                        <div
-                            className={clsx(
-                                "flex items-center gap-2",
-                                variant === 'mobile' && "w-full flex-wrap gap-2"
-                            )}
-                        >
+                    <div className={clsx("flex shrink-0 items-start gap-2", isMobile && "w-full")}>
+                        <div className={clsx("flex shrink-0 flex-wrap items-center gap-2", isMobile && "w-full justify-start")}>
                             <button
                                 className={mobileActionButtonClass}
                                 title="Message"
@@ -1866,7 +1921,7 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
                             >
                                 <span className="inline-flex items-center gap-1">
                                     <MessageSquare size={actionIconSize} />
-                                    {!isMobile && 'Message'}
+                                    <span className="hidden sm:inline">Message</span>
                                 </span>
                             </button>
                             <button
@@ -1876,7 +1931,7 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
                             >
                                 <span className="inline-flex items-center gap-1">
                                     <Share2 size={actionIconSize} />
-                                    {!isMobile && 'Share'}
+                                    <span className="hidden sm:inline">Share</span>
                                 </span>
                             </button>
 
@@ -1888,7 +1943,7 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         <Star size={actionIconSize} />
-                                        {!isMobile && 'Rate'}
+                                        <span className="hidden sm:inline">Rate</span>
                                     </span>
                                 </Link>
                             )}
@@ -1903,91 +1958,133 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         <LinkIcon size={actionIconSize} />
-                                        {!isMobile && 'Website'}
+                                        <span className="hidden sm:inline">Website</span>
                                     </span>
                                 </a>
                             )}
                         </div>
                     </div>
-
-                    <div className={clsx("text-sm text-gray-600 mt-1 dark:text-gray-300", variant === 'mobile' && "break-words")}>
-                        {u.city}
-                        {u.state ? `, ${u.state}` : ''}
-                        {u.price != null && u.role !== 'GYM' && (
-                            <>
-                                {' '}
-                                • {u.role === 'TRAINER' ? `$${u.price}/hr` : `$${u.price}`}
-                            </>
-                        )}
-                    </div>
                 </div>
-            </div>
 
-            <hr className={clsx("my-5", variant === 'mobile' && "my-4")} />
-
-            {/* About */}
-            <div>
-                <h3 className="font-semibold mb-2">About</h3>
-                <p className="text-gray-800 whitespace-pre-wrap break-words dark:text-gray-200">
-                    {u.about?.trim() || 'No description provided.'}
-                </p>
-            </div>
-
-            {/* TRAINEE — Goals on its own line */}
-            {u.role === 'TRAINEE' && u.goals && (
-                <section className={clsx("mt-6", variant === 'mobile' && "mt-4")}>
-                    <h3 className="font-semibold mb-2">Goals</h3>
-                    <TagList items={u.goals} />
-                </section>
-            )}
-
-            {/* TRAINER — Services, Clients, Rating all on the same line */}
-            {u.role === 'TRAINER' && (
-                <section
-                    className={clsx(
-                        "mt-6 grid grid-cols-3 gap-4 text-sm items-start",
-                        variant === 'mobile' && "grid-cols-1 gap-3"
-                    )}
-                >
-                    <div className="min-w-0">
-                        <div className="font-semibold mb-1">Services</div>
-                        <TagList items={u.services ?? []} />
+                {locationSummary && (
+                    <div className="mt-4">
+                        <div className="flex flex-nowrap items-start gap-2 text-sm text-zinc-600 dark:text-gray-300">
+                            <Navigation size={15} className="mt-0.5 shrink-0 text-zinc-400 dark:text-gray-500" />
+                            <div className={clsx("min-w-0", isMobile && "break-words")}>
+                                {locationSummary}
+                            </div>
+                        </div>
                     </div>
-                    <div className="min-w-0">
-                        <div className="font-semibold mb-1">Clients</div>
-                        <div className="text-gray-700 dark:text-gray-200">{u.clients ?? 0}</div>
-                    </div>
-                    <div className="min-w-0">
-                        <div className="font-semibold mb-1">Rating</div>
-                        <div className="text-gray-700 dark:text-gray-200">{u.rating?.toFixed(1) ?? 'N/A'}</div>
-                    </div>
-                </section>
-            )}
+                )}
 
-            {/* GYM — Amenities on its own line (description preferred) */}
-            {u.role === 'GYM' && (
-                <section className={clsx("mt-6", variant === 'mobile' && "mt-4")}>
-                    <h3 className="font-semibold mb-2">Amenities</h3>
-                    {u.amenitiesText?.trim() ? (
-                        <p className="text-gray-800 whitespace-pre-wrap dark:text-gray-200">{u.amenitiesText}</p>
-                    ) : u.amenities?.length ? (
-                        <TagList items={u.amenities} />
-                    ) : (
-                        <div className="text-gray-600 dark:text-gray-400">—</div>
-                    )}
-                </section>
-            )}
+                {about && (
+                    <section className={sectionCardClass}>
+                        <h3 className={sectionHeaderClass}>About</h3>
+                        <p className="whitespace-pre-wrap break-words text-sm leading-6 text-zinc-600 dark:text-gray-300">
+                            {about}
+                        </p>
+                    </section>
+                )}
+
+                {u.role === 'TRAINEE' && goals.length > 0 && (
+                    <section className={sectionCardClass}>
+                        <h3 className={sectionHeaderClass}>Goals</h3>
+                        <TagList items={goals} />
+                    </section>
+                )}
+
+                {u.role === 'TRAINEE' && (traineeGymName || associatedTrainerLabel) && (
+                    <section className={clsx(sectionCardClass, "space-y-4")}>
+                        {traineeGymName && (
+                            <StatusRow
+                                label="Gym"
+                                value={traineeGymName}
+                            />
+                        )}
+                        {associatedTrainerLabel && (
+                            <StatusRow
+                                label="Trainer"
+                                value={
+                                    associatedTrainerSlug ? (
+                                        <Link
+                                            href={`/u/${encodeURIComponent(associatedTrainerSlug)}`}
+                                            className="hover:underline"
+                                        >
+                                            {associatedTrainerLabel}
+                                        </Link>
+                                    ) : (
+                                        associatedTrainerLabel
+                                    )
+                                }
+                            />
+                        )}
+                    </section>
+                )}
+
+                {u.role === 'TRAINER' && (shouldShowTrainerRate || shouldShowTrainerClients || shouldShowTrainerRating) && (
+                    <section className={clsx("mt-4 grid gap-3 pt-1 sm:grid-cols-3", variant === 'mobile' && "grid-cols-1")}>
+                        {shouldShowTrainerRate && (
+                            <InfoStat label="Hourly rate" value={`$${u.price}/hour`} />
+                        )}
+                        {shouldShowTrainerClients && (
+                            <InfoStat label="Clients" value={String(u.clients ?? 0)} />
+                        )}
+                        {shouldShowTrainerRating && (
+                            <InfoStat label="Rating" value={u.rating != null ? u.rating.toFixed(1) : '—'} />
+                        )}
+                    </section>
+                )}
+
+                {u.role === 'TRAINER' && services.length > 0 && (
+                    <section className={sectionCardClass}>
+                        <h3 className={sectionHeaderClass}>Services</h3>
+                        <TagList items={services} />
+                    </section>
+                )}
+
+                {u.role === 'TRAINER' && trainerGymName && (
+                    <section className={sectionCardClass}>
+                        <StatusRow label="Gym" value={trainerGymName} />
+                    </section>
+                )}
+
+                {u.role === 'GYM' && (u.price != null || shouldShowGymRating || shouldShowGymHiring) && (
+                    <section className={clsx("grid gap-3 pt-1 sm:grid-cols-3", variant === 'mobile' && "grid-cols-1")}>
+                        {u.price != null && u.price > 0 && (
+                            <InfoStat label="Monthly fee" value={`$${u.price}/month`} />
+                        )}
+                        {shouldShowGymRating && (
+                            <InfoStat label="Rating" value={u.rating!.toFixed(1)} />
+                        )}
+                        {shouldShowGymHiring && (
+                            <InfoStat label="Hiring" value="Actively hiring trainers" />
+                        )}
+                    </section>
+                )}
+
+                {u.role === 'GYM' && (u.amenitiesText?.trim() || amenities.length > 0) && (
+                    <section className={sectionCardClass}>
+                        <h3 className={sectionHeaderClass}>Amenities</h3>
+                        {u.amenitiesText?.trim() ? (
+                            <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-600 dark:text-gray-300">
+                                {u.amenitiesText}
+                            </p>
+                        ) : (
+                            <TagList items={amenities} />
+                        )}
+                    </section>
+                )}
 
             {/* Photos (click to enlarge in modal) — on its own line */}
             {!!u.gallery?.length && (
-                <section className={clsx("mt-6", variant === 'mobile' && "mt-4")}>
-                    <h3 className="font-semibold mb-2">Photos</h3>
+                <section className={sectionCardClass}>
+                    <h3 className={sectionHeaderClass}>{photosTitle}</h3>
                     <div className={clsx("grid gap-2", variant === 'mobile' ? "grid-cols-2" : "grid-cols-3")}>
                         {u.gallery.map((url) => (
                             <button
                                 key={url}
                                 type="button"
-                                className="group relative aspect-square overflow-hidden rounded-lg border bg-black dark:border-white/10"
+                                className="group relative aspect-square overflow-hidden rounded-lg border border-zinc-200 bg-black dark:border-white/10"
                                 onClick={() => onOpenImage(url)}
                                 title="View photo"
                             >
@@ -2002,7 +2099,33 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
                     </div>
                 </section>
             )}
+        </div>
+        </div>
+    );
+}
 
+function StatusRow({ label, value }: { label: string; value: ReactNode }) {
+    return (
+        <div>
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-gray-400">
+                {label}
+            </div>
+            <div className="min-w-0 text-sm text-zinc-700 dark:text-gray-200">
+                {value}
+            </div>
+        </div>
+    );
+}
+
+function InfoStat({ label, value }: { label: string; value: ReactNode }) {
+    return (
+        <div className="rounded-xl bg-zinc-50/60 px-3 py-3 dark:bg-white/[0.04]">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-400 dark:text-gray-500">
+                {label}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-zinc-900 dark:text-white">
+                {value}
+            </div>
         </div>
     );
 }
@@ -2010,9 +2133,9 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
 function TagList({ items }: { items: string[] }) {
     if (!items.length) return <div className="text-gray-600 dark:text-gray-400">—</div>;
     return (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
             {items.map((x) => (
-                <span key={x} className="px-2 py-0.5 rounded-full border text-xs bg-gray-50 dark:border-white/15 dark:bg-white/5">
+                <span key={x} className="rounded-full border border-zinc-200/80 bg-white/80 px-2.5 py-1 text-xs text-zinc-700 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-200">
                     {x}
                 </span>
             ))}
@@ -2163,10 +2286,10 @@ function Chip({
                         ref={menuRef}
                         className={clsx(
                             menuFixed
-                                ? 'fixed z-40 w-fit max-w-[calc(100vw-32px)] rounded-lg border border-gray-200 bg-white/95 shadow-md ring-1 ring-black/5 backdrop-blur dark:border-white/10 dark:bg-neutral-900/95 dark:text-gray-100'
-                                : 'absolute z-20 mt-2 rounded-lg border border-gray-200 bg-white/95 shadow-md ring-1 ring-black/5 backdrop-blur dark:border-white/10 dark:bg-neutral-900/95 dark:text-gray-100',
+                                ? 'fixed z-40 w-fit max-w-[calc(100vw-32px)] rounded-lg border border-zinc-200/90 bg-white/96 shadow-sm ring-1 ring-black/5 backdrop-blur dark:border-white/10 dark:bg-neutral-900/96 dark:text-gray-100'
+                                : 'absolute z-20 mt-2 rounded-lg border border-zinc-200/90 bg-white/96 shadow-sm ring-1 ring-black/5 backdrop-blur dark:border-white/10 dark:bg-neutral-900/96 dark:text-gray-100',
                             menuFixed ? '' : menuPosition ?? 'right-0',
-                            menuClassName ?? (menuFixed ? '' : 'min-w-[10rem]')
+                            menuClassName ?? (menuFixed ? '' : 'min-w-[9rem]')
                         )}
                         style={
                             menuFixed
@@ -2177,19 +2300,19 @@ function Chip({
                                 : undefined
                         }
                     >
-                        <div className="flex justify-end px-1.5 pt-1.5">
+                        <div className="flex justify-end px-1 pt-1">
                             <button
                                 onClick={() => {
                                     setOpen(false);
                                     setMenuTop(null);
                                 }}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
                                 title="Close"
                             >
-                                <X size={16} />
+                                <X size={15} />
                             </button>
                         </div>
-                        <div className="px-3 pb-3">
+                        <div className="px-2 pb-2">
                             {menu}
                         </div>
                     </div>

@@ -1253,7 +1253,7 @@ export default function Messenger() {
                                                                     </span>
                                                                 ) : (
                                                                     <button
-                                                                        className="block w-full max-w-full truncate text-left hover:underline"
+                                                                        className="inline-block max-w-full truncate text-left align-top hover:underline"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             goToProfile(c.other);
@@ -1490,9 +1490,9 @@ export default function Messenger() {
                     <div className="mb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-2 border-t bg-white px-3 py-3 flex-shrink-0 dark:border-white/10 dark:bg-neutral-900 sm:px-4 lg:mb-0 lg:bg-transparent lg:py-3 dark:lg:bg-transparent">
                         {/* Share draft preview bar */}
                         {shareDraft && (
-                            <div className="border rounded-lg p-2 flex items-center gap-3 dark:border-white/10">
+                            <div className="flex min-w-0 items-center gap-3 overflow-hidden rounded-lg border p-2 dark:border-white/10">
                                 {shareDraft.type === 'profile' ? (
-                                    <>
+                                    <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
                                         <Avatar
                                             user={
                                                 shareDraft.userId
@@ -1506,18 +1506,12 @@ export default function Messenger() {
                                             size={32}
                                             fallbackChar="P"
                                         />
-                                        <div className="text-sm min-w-0">
-                                            <div className="truncate">
-                                                Sharing profile:{' '}
-                                                <span className="font-medium">
-                                                    {shareDraft.label || 'Profile'}
-                                                </span>
-                                            </div>
-                                            <div className="text-xs text-gray-500 truncate dark:text-gray-400">
-                                                {shareDraft.url}
+                                        <div className="min-w-0 flex-1 text-sm">
+                                            <div className="truncate font-medium">
+                                                {shareDraft.label || 'Profile'}
                                             </div>
                                         </div>
-                                    </>
+                                    </div>
                                 ) : (
                                     <div className="flex w-full items-start gap-3">
                                         {shareDraft.post.imageUrl && (
@@ -1541,7 +1535,7 @@ export default function Messenger() {
                                         </div>
                                     </div>
                                 )}
-                                <div className="ml-auto flex items-center gap-2">
+                                <div className="ml-auto flex shrink-0 items-center gap-2">
                                     {shareDraft.type === 'post' && (
                                         <button
                                             type="button"

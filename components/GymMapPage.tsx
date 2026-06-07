@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -203,7 +204,10 @@ export function GymDiscoveryPanel({
     hideList = false,
     hideListHeader = false,
     selectedGymIdOverride = null,
+    clearSelectionSignal = 0,
+    onViewAllGyms,
     autoSelectFirst = true,
+    showBackToMap = false,
     query = "",
     hiringOnly = false,
     sortBy = "DISTANCE",
@@ -215,7 +219,10 @@ export function GymDiscoveryPanel({
     hideList?: boolean;
     hideListHeader?: boolean;
     selectedGymIdOverride?: string | null;
+    clearSelectionSignal?: number;
+    onViewAllGyms?: (() => void) | undefined;
     autoSelectFirst?: boolean;
+    showBackToMap?: boolean;
     query?: string;
     hiringOnly?: boolean;
     sortBy?: "DISTANCE" | "RATING";
@@ -226,7 +233,7 @@ export function GymDiscoveryPanel({
     const mapRef = useRef<HTMLDivElement | null>(null);
     const infoPanelRef = useRef<HTMLDivElement | null>(null);
     const mapInstanceRef = useRef<any>(null);
-    const markersRef = useRef<any[]>([]);
+    const markersRef = useRef<Array<{ id: string; marker: any }>>([]);
     const locationMarkerRef = useRef<any>(null);
     const [gyms, setGyms] = useState<GymMapItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -238,6 +245,13 @@ export function GymDiscoveryPanel({
     const [mounted, setMounted] = useState(false);
     const [resolvedApiKey, setResolvedApiKey] = useState<string | null>(googleMapsApiKey ?? null);
     const [apiKeyResolved, setApiKeyResolved] = useState(googleMapsApiKey !== undefined);
+    const [mapRefitNonce, setMapRefitNonce] = useState(0);
+    const [browserLocationResolved, setBrowserLocationResolved] = useState(false);
+    const [hideViewAllGymsButton, setHideViewAllGymsButton] = useState(false);
+    const previousSelectedGymIdOverrideRef = useRef<string | null>(selectedGymIdOverride);
+    const previousHasSelectedGymRef = useRef<boolean>(false);
+    const previousClearSelectionSignalRef = useRef(clearSelectionSignal);
+    const userMapInteractionArmedRef = useRef(false);
 
     useEffect(() => setMounted(true), []);
 
@@ -278,7 +292,7 @@ export function GymDiscoveryPanel({
 
     const normalizedQuery = query.trim().toLowerCase();
     const filteredGyms = useMemo(() => {
-        const matches = gyms.filter((gym) => {
+        return gyms.filter((gym) => {
             const matchesQuery =
                 !normalizedQuery ||
                 gym.gymProfile.name.toLowerCase().includes(normalizedQuery) ||
@@ -293,15 +307,7 @@ export function GymDiscoveryPanel({
 
             return matchesQuery && matchesMin && matchesMax && matchesHiring;
         });
-
-        if (!selectedGymIdOverride) return matches;
-
-        const selectedGym = gyms.find((gym) => gym.id === selectedGymIdOverride);
-        if (!selectedGym) return matches;
-        if (matches.some((gym) => gym.id === selectedGymIdOverride)) return matches;
-
-        return [selectedGym, ...matches];
-    }, [gyms, hiringOnly, maxBudget, minBudget, normalizedQuery, selectedGymIdOverride]);
+    }, [gyms, hiringOnly, maxBudget, minBudget, normalizedQuery]);
 
     const gymsByDistance = useMemo(() => {
         const sorted = [...filteredGyms];
@@ -378,11 +384,86 @@ export function GymDiscoveryPanel({
         () => gymsByDistance.find(({ gym }) => gym.id === selectedGym?.id)?.distanceMiles ?? null,
         [gymsByDistance, selectedGym]
     );
+    const selectedGymAmenities = useMemo(
+        () => (selectedGym?.gymProfile.amenities ?? []).map((item) => item.trim()).filter(Boolean),
+        [selectedGym]
+    );
+    const selectedGymLocationSummary = useMemo(
+        () =>
+            [selectedGym?.gymProfile.city, selectedGym?.gymProfile.state, selectedGym?.gymProfile.country]
+                .filter(Boolean)
+                .join(", "),
+        [selectedGym]
+    );
+    const showStreetAddress = useMemo(() => {
+        const address = selectedGym?.gymProfile.address?.trim() ?? "";
+        const locationSummary = selectedGymLocationSummary.trim();
+        if (!address) return false;
+        if (!locationSummary) return true;
+        return address.toLowerCase() !== locationSummary.toLowerCase();
+    }, [selectedGym, selectedGymLocationSummary]);
+    const streetAddressLine = useMemo(() => {
+        return showStreetAddress ? selectedGym?.gymProfile.address?.trim() ?? "" : "";
+    }, [selectedGym, showStreetAddress]);
+    const cityLocationLine = useMemo(() => {
+        return selectedGymLocationSummary.trim();
+    }, [selectedGymLocationSummary]);
+    const allowReturnToMap = showBackToMap && !selectedGymIdOverride && !autoSelectFirst;
+    const showViewAllGymsButton = showBackToMap && filteredGyms.length > 1 && !hideViewAllGymsButton;
+    const hasSelectedGymTarget = Boolean(selectedGymIdOverride || selectedGymId);
+
+    const handleViewAllGyms = () => {
+        userMapInteractionArmedRef.current = false;
+        setHideViewAllGymsButton(true);
+        if (onViewAllGyms) {
+            onViewAllGyms();
+            if (!selectedGym && !selectedGymIdOverride) {
+                setMapRefitNonce((current) => current + 1);
+            }
+            return;
+        }
+        if (!selectedGym && !selectedGymIdOverride) {
+            setMapRefitNonce((current) => current + 1);
+        }
+        setSelectedGymId(null);
+    };
 
     useEffect(() => {
-        if (!selectedGymIdOverride) return;
-        setSelectedGymId(selectedGymIdOverride);
+        if (selectedGym) {
+            setHideViewAllGymsButton(false);
+        }
+    }, [selectedGym]);
+
+    useEffect(() => {
+        if (showBackToMap && !selectedGym && !selectedGymIdOverride) {
+            setHideViewAllGymsButton(true);
+        }
+    }, [selectedGym, selectedGymIdOverride, showBackToMap]);
+
+    useEffect(() => {
+        const previousSelectedGymIdOverride = previousSelectedGymIdOverrideRef.current;
+
+        if (selectedGymIdOverride) {
+            setSelectedGymId(selectedGymIdOverride);
+        } else if (previousSelectedGymIdOverride) {
+            setSelectedGymId(null);
+        }
+
+        previousSelectedGymIdOverrideRef.current = selectedGymIdOverride;
     }, [selectedGymIdOverride]);
+
+    useEffect(() => {
+        if (selectedGymIdOverride) {
+            previousClearSelectionSignalRef.current = clearSelectionSignal;
+            return;
+        }
+
+        if (previousClearSelectionSignalRef.current !== clearSelectionSignal) {
+            setSelectedGymId(null);
+        }
+
+        previousClearSelectionSignalRef.current = clearSelectionSignal;
+    }, [clearSelectionSignal, selectedGymIdOverride]);
 
     useEffect(() => {
         let alive = true;
@@ -399,6 +480,12 @@ export function GymDiscoveryPanel({
                 if (!alive) return;
                 const nextGyms: GymMapItem[] = Array.isArray(data?.gyms) ? data.gyms : [];
                 setGyms(nextGyms);
+                if (!browserLocationResolved && data?.viewerCoords?.lat != null && data?.viewerCoords?.lng != null) {
+                    setUserLocation({
+                        lat: data.viewerCoords.lat,
+                        lng: data.viewerCoords.lng,
+                    });
+                }
                 if (selectedGymIdOverride) {
                     setSelectedGymId(selectedGymIdOverride);
                 } else if (autoSelectFirst) {
@@ -419,7 +506,7 @@ export function GymDiscoveryPanel({
         return () => {
             alive = false;
         };
-    }, []);
+    }, [autoSelectFirst]);
 
     useEffect(() => {
         if (typeof window === "undefined" || !("geolocation" in navigator)) return;
@@ -432,9 +519,11 @@ export function GymDiscoveryPanel({
                     lat: position.coords.latitude,
                     lng: position.coords.longitude,
                 });
+                setBrowserLocationResolved(true);
             },
             () => {
-                // Leave ordering unchanged when location is unavailable or denied.
+                if (cancelled) return;
+                setBrowserLocationResolved(true);
             },
             {
                 enableHighAccuracy: true,
@@ -476,9 +565,7 @@ export function GymDiscoveryPanel({
                 const googleApi = await loadGoogleMaps(resolvedApiKey);
                 if (cancelled || !mapRef.current) return;
 
-                const gymsToDisplayOnMap = selectedGym
-                    ? [selectedGym]
-                    : gymsByDistance.map(({ gym }) => gym);
+                const gymsToDisplayOnMap = gymsByDistance.map(({ gym }) => gym);
 
                 const center = selectedGym
                     ? { lat: selectedGym.gymProfile.lat, lng: selectedGym.gymProfile.lng }
@@ -497,28 +584,49 @@ export function GymDiscoveryPanel({
                 });
                 mapInstanceRef.current = map;
 
-                const bounds = new googleApi.maps.LatLngBounds();
+                const mapElement = mapRef.current;
+                const armInteraction = () => {
+                    userMapInteractionArmedRef.current = true;
+                };
+
+                mapElement?.addEventListener("pointerdown", armInteraction);
+                mapElement?.addEventListener("touchstart", armInteraction, { passive: true });
+                mapElement?.addEventListener("wheel", armInteraction, { passive: true });
+
+                const gymBounds = new googleApi.maps.LatLngBounds();
 
                 markersRef.current = gymsToDisplayOnMap.map((gym) => {
                     const position = { lat: gym.gymProfile.lat, lng: gym.gymProfile.lng };
+                    const shouldShowMarker = !selectedGym || gym.id === selectedGym.id;
                     const marker = new googleApi.maps.Marker({
                         position,
-                        map,
+                        map: shouldShowMarker ? map : null,
                         title: gym.gymProfile.name,
                         animation: googleApi.maps.Animation.DROP,
                     });
 
-                    bounds.extend(position);
+                    gymBounds.extend(position);
 
                     marker.addListener("click", () => {
                         setSelectedGymId(gym.id);
                     });
 
-                    return marker;
+                    return { id: gym.id, marker };
+                });
+
+                const dragListener = map.addListener("dragend", () => {
+                    if (!userMapInteractionArmedRef.current) return;
+                    userMapInteractionArmedRef.current = false;
+                    setHideViewAllGymsButton(false);
+                });
+
+                const zoomListener = map.addListener("zoom_changed", () => {
+                    if (!userMapInteractionArmedRef.current) return;
+                    userMapInteractionArmedRef.current = false;
+                    setHideViewAllGymsButton(false);
                 });
 
                 if (userLocation) {
-                    bounds.extend(userLocation);
                     locationMarkerRef.current = new googleApi.maps.Marker({
                         position: userLocation,
                         map,
@@ -536,21 +644,37 @@ export function GymDiscoveryPanel({
                 }
 
                 if (gymsToDisplayOnMap.length > 1 || userLocation) {
-                    map.fitBounds(bounds, 80);
+                    if (userLocation) {
+                        gymBounds.extend(userLocation);
+                    }
+                    map.fitBounds(gymBounds, 40);
                 }
 
                 setMapReady(true);
+
+                return () => {
+                    mapElement?.removeEventListener("pointerdown", armInteraction);
+                    mapElement?.removeEventListener("touchstart", armInteraction);
+                    mapElement?.removeEventListener("wheel", armInteraction);
+                    googleApi.maps.event.removeListener(dragListener);
+                    googleApi.maps.event.removeListener(zoomListener);
+                };
             } catch (error) {
                 if (cancelled) return;
                 setMapError(error instanceof Error ? error.message : "Failed to initialize map.");
             }
         };
 
-        void initMap();
+        let cleanupMapListeners: (() => void) | undefined;
+
+        void initMap().then((cleanup) => {
+            cleanupMapListeners = cleanup;
+        });
 
         return () => {
             cancelled = true;
-            markersRef.current.forEach((marker) => {
+            cleanupMapListeners?.();
+            markersRef.current.forEach(({ marker }) => {
                 if (marker?.setMap) marker.setMap(null);
             });
             markersRef.current = [];
@@ -560,15 +684,96 @@ export function GymDiscoveryPanel({
             locationMarkerRef.current = null;
             mapInstanceRef.current = null;
         };
-    }, [apiKeyResolved, gymsByDistance, resolvedApiKey, selectedGym, userLocation]);
+    }, [apiKeyResolved, gymsByDistance, resolvedApiKey, userLocation]);
 
     useEffect(() => {
         const map = mapInstanceRef.current;
-        if (!map || !selectedGym) return;
+        const googleApi = typeof window !== "undefined" ? window.google : undefined;
+        if (!map || !googleApi?.maps || gymsByDistance.length === 0) return;
 
-        map.panTo({
-            lat: selectedGym.gymProfile.lat,
-            lng: selectedGym.gymProfile.lng,
+        const fitBoundsWithMaxZoom = (bounds: any, padding: number, maxZoom: number) => {
+            const previousMaxZoom = typeof map.get("maxZoom") === "number" ? map.get("maxZoom") : null;
+            map.setOptions({ maxZoom });
+            map.fitBounds(bounds, padding);
+            googleApi.maps.event.addListenerOnce(map, "idle", () => {
+                map.setOptions({ maxZoom: previousMaxZoom });
+            });
+        };
+
+        const fitAllGyms = () => {
+            const bounds = new googleApi.maps.LatLngBounds();
+            gymsByDistance.forEach(({ gym }) => {
+                bounds.extend({ lat: gym.gymProfile.lat, lng: gym.gymProfile.lng });
+            });
+            if (userLocation) {
+                bounds.extend(userLocation);
+            }
+            if (gymsByDistance.length > 1 || userLocation) {
+                map.fitBounds(bounds, 40);
+                return;
+            }
+            map.panTo({
+                lat: gymsByDistance[0]!.gym.gymProfile.lat,
+                lng: gymsByDistance[0]!.gym.gymProfile.lng,
+            });
+            map.setZoom(13);
+        };
+
+        const applyViewport = () => {
+            if (!selectedGym) {
+                fitAllGyms();
+                return;
+            }
+
+            if (userLocation) {
+                const bounds = new googleApi.maps.LatLngBounds();
+                bounds.extend(userLocation);
+                bounds.extend({
+                    lat: selectedGym.gymProfile.lat,
+                    lng: selectedGym.gymProfile.lng,
+                });
+                fitBoundsWithMaxZoom(bounds, 48, 13);
+                return;
+            }
+
+            map.panTo({
+                lat: selectedGym.gymProfile.lat,
+                lng: selectedGym.gymProfile.lng,
+            });
+            map.setZoom(13);
+        };
+
+        const hasSelectedGym = Boolean(selectedGym);
+        const modeChanged = previousHasSelectedGymRef.current !== hasSelectedGym;
+        previousHasSelectedGymRef.current = hasSelectedGym;
+
+        if (!modeChanged) {
+            applyViewport();
+            return;
+        }
+
+        const resizeTimeout = window.setTimeout(() => {
+            if (mapInstanceRef.current !== map) return;
+            googleApi.maps.event.trigger(map, "resize");
+            applyViewport();
+        }, 320);
+
+        return () => {
+            window.clearTimeout(resizeTimeout);
+        };
+    }, [gymsByDistance, mapRefitNonce, selectedGym, userLocation]);
+
+    useEffect(() => {
+        const map = mapInstanceRef.current;
+        if (!map) return;
+
+        markersRef.current.forEach(({ id, marker }) => {
+            if (!marker?.setMap) return;
+            if (!selectedGym || id === selectedGym.id) {
+                marker.setMap(map);
+            } else {
+                marker.setMap(null);
+            }
         });
     }, [selectedGym]);
 
@@ -706,10 +911,28 @@ export function GymDiscoveryPanel({
                 )}
 
                 <section
-                    className="scrollbar-hidden order-1 flex min-h-[420px] flex-col rounded-xl border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-900 lg:order-2 lg:h-[calc(100vh-190px)] lg:min-w-0 lg:flex-1 lg:overflow-y-auto"
+                    className={clsx(
+                        "scrollbar-hidden order-1 flex min-h-[420px] flex-col rounded-xl border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-900 lg:order-2 lg:h-[calc(100vh-190px)] lg:min-w-0 lg:flex-1 lg:overflow-y-auto",
+                        selectedGym ? "" : "overflow-hidden"
+                    )}
                 >
-                    <div className="relative flex-1 overflow-hidden lg:flex-none" style={{ height: `${DESKTOP_MAP_PERCENT}%` }}>
+                    <div
+                        className="relative flex-1 overflow-hidden transition-[height] duration-500 ease-in-out lg:flex-none"
+                        style={{ height: selectedGym ? `${DESKTOP_MAP_PERCENT}%` : '100%' }}
+                    >
                         <div ref={mapRef} className="h-[54vh] w-full rounded-t-xl lg:h-full lg:rounded-none lg:rounded-t-xl" />
+
+                        {showViewAllGymsButton && (
+                            <div className="absolute left-4 top-4 z-[1]">
+                                <button
+                                    type="button"
+                                    onClick={handleViewAllGyms}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-white/90 px-3 py-2 text-sm text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-100 dark:border-white/10 dark:bg-neutral-900/85 dark:text-gray-100 dark:hover:bg-neutral-800"
+                                >
+                                    View All Gyms
+                                </button>
+                            </div>
+                        )}
 
                         {!mapReady && !mapError && (
                             <div className="absolute inset-0 flex items-center justify-center rounded-t-xl bg-white/85 backdrop-blur-sm dark:bg-neutral-900/85">
@@ -729,7 +952,7 @@ export function GymDiscoveryPanel({
                             </div>
                         )}
 
-                        {mapReady && !mapError && filteredGyms.length === 0 && (
+                        {mapReady && !mapError && filteredGyms.length === 0 && !hasSelectedGymTarget && (
                             <div className="absolute inset-0 flex items-center justify-center rounded-t-xl bg-white/85 px-6 text-center backdrop-blur-sm dark:bg-neutral-900/85">
                                 <div className="max-w-sm">
                                     <div className="text-sm font-medium text-zinc-900 dark:text-white">No gyms to display</div>
@@ -739,40 +962,67 @@ export function GymDiscoveryPanel({
                                 </div>
                             </div>
                         )}
+
+                        {mapReady && !mapError && filteredGyms.length === 0 && hasSelectedGymTarget && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-t-xl bg-white/85 backdrop-blur-sm dark:bg-neutral-900/85">
+                                <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-gray-400">
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent dark:border-white dark:border-t-transparent" />
+                                    Loading…
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {selectedGym && (
-                        <div
-                            ref={infoPanelRef}
-                            className="border-t border-black/5 bg-white dark:border-white/10 dark:bg-neutral-900"
-                        >
-                            <div className="p-4">
+                    <div
+                        ref={infoPanelRef}
+                        className={clsx(
+                            "shrink-0 overflow-hidden bg-white transition-[max-height,opacity,border-color] duration-500 ease-in-out dark:bg-neutral-900",
+                            selectedGym
+                                ? "max-h-[2000px] border-t border-black/5 opacity-100 dark:border-white/10"
+                                : "max-h-0 border-t border-transparent opacity-0 dark:border-transparent"
+                        )}
+                    >
+                        {selectedGym && (
+                            <div key={selectedGym.id} className="p-4 transition-opacity duration-300 ease-out">
                                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-white/10 dark:bg-black/20">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <Link
-                                                href={popupProfileHref}
-                                                className="text-lg font-semibold text-zinc-900 transition hover:underline dark:text-white"
-                                            >
-                                                {selectedGym.gymProfile.name}
-                                            </Link>
-                                            {selectedGym.gymProfile.isVerified && (
-                                                <CheckCircle2 size={16} className="text-green-700 dark:text-green-400" />
-                                            )}
-                                        </div>
-                                        {selectedGymDistance != null && (
-                                            <div className="mt-1 text-xs text-zinc-500 dark:text-gray-400">
-                                                {formatDistanceMiles(selectedGymDistance)} away
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        {selectedGym.image ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={selectedGym.image}
+                                                alt=""
+                                                className="h-14 w-14 shrink-0 rounded-full border border-zinc-200 object-cover dark:border-white/20"
+                                            />
+                                        ) : (
+                                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-700 dark:border-white/20 dark:bg-white/10 dark:text-white">
+                                                {(selectedGym.gymProfile.name || selectedGym.username || 'G').slice(0, 2).toUpperCase()}
                                             </div>
                                         )}
+
+                                        <div className="min-w-0 space-y-0">
+                                            <div className="flex items-center gap-2">
+                                                <Link
+                                                    href={popupProfileHref}
+                                                    className="block break-words text-lg font-semibold text-zinc-900 transition hover:underline sm:truncate dark:text-white"
+                                                >
+                                                    {selectedGym.gymProfile.name}
+                                                </Link>
+                                                {selectedGym.gymProfile.isVerified && (
+                                                    <CheckCircle2 size={16} className="shrink-0 text-green-700 dark:text-green-400" />
+                                                )}
+                                            </div>
+                                            <span className="inline-block rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500 dark:bg-white/10 dark:text-gray-400">
+                                                gym
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex shrink-0 items-start gap-2">
-                                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                                    <div className="flex w-full shrink-0 items-start gap-2 sm:w-auto">
+                                        <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
                                             <button
                                                 type="button"
                                                 onClick={() => handleMessage(selectedGym)}
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white p-0 text-sm text-zinc-700 transition hover:bg-zinc-50 dark:border-white/15 dark:bg-transparent dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1 sm:px-3 sm:py-1.5"
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                                                 title="Message"
                                             >
                                                 <MessageSquare size={16} />
@@ -781,7 +1031,7 @@ export function GymDiscoveryPanel({
                                             <button
                                                 type="button"
                                                 onClick={() => handleShareProfile(selectedGym)}
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white p-0 text-sm text-zinc-700 transition hover:bg-zinc-50 dark:border-white/15 dark:bg-transparent dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1 sm:px-3 sm:py-1.5"
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                                                 title="Share"
                                             >
                                                 <Share2 size={16} />
@@ -789,7 +1039,7 @@ export function GymDiscoveryPanel({
                                             </button>
                                             <Link
                                                 href={`/u/${encodeURIComponent(selectedGym.username || selectedGym.id)}?rate=1`}
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white p-0 text-sm text-zinc-700 transition hover:bg-zinc-50 dark:border-white/15 dark:bg-transparent dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1 sm:px-3 sm:py-1.5"
+                                                className="inline-flex h-9 w-9 cursor-default items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                                                 title="Rate"
                                             >
                                                 <Star size={16} />
@@ -800,7 +1050,7 @@ export function GymDiscoveryPanel({
                                                     href={selectedGym.gymProfile.website}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white p-0 text-sm text-zinc-700 transition hover:bg-zinc-50 dark:border-white/15 dark:bg-transparent dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1 sm:px-3 sm:py-1.5"
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2"
                                                     title="Visit website"
                                                 >
                                                     <LinkIcon size={16} />
@@ -811,60 +1061,82 @@ export function GymDiscoveryPanel({
                                     </div>
                                 </div>
 
-                                <div className="mt-4 flex items-start gap-2 text-sm text-zinc-600 dark:text-gray-300">
-                                    <Navigation size={15} className="mt-0.5 shrink-0 text-zinc-400 dark:text-gray-500" />
-                                    <div>
-                                        <div>{selectedGym.gymProfile.address}</div>
-                                        <div className="mt-1 text-xs text-zinc-500 dark:text-gray-400">
-                                            {[selectedGym.gymProfile.city, selectedGym.gymProfile.state, selectedGym.gymProfile.country]
-                                                .filter(Boolean)
-                                                .join(", ")}
+                                {(streetAddressLine || cityLocationLine || selectedGymDistance != null) && (
+                                    <div className="mt-3 flex flex-nowrap items-start gap-2">
+                                        {showStreetAddress
+                                            ? <MapPin size={15} className="mt-0.5 shrink-0 text-zinc-400 dark:text-gray-500" />
+                                            : <Navigation size={15} className="mt-0.5 shrink-0 text-zinc-400 dark:text-gray-500" />}
+                                        <div className="min-w-0 flex flex-col gap-1">
+                                            {streetAddressLine && (
+                                                <div className="min-w-0 break-words text-sm text-zinc-600 dark:text-gray-300">
+                                                    {streetAddressLine}
+                                                </div>
+                                            )}
+                                            {cityLocationLine && (
+                                                <div className="min-w-0 break-words text-sm text-zinc-600 dark:text-gray-300">
+                                                    {cityLocationLine}
+                                                </div>
+                                            )}
+                                            {selectedGymDistance != null && (
+                                                <div className="text-xs text-zinc-500 dark:text-gray-400">
+                                                    {formatDistanceMiles(selectedGymDistance)} away
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                                    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-neutral-900">
+                                <div className="mt-4 grid gap-3 pt-1 sm:grid-cols-3">
+                                    <div className="rounded-xl bg-zinc-50/60 px-3 py-3 dark:bg-white/[0.04]">
                                         <div className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-gray-500">Monthly fee</div>
                                         <div className="mt-1 text-sm font-semibold text-zinc-900 dark:text-white">
                                             ${formatMoney(selectedGym.gymProfile.fee)}
                                         </div>
                                     </div>
-                                    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-neutral-900">
+                                    <div className="rounded-xl bg-zinc-50/60 px-3 py-3 dark:bg-white/[0.04]">
                                         <div className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-gray-500">Rating</div>
                                         <div className="mt-1 text-sm font-semibold text-zinc-900 dark:text-white">
                                             {selectedGym.gymProfile.rating != null ? selectedGym.gymProfile.rating.toFixed(1) : "—"}
                                         </div>
                                     </div>
-                                    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-neutral-900">
-                                        <div className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-gray-500">Clients</div>
+                                    <div className="rounded-xl bg-zinc-50/60 px-3 py-3 dark:bg-white/[0.04]">
+                                        <div className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-gray-500">Members</div>
                                         <div className="mt-1 text-sm font-semibold text-zinc-900 dark:text-white">
                                             {selectedGym.gymProfile.clients ?? 0}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-5">
-                                    <h4 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-white">About</h4>
-                                    <p className="text-sm leading-6 text-zinc-600 dark:text-gray-300">
-                                        {selectedGym.about?.trim() || selectedGym.gymProfile.bio?.trim() || "No description provided."}
-                                    </p>
-                                </div>
+                                {selectedGym.gymProfile.hiringTrainers && (
+                                    <div className="mt-5 border-t border-zinc-200/80 pt-4 dark:border-white/10">
+                                        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-gray-400">Hiring</h4>
+                                        <div className="mt-1 text-sm font-semibold text-zinc-900 dark:text-white">
+                                            Actively hiring trainers
+                                        </div>
+                                    </div>
+                                )}
 
-                                <div className="mt-5">
-                                    <h4 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-white">Amenities</h4>
-                                    {selectedGym.gymProfile.amenities?.length ? (
+                                {(selectedGym.about?.trim() || selectedGym.gymProfile.bio?.trim()) && (
+                                    <div className="mt-5 border-t border-zinc-200/80 pt-4 dark:border-white/10">
+                                        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-gray-400">About</h4>
                                         <p className="text-sm leading-6 text-zinc-600 dark:text-gray-300">
-                                            {selectedGym.gymProfile.amenities.join(", ")}
+                                            {selectedGym.about?.trim() || selectedGym.gymProfile.bio?.trim()}
                                         </p>
-                                    ) : (
-                                        <div className="text-sm text-zinc-500 dark:text-gray-400">—</div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
+
+                                {selectedGymAmenities.length > 0 && (
+                                    <div className="mt-5 border-t border-zinc-200/80 pt-4 dark:border-white/10">
+                                        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-gray-400">Amenities</h4>
+                                        <p className="text-sm leading-6 text-zinc-600 dark:text-gray-300">
+                                            {selectedGymAmenities.join(", ")}
+                                        </p>
+                                    </div>
+                                )}
 
                                 {!!selectedGym.gallery?.length && (
-                                    <div className="mt-5">
-                                        <h4 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-white">Photos</h4>
+                                    <div className="mt-5 border-t border-zinc-200/80 pt-4 dark:border-white/10">
+                                        <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-gray-400">Facility Images</h4>
                                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                             {selectedGym.gallery.map((url) => (
                                                 <button
@@ -886,8 +1158,8 @@ export function GymDiscoveryPanel({
                                 )}
                             </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </section>
             </main>
 

@@ -542,9 +542,9 @@ export function TraineeProfile({
                                     onClick={handleFollowButton}
                                     disabled={loading}
                                     className={clsx(
-                                        "w-full py-2 rounded-full text-sm font-medium transition",
-                                        "border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white",
-                                        "dark:border-white dark:text-white dark:hover:bg-white/10",
+                                        "w-full rounded-lg border px-3 py-2 text-sm font-medium transition",
+                                        "border-zinc-200/80 bg-zinc-50/80 text-zinc-900 hover:bg-zinc-100",
+                                        "dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10",
                                         "disabled:opacity-60 disabled:cursor-not-allowed"
                                     )}
                                 >
@@ -581,7 +581,7 @@ export function TraineeProfile({
                                 <div className="flex gap-2">
                                     <button
                                         onClick={handleMessage}
-                                        className="flex-1 py-1.5 rounded-full border text-xs text-zinc-700 bg-white hover:bg-gray-50 transition flex items-center justify-center gap-1 dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-xs text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                     >
                                         <MessageSquare size={16} />
                                         <span>Message</span>
@@ -589,10 +589,10 @@ export function TraineeProfile({
                                     <button
                                         onClick={handleShare}
                                         className={clsx(
-                                            "w-9 h-9 shrink-0 rounded-full border bg-white hover:bg-gray-50 transition inline-flex items-center justify-center p-0 dark:bg-transparent dark:hover:bg-white/10",
+                                            "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10",
                                             shareActive
-                                                ? "text-green-500 border-green-500 dark:text-green-400 dark:border-green-500"
-                                                : "text-zinc-700 border-gray-200 dark:text-gray-100 dark:border-white/20"
+                                                ? "border-green-700 text-green-700 dark:border-green-500 dark:text-green-500"
+                                                : "text-zinc-700 dark:text-gray-100"
                                         )}
                                         title="Copy profile link"
                                     >
@@ -610,7 +610,7 @@ export function TraineeProfile({
                             <>
                                 <div className="mx-auto grid w-full max-w-[312px] grid-cols-[0.96fr_1.04fr] gap-2">
                                     <button
-                                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border bg-white px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-gray-50 sm:text-sm dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                         onClick={() => router.push("/settings")}
                                         aria-label="Edit profile"
                                         title="Edit profile"
@@ -619,7 +619,7 @@ export function TraineeProfile({
                                         <span className="whitespace-nowrap">Edit Profile</span>
                                     </button>
                                     <button
-                                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border bg-white px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-gray-50 sm:text-sm dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                         onClick={() => setShowNotifications(true)}
                                         aria-label="Notifications"
                                         title="Notifications"

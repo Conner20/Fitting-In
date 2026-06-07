@@ -924,10 +924,10 @@ export function GymProfile({
                   onClick={handleFollowButton}
                   disabled={loading}
                   className={clsx(
-                    "w-full py-2 rounded-full text-sm font-medium transition",
-                    "border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white",
+                    "w-full rounded-lg border px-3 py-2 text-sm font-medium transition",
+                    "border-zinc-200/80 bg-zinc-50/80 text-zinc-900 hover:bg-zinc-100",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
-                    "dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                    "dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                   )}
                 >
                   {user.isPrivate ? (
@@ -966,7 +966,7 @@ export function GymProfile({
                 >
                   <button
                     onClick={handleMessage}
-                    className="h-9 w-full rounded-full border text-xs text-zinc-700 bg-white hover:bg-gray-50 transition flex items-center justify-center dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                    className="flex h-9 w-full items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 text-xs text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     title="Message"
                   >
                     <MessageSquare size={16} />
@@ -974,10 +974,10 @@ export function GymProfile({
                   <button
                     onClick={handleShare}
                     className={clsx(
-                      "h-9 w-full rounded-full border bg-white hover:bg-gray-50 transition inline-flex items-center justify-center p-0 dark:bg-transparent dark:hover:bg-white/10",
+                      "inline-flex h-9 w-full items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10",
                       shareActive
-                        ? "text-green-500 border-green-500 dark:text-green-400 dark:border-green-500"
-                        : "text-zinc-700 border-gray-200 dark:text-gray-100 dark:border-white/20"
+                        ? "border-green-700 text-green-700 dark:border-green-500 dark:text-green-500"
+                        : "text-zinc-700 dark:text-gray-100"
                     )}
                     title="Copy profile link"
                   >
@@ -986,7 +986,7 @@ export function GymProfile({
                   {showWebsiteAction && (
                     <button
                       onClick={handleWebsiteClick}
-                      className="h-9 w-full rounded-full border bg-white hover:bg-gray-50 transition inline-flex items-center justify-center p-0 text-zinc-700 border-gray-200 dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                      className="inline-flex h-9 w-full items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                       title="Visit website"
                     >
                       <LinkIcon size={16} />
@@ -994,7 +994,7 @@ export function GymProfile({
                   )}
                   <button
                     onClick={() => setShowRate(true)}
-                    className="h-9 w-full rounded-full border bg-white hover:bg-gray-50 transition flex items-center justify-center dark:bg-transparent dark:border-white/20 dark:text-gray-100 dark:hover:bg-white/10"
+                    className="flex h-9 w-full items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     title="Rate this gym"
                   >
                     <Star size={16} />
@@ -1017,7 +1017,7 @@ export function GymProfile({
                 >
                   {showWebsiteAction && (
                     <button
-                      className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-2xl border bg-white px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-gray-50 dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                      className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                       onClick={handleWebsiteClick}
                       aria-label="Website"
                       title="Website"
@@ -1027,7 +1027,7 @@ export function GymProfile({
                     </button>
                   )}
                   <button
-                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-2xl border bg-white px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-gray-50 dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     onClick={() => router.push("/settings")}
                     aria-label="Edit profile"
                     title="Edit profile"
@@ -1036,7 +1036,7 @@ export function GymProfile({
                     <span className="max-w-full text-center">Edit Profile</span>
                   </button>
                   <button
-                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-2xl border bg-white px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-gray-50 dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     onClick={() => setShowManageRatings(true)}
                     aria-label="Ratings"
                     title="Ratings"
@@ -1045,7 +1045,7 @@ export function GymProfile({
                     <span className="max-w-full text-center">Ratings</span>
                   </button>
                   <button
-                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-2xl border bg-white px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-gray-50 dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     onClick={() => setShowNotifications(true)}
                     aria-label="Notifications"
                     title="Notifications"
@@ -1057,7 +1057,7 @@ export function GymProfile({
                 <div className="mx-auto hidden w-full max-w-[312px] space-y-2 sm:block">
                   {showWebsiteAction && (
                     <button
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border bg-white px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-gray-50 sm:text-sm dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                       onClick={handleWebsiteClick}
                     >
                       <LinkIcon size={16} className="shrink-0" />
@@ -1066,7 +1066,7 @@ export function GymProfile({
                   )}
                   <div className="grid w-full grid-cols-[0.96fr_1.04fr] gap-2">
                     <button
-                      className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border bg-white px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-gray-50 sm:text-sm dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                      className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                       onClick={() => router.push("/settings")}
                       aria-label="Edit profile"
                       title="Edit profile"
@@ -1075,7 +1075,7 @@ export function GymProfile({
                       <span className="whitespace-nowrap">Edit Profile</span>
                     </button>
                     <button
-                      className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border bg-white px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-gray-50 sm:text-sm dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                      className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                       onClick={() => setShowManageRatings(true)}
                       aria-label="Ratings"
                       title="Ratings"
@@ -1085,7 +1085,7 @@ export function GymProfile({
                     </button>
                   </div>
                   <button
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border bg-white px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-gray-50 sm:text-sm dark:bg-transparent dark:text-gray-100 dark:border-white/20 dark:hover:bg-white/10"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     onClick={() => setShowNotifications(true)}
                   >
                     <Bell size={16} className="shrink-0" />
