@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, ChevronDown, Link as LinkIcon, MapPin, MessageSquare, Navigation, Share2, Star, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
+import FavoriteButton from "@/components/FavoriteButton";
 import MobileHeader from "@/components/MobileHeader";
 
 type GymMapItem = {
@@ -208,6 +209,10 @@ export function GymDiscoveryPanel({
     onViewAllGyms,
     autoSelectFirst = true,
     showBackToMap = false,
+    isFavorited,
+    isFavoritePending,
+    isFavoriteAnimating,
+    onToggleFavorite,
     query = "",
     hiringOnly = false,
     sortBy = "DISTANCE",
@@ -223,6 +228,10 @@ export function GymDiscoveryPanel({
     onViewAllGyms?: (() => void) | undefined;
     autoSelectFirst?: boolean;
     showBackToMap?: boolean;
+    isFavorited?: ((gymId: string) => boolean) | undefined;
+    isFavoritePending?: ((gymId: string) => boolean) | undefined;
+    isFavoriteAnimating?: ((gymId: string) => boolean) | undefined;
+    onToggleFavorite?: ((gymId: string) => void) | undefined;
     query?: string;
     hiringOnly?: boolean;
     sortBy?: "DISTANCE" | "RATING";
@@ -787,6 +796,9 @@ export function GymDiscoveryPanel({
     const popupProfileHref = selectedGym?.username
         ? `/u/${encodeURIComponent(selectedGym.username)}`
         : "/search";
+    const selectedGymIsFavorited = selectedGym ? Boolean(isFavorited?.(selectedGym.id)) : false;
+    const selectedGymFavoritePending = selectedGym ? Boolean(isFavoritePending?.(selectedGym.id)) : false;
+    const selectedGymFavoriteAnimating = selectedGym ? Boolean(isFavoriteAnimating?.(selectedGym.id)) : false;
     const handleMessage = (gym: GymMapItem) => {
         const to = gym.username || gym.id;
         router.push(`/messages?to=${encodeURIComponent(to)}`);
@@ -1019,6 +1031,17 @@ export function GymDiscoveryPanel({
                                     </div>
                                     <div className="flex w-full shrink-0 items-start gap-2 sm:w-auto">
                                         <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
+                                            {selectedGym && onToggleFavorite && (
+                                                <FavoriteButton
+                                                    favorited={selectedGymIsFavorited}
+                                                    animating={selectedGymFavoriteAnimating}
+                                                    disabled={selectedGymFavoritePending}
+                                                    iconOnly={false}
+                                                    onClick={() => onToggleFavorite(selectedGym.id)}
+                                                    title={selectedGymIsFavorited ? "Favorited" : "Favorite"}
+                                                    className="sm:pr-3"
+                                                />
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => handleMessage(selectedGym)}

@@ -115,6 +115,8 @@ model User {
 
   following Follow[] @relation("UserFollows")
   followers Follow[] @relation("UserFollowedBy")
+  favoritesGiven FavoriteUser[] @relation("FavoriteUsersByFavoriter")
+  favoritesReceived FavoriteUser[] @relation("FavoriteUsersByFavorited")
 
   notifications      Notification[] @relation("UserNotifications")
   actorNotifications Notification[] @relation("UserActorNotifications")
@@ -379,6 +381,19 @@ model Follow {
   notifications Notification[] @relation("FollowNotifications")
 
   @@unique([followerId, followingId]) // a user can follow another once
+}
+
+model FavoriteUser {
+  id          String   @id @default(cuid())
+  favoriter   User     @relation("FavoriteUsersByFavoriter", fields: [favoriterId], references: [id], onDelete: Cascade)
+  favoriterId String
+  favorited   User     @relation("FavoriteUsersByFavorited", fields: [favoritedId], references: [id], onDelete: Cascade)
+  favoritedId String
+  createdAt   DateTime @default(now())
+
+  @@unique([favoriterId, favoritedId])
+  @@index([favoriterId, createdAt])
+  @@index([favoritedId, createdAt])
 }
 
 model Notification {

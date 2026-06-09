@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import MobileHeader from "@/components/MobileHeader";
 import { GymDiscoveryPanel } from "@/components/GymMapPage";
+import FavoriteButton from "@/components/FavoriteButton";
 import SearchProfileEditor from "@/components/SearchProfileEditor";
 
 type Role = 'TRAINEE' | 'TRAINER' | 'GYM';
@@ -59,6 +60,8 @@ type ApiResponse = {
     results: SearchUser[];
     viewerHasCoords: boolean;
 };
+
+type SearchListTab = 'all' | 'favorites';
 
 type StatusFilter = 'ALL' | 'LOOKING_GYM' | 'LOOKING_TRAINER' | 'AT_GYM';
 type ViewerCoords = { lat: number; lng: number };
@@ -133,6 +136,10 @@ export default function SearchPage() {
     const [data, setData] = useState<ApiResponse | null>(null);
     const [viewerCoords, setViewerCoords] = useState<ViewerCoords | null>(null);
     const [mobileView, setMobileView] = useState<'list' | 'details' | 'editor'>('list');
+    const [listTab, setListTab] = useState<SearchListTab>('all');
+    const [favoriteUserIds, setFavoriteUserIds] = useState<string[]>([]);
+    const [favoritePendingIds, setFavoritePendingIds] = useState<string[]>([]);
+    const [favoriteAnimatingIds, setFavoriteAnimatingIds] = useState<string[]>([]);
     const pageSize = 10;
     const [page, setPage] = useState(1);
     const [gymMapResetNonce, setGymMapResetNonce] = useState(0);
@@ -150,11 +157,21 @@ export default function SearchPage() {
 
     // lightbox (image enlarge)
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const favoriteAnimationTimersRef = useRef<Record<string, number>>({});
+    const favoriteRequestVersionRef = useRef<Record<string, number>>({});
 
     // ensure portal only runs client-side
     const [mounted, setMounted] = useState(false);
     const [isDesktopViewport, setIsDesktopViewport] = useState(false);
     useEffect(() => setMounted(true), []);
+
+    useEffect(() => {
+        return () => {
+            Object.values(favoriteAnimationTimersRef.current).forEach((timerId) => {
+                window.clearTimeout(timerId);
+            });
+        };
+    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -208,6 +225,28 @@ export default function SearchPage() {
             }
         );
 
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const fetchFavorites = async () => {
+            try {
+                const res = await fetch('/api/user/favorites', { cache: 'no-store' });
+                if (!res.ok) return;
+                const json = await res.json().catch(() => null);
+                if (!cancelled) {
+                    setFavoriteUserIds(Array.isArray(json?.favoriteUserIds) ? json.favoriteUserIds : []);
+                }
+            } catch {
+                // Keep search usable even if favorites fail to load.
+            }
+        };
+
+        void fetchFavorites();
         return () => {
             cancelled = true;
         };
@@ -352,7 +391,7 @@ export default function SearchPage() {
             Math.ceil(((data?.results?.length ?? 0) || 0) / pageSize)
         );
         if (page > total) setPage(total);
-    }, [data?.results?.length, page, pageSize]);
+    }, [data?.results?.length, page, pageSize, selected?.id]);
 
     useEffect(() => {
         if (listRef.current) listRef.current.scrollTop = 0;
@@ -401,6 +440,60 @@ export default function SearchPage() {
         if (isDesktopViewport && !hasActiveNonQueryFilters) {
             setSelectedId(null);
             setShowGymMapPanel(false);
+        }
+    };
+
+    const favoriteIdSet = useMemo(() => new Set(favoriteUserIds), [favoriteUserIds]);
+    const favoritePendingIdSet = useMemo(() => new Set(favoritePendingIds), [favoritePendingIds]);
+    const favoriteAnimatingIdSet = useMemo(() => new Set(favoriteAnimatingIds), [favoriteAnimatingIds]);
+
+    const triggerFavoriteAnimation = (userId: string) => {
+        if (typeof window === 'undefined') return;
+        window.clearTimeout(favoriteAnimationTimersRef.current[userId]);
+        setFavoriteAnimatingIds((current) => (current.includes(userId) ? current : [...current, userId]));
+        favoriteAnimationTimersRef.current[userId] = window.setTimeout(() => {
+            setFavoriteAnimatingIds((current) => current.filter((id) => id !== userId));
+            delete favoriteAnimationTimersRef.current[userId];
+        }, 360);
+    };
+
+    const handleToggleFavorite = async (userId: string) => {
+        if (!userId) return;
+
+        const isFavorited = favoriteIdSet.has(userId);
+        const nextFavorited = !isFavorited;
+        const requestVersion = (favoriteRequestVersionRef.current[userId] ?? 0) + 1;
+        favoriteRequestVersionRef.current[userId] = requestVersion;
+
+        setFavoritePendingIds((current) => [...current, userId]);
+        setFavoriteUserIds((current) =>
+            nextFavorited ? Array.from(new Set([userId, ...current])) : current.filter((id) => id !== userId)
+        );
+
+        if (!isFavorited) {
+            triggerFavoriteAnimation(userId);
+        }
+
+        try {
+            const res = await fetch('/api/user/favorites', {
+                method: nextFavorited ? 'POST' : 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUserId: userId }),
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to update favorite.');
+            }
+        } catch {
+            if (favoriteRequestVersionRef.current[userId] === requestVersion) {
+                setFavoriteUserIds((current) =>
+                    isFavorited ? Array.from(new Set([userId, ...current])) : current.filter((id) => id !== userId)
+                );
+            }
+        } finally {
+            if (favoriteRequestVersionRef.current[userId] === requestVersion) {
+                setFavoritePendingIds((current) => current.filter((id) => id !== userId));
+            }
         }
     };
 
@@ -968,18 +1061,33 @@ export default function SearchPage() {
         setMobileView('details');
     };
 
+    const handleSelectableCardKeyDown = (
+        event: React.KeyboardEvent<HTMLDivElement>,
+        onSelect: () => void
+    ) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onSelect();
+        }
+    };
+
     const renderMobileCard = (u: SearchUser) => {
         const isSelected = selectedId === u.id;
         const display = u.name || u.username || 'User';
         const locationLabel = [u.city, u.state].filter(Boolean).join(', ');
+        const isFavorited = favoriteIdSet.has(u.id);
+        const selectCard = () => handleMobileSelect(u.id);
         return (
-            <button
+            <div
                 key={`mobile-${u.id}`}
+                role="button"
+                tabIndex={0}
                 className={clsx(
-                    "w-full rounded-2xl border bg-white px-4 py-3 text-left transition focus-visible:outline-none shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:text-gray-100",
+                    "relative w-full rounded-2xl border bg-white px-4 py-3 text-left transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 dark:border-white/10 dark:bg-neutral-900 dark:text-gray-100 dark:focus-visible:ring-green-400",
                     isSelected && "border-2 border-gray-900 dark:border-green-400"
                 )}
-                onClick={() => handleMobileSelect(u.id)}
+                onClick={selectCard}
+                onKeyDown={(event) => handleSelectableCardKeyDown(event, selectCard)}
             >
                 <div className="flex items-start gap-3">
                     {u.image ? (
@@ -1016,17 +1124,48 @@ export default function SearchPage() {
                         </div>
                     </div>
                 </div>
-            </button>
+                            <FavoriteButton
+                                compact
+                                iconOnly
+                                variant="plain"
+                                favorited={isFavorited}
+                                animating={favoriteAnimatingIdSet.has(u.id)}
+                                disabled={favoritePendingIdSet.has(u.id)}
+                    onClick={() => handleToggleFavorite(u.id)}
+                    title={isFavorited ? 'Favorited' : 'Favorite'}
+                    className="absolute bottom-3 right-3 cursor-default"
+                />
+            </div>
         );
     };
 
     const allResults = data?.results ?? [];
-    const totalPages = Math.max(1, Math.ceil(allResults.length / pageSize));
+    const favoriteResults = useMemo(
+        () => allResults.filter((user) => favoriteIdSet.has(user.id)),
+        [allResults, favoriteIdSet]
+    );
+    const visibleResults = listTab === 'favorites' ? favoriteResults : allResults;
+    const totalPages = Math.max(1, Math.ceil(visibleResults.length / pageSize));
     const startIdx = (page - 1) * pageSize;
-    const paginatedResults = allResults.slice(startIdx, startIdx + pageSize);
+    const paginatedResults = visibleResults.slice(startIdx, startIdx + pageSize);
     const minBudgetValue = minBudget.trim() === '' ? null : Number(minBudget);
     const maxBudgetValue = maxBudget.trim() === '' ? null : Number(maxBudget);
     const selectedGym = selected?.role === 'GYM' ? selected : null;
+    const shouldShowGymPanel =
+        ((role === 'GYM' && visibleResults.length > 0) || showGymMapPanel || Boolean(selectedGym));
+
+    useEffect(() => {
+        if (!selectedId) return;
+        if (visibleResults.some((result) => result.id === selectedId)) return;
+        setSelectedId(null);
+    }, [selectedId, visibleResults]);
+
+    useEffect(() => {
+        const total = Math.max(1, Math.ceil(visibleResults.length / pageSize));
+        if (page > total) {
+            setPage(total);
+        }
+    }, [page, pageSize, visibleResults.length]);
     const sharedGymPanel = (
         <GymDiscoveryPanel
             embedded
@@ -1040,12 +1179,52 @@ export default function SearchPage() {
                 setShowGymMapPanel(true);
                 setGymMapResetNonce((current) => current + 1);
             }}
+            isFavorited={(gymId) => favoriteIdSet.has(gymId)}
+            isFavoritePending={(gymId) => favoritePendingIdSet.has(gymId)}
+            isFavoriteAnimating={(gymId) => favoriteAnimatingIdSet.has(gymId)}
+            onToggleFavorite={handleToggleFavorite}
             query={q}
             hiringOnly={role === 'GYM' ? hiringOnly : false}
             sortBy={role === 'GYM' ? gymSortBy : 'DISTANCE'}
             minBudget={Number.isFinite(minBudgetValue as number) ? minBudgetValue : null}
             maxBudget={Number.isFinite(maxBudgetValue as number) ? maxBudgetValue : null}
         />
+    );
+
+    const searchListTabs = (
+        <div className="mb-4 flex items-center gap-2">
+            <button
+                type="button"
+                onClick={() => {
+                    setListTab('all');
+                    setPage(1);
+                }}
+                className={clsx(
+                    'inline-flex items-center rounded-lg px-3 py-1.5 text-sm transition',
+                    listTab === 'all'
+                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
+                        : 'text-zinc-600 hover:bg-zinc-100 dark:text-gray-300 dark:hover:bg-white/10'
+                )}
+            >
+                All Users
+            </button>
+            <button
+                type="button"
+                onClick={() => {
+                    setListTab('favorites');
+                    setPage(1);
+                }}
+                className={clsx(
+                    'inline-flex items-center rounded-lg px-3 py-1.5 text-sm transition',
+                    listTab === 'favorites'
+                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
+                        : 'text-zinc-600 hover:bg-zinc-100 dark:text-gray-300 dark:hover:bg-white/10'
+                )}
+            >
+                Favorites
+                <span className="ml-1.5 text-xs opacity-70">({favoriteResults.length})</span>
+            </button>
+        </div>
     );
 
     const desktopSearchProfileEditor = (
@@ -1072,14 +1251,14 @@ export default function SearchPage() {
         if (isDesktopViewport) return;
         if (role !== 'GYM' && role !== 'TRAINER' && role !== 'TRAINEE') return;
         if (mobileView !== 'details') return;
-        if (role === 'GYM' || showGymMapPanel) return;
+        if ((role === 'GYM' && visibleResults.length > 0) || showGymMapPanel) return;
         if (selected) return;
         setMobileView('list');
-    }, [isDesktopViewport, mobileView, role, selected, showGymMapPanel]);
+    }, [isDesktopViewport, mobileView, role, selected, showGymMapPanel, visibleResults.length]);
 
     useEffect(() => {
         if (role === 'GYM') {
-            setShowGymMapPanel(true);
+            setShowGymMapPanel(visibleResults.length > 0);
             return;
         }
         if (selected?.role === 'GYM') {
@@ -1089,7 +1268,10 @@ export default function SearchPage() {
         if (selected && (selected.role === 'TRAINEE' || selected.role === 'TRAINER')) {
             setShowGymMapPanel(false);
         }
-    }, [role, selected]);
+        if (!selected) {
+            setShowGymMapPanel(false);
+        }
+    }, [role, selected, visibleResults.length]);
 
     const mobileHeaderActions = (
         <button
@@ -1588,6 +1770,7 @@ export default function SearchPage() {
                 <div className="lg:hidden">
                     {mobileView === 'list' && (
                         <div className="px-4 pb-0 pt-4 space-y-4">
+                            {searchListTabs}
                             {loading ? (
                                 <div className="flex items-center justify-center rounded-xl border bg-white py-6 text-sm text-gray-500 dark:bg-neutral-900 dark:border-white/10 dark:text-gray-300">
                                     <span className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-gray-900 border-t-transparent dark:border-white dark:border-t-transparent" />
@@ -1595,7 +1778,7 @@ export default function SearchPage() {
                                 </div>
                             ) : error ? (
                                 <div className="p-4 text-sm text-red-500 bg-white rounded-xl border dark:bg-neutral-900 dark:border-white/10">{error}</div>
-                            ) : allResults.length ? (
+                            ) : visibleResults.length ? (
                                 <>
                                     <div
                                         className="max-h-[calc(100dvh-21rem-env(safe-area-inset-bottom,0px))] space-y-3 overflow-y-auto scrollbar-slim"
@@ -1624,7 +1807,9 @@ export default function SearchPage() {
                                     </div>
                                 </>
                             ) : (
-                                <div className="p-4 text-sm text-gray-500 bg-white rounded-xl border dark:bg-neutral-900 dark:border-white/10 dark:text-gray-400">No results.</div>
+                                <div className="p-4 text-sm text-gray-500 bg-white rounded-xl border dark:bg-neutral-900 dark:border-white/10 dark:text-gray-400">
+                                    {listTab === 'favorites' ? 'No favorited users yet.' : 'No results.'}
+                                </div>
                             )}
                         </div>
                     )}
@@ -1640,8 +1825,10 @@ export default function SearchPage() {
                                 <span className="text-lg">&larr;</span> Back
                             </button>
                             <div className="bg-white border rounded-xl p-4 overflow-hidden dark:bg-neutral-900 dark:border-white/10">
-                                {role === 'GYM' || showGymMapPanel ? (
+                                {shouldShowGymPanel ? (
                                     sharedGymPanel
+                                ) : role === 'GYM' ? (
+                                    <SearchProfileEditor className="overflow-x-hidden" />
                                 ) : !selected ? (
                                     <div className="text-gray-500 text-sm dark:text-gray-400">Select a result to see details.</div>
                                 ) : selectedGym ? (
@@ -1651,6 +1838,10 @@ export default function SearchPage() {
                                         u={selected}
                                         onMessage={handleMessage}
                                         onShare={handleShareProfile}
+                                        onToggleFavorite={handleToggleFavorite}
+                                        isFavorited={favoriteIdSet.has(selected.id)}
+                                        isFavoritePending={favoritePendingIdSet.has(selected.id)}
+                                        isFavoriteAnimating={favoriteAnimatingIdSet.has(selected.id)}
                                         onOpenImage={(url) => setLightboxUrl(url)}
                                         variant="mobile"
                                     />
@@ -1665,10 +1856,11 @@ export default function SearchPage() {
                         <div className="flex gap-6">
                             <aside className="w-[380px] shrink-0">
                                 <div className="bg-white border rounded-xl overflow-hidden lg:h-[calc(100vh-190px)] lg:flex lg:flex-col dark:bg-neutral-900 dark:border-white/10">
-                                    <div
-                                        ref={listRef}
-                                        className="overflow-y-auto p-4 lg:flex-1 lg:min-h-0 scrollbar-slim"
-                                    >
+                                <div
+                                    ref={listRef}
+                                    className="overflow-y-auto p-4 lg:flex-1 lg:min-h-0 scrollbar-slim"
+                                >
+                                        {searchListTabs}
                                         {loading ? (
                                             <div className="flex items-center justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
                                                 <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent dark:border-white dark:border-t-transparent" />
@@ -1676,24 +1868,35 @@ export default function SearchPage() {
                                             </div>
                                         ) : error ? (
                                             <div className="py-4 text-sm text-red-500">{error}</div>
-                                        ) : allResults.length === 0 ? (
-                                            <div className="py-4 text-sm text-gray-500 dark:text-gray-400">No results.</div>
+                                        ) : visibleResults.length === 0 ? (
+                                            <div className="py-4 text-sm text-gray-500 dark:text-gray-400">
+                                                {listTab === 'favorites' ? 'No favorited users yet.' : 'No results.'}
+                                            </div>
                                         ) : (
                                             <div className="space-y-2">
                                                 {paginatedResults.map((u) => {
                                                     const slug = u.username || u.id;
                                                     const display = u.name || u.username || 'User';
                                                     const locationLabel = [u.city, u.state].filter(Boolean).join(', ');
+                                                    const isFavorited = favoriteIdSet.has(u.id);
 
                                                     return (
-                                                        <button
+                                                        <div
                                                             key={u.id}
+                                                            role="button"
+                                                            tabIndex={0}
                                                             onClick={() => {
                                                                 setShowGymMapPanel(u.role === 'GYM');
                                                                 setSelectedId(u.id);
                                                             }}
+                                                            onKeyDown={(event) =>
+                                                                handleSelectableCardKeyDown(event, () => {
+                                                                    setShowGymMapPanel(u.role === 'GYM');
+                                                                    setSelectedId(u.id);
+                                                                })
+                                                            }
                                                             className={clsx(
-                                                                'w-full rounded-2xl border px-4 py-3 text-left transition',
+                                                                'relative w-full rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 dark:focus-visible:ring-green-400',
                                                                 selectedId === u.id
                                                                     ? 'border-green-700 bg-green-50 dark:border-green-400 dark:bg-green-500/10'
                                                                     : 'border-zinc-200 bg-white hover:border-zinc-400 dark:border-white/10 dark:bg-neutral-900 dark:hover:border-white/30'
@@ -1745,13 +1948,24 @@ export default function SearchPage() {
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        </button>
+                                                            <FavoriteButton
+                                                                compact
+                                                                iconOnly
+                                                                variant="plain"
+                                                                favorited={isFavorited}
+                                                                animating={favoriteAnimatingIdSet.has(u.id)}
+                                                                disabled={favoritePendingIdSet.has(u.id)}
+                                                                onClick={() => handleToggleFavorite(u.id)}
+                                                                title={isFavorited ? 'Favorited' : 'Favorite'}
+                                                                className="absolute bottom-3 right-3 cursor-default"
+                                                            />
+                                                        </div>
                                                     );
                                                 })}
                                             </div>
                                         )}
                                     </div>
-                                    {allResults.length > 0 && (
+                                    {visibleResults.length > 0 && (
                                         <div className="px-4 py-3 border-t flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                                             <button
                                                 className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-50 dark:border-white/20 dark:text-gray-100 dark:hover:bg-white/10"
@@ -1778,8 +1992,12 @@ export default function SearchPage() {
                             </aside>
 
                             <section className="flex-1 min-w-0">
-                                {role === 'GYM' || showGymMapPanel || selectedGym ? (
+                                {shouldShowGymPanel ? (
                                     sharedGymPanel
+                                ) : role === 'GYM' ? (
+                                    <div className="bg-white border rounded-xl p-6 min-h-[calc(100vh-190px)] dark:bg-neutral-900 dark:border-white/10 lg:flex lg:h-[calc(100vh-190px)] lg:flex-col lg:overflow-hidden">
+                                        <SearchProfileEditor className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1 scrollbar-slim" />
+                                    </div>
                                 ) : !selected ? (
                                     desktopSearchProfileEditor
                                 ) : (
@@ -1789,6 +2007,10 @@ export default function SearchPage() {
                                                 u={selected}
                                                 onMessage={handleMessage}
                                                 onShare={handleShareProfile}
+                                                onToggleFavorite={handleToggleFavorite}
+                                                isFavorited={favoriteIdSet.has(selected.id)}
+                                                isFavoritePending={favoritePendingIdSet.has(selected.id)}
+                                                isFavoriteAnimating={favoriteAnimatingIdSet.has(selected.id)}
                                                 onOpenImage={(url) => setLightboxUrl(url)}
                                             />
                                         </div>
@@ -1842,11 +2064,25 @@ type UserDetailsProps = {
     u: SearchUser;
     onMessage: (u: SearchUser) => void;
     onShare: (u: SearchUser) => void;
+    onToggleFavorite: (userId: string) => void;
     onOpenImage: (url: string) => void;
+    isFavorited: boolean;
+    isFavoritePending: boolean;
+    isFavoriteAnimating: boolean;
     variant?: 'desktop' | 'mobile';
 };
 
-function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }: UserDetailsProps) {
+function UserDetails({
+    u,
+    onMessage,
+    onShare,
+    onToggleFavorite,
+    onOpenImage,
+    isFavorited,
+    isFavoritePending,
+    isFavoriteAnimating,
+    variant = 'desktop',
+}: UserDetailsProps) {
     const slug = u.username || u.id;
     const display = u.name || u.username || 'User';
     const isMobile = variant === 'mobile';
@@ -1914,6 +2150,14 @@ function UserDetails({ u, onMessage, onShare, onOpenImage, variant = 'desktop' }
 
                     <div className={clsx("flex shrink-0 items-start gap-2", isMobile && "w-full")}>
                         <div className={clsx("flex shrink-0 flex-wrap items-center gap-2", isMobile && "w-full justify-start")}>
+                            <FavoriteButton
+                                favorited={isFavorited}
+                                animating={isFavoriteAnimating}
+                                disabled={isFavoritePending}
+                                iconOnly={isMobile}
+                                onClick={() => onToggleFavorite(u.id)}
+                                title={isFavorited ? 'Favorited' : 'Favorite'}
+                            />
                             <button
                                 className={mobileActionButtonClass}
                                 title="Message"
