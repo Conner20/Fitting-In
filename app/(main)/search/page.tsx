@@ -1268,9 +1268,6 @@ export default function SearchPage() {
         if (selected && (selected.role === 'TRAINEE' || selected.role === 'TRAINER')) {
             setShowGymMapPanel(false);
         }
-        if (!selected) {
-            setShowGymMapPanel(false);
-        }
     }, [role, selected, visibleResults.length]);
 
     const mobileHeaderActions = (
