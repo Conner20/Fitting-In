@@ -67,3 +67,51 @@ export async function createCommentMentionNotifications({
         })),
     });
 }
+
+export async function createCommentNotifications({
+    actorId,
+    postId,
+    commentId,
+    postAuthorId,
+    parentAuthorId,
+}: {
+    actorId: string;
+    postId: string;
+    commentId: string;
+    postAuthorId: string;
+    parentAuthorId?: string | null;
+}) {
+    const notifications: {
+        type: "POST_COMMENT" | "COMMENT_REPLY";
+        userId: string;
+        actorId: string;
+        postId: string;
+        commentId: string;
+    }[] = [];
+
+    if (parentAuthorId && parentAuthorId !== actorId) {
+        notifications.push({
+            type: "COMMENT_REPLY",
+            userId: parentAuthorId,
+            actorId,
+            postId,
+            commentId,
+        });
+    }
+
+    if (postAuthorId !== actorId && postAuthorId !== parentAuthorId) {
+        notifications.push({
+            type: "POST_COMMENT",
+            userId: postAuthorId,
+            actorId,
+            postId,
+            commentId,
+        });
+    }
+
+    if (!notifications.length) return;
+
+    await db.notification.createMany({
+        data: notifications,
+    });
+}

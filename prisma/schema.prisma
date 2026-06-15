@@ -52,6 +52,8 @@ enum NotificationType {
   REQUEST_ACCEPTED
   TAGGED_IN_POST
   TAGGED_IN_COMMENT
+  POST_COMMENT
+  COMMENT_REPLY
 }
 
 enum RatingStatus {

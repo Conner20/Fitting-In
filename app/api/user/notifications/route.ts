@@ -19,9 +19,10 @@ type NotificationItem = {
         | "REQUEST_ACCEPTED"
         | "TAGGED_IN_POST"
         | "TAGGED_IN_COMMENT"
+        | "POST_COMMENT"
+        | "COMMENT_REPLY"
         | "MESSAGE"
         | "LIKE"
-        | "COMMENT"
         | "RATING"
         | "DASHBOARD_SHARED";
     createdAt: string;
@@ -57,9 +58,8 @@ export async function GET() {
     const dismissedIds = new Set(dismissals.map((dismissal) => dismissal.notificationId));
 
     const [
-        followNotifications,
+        storedNotifications,
         likes,
-        comments,
         shares,
         ratings,
         conversations,
@@ -91,22 +91,6 @@ export async function GET() {
             include: {
                 user: { select: { id: true, username: true, name: true, image: true } },
                 post: { select: { id: true, title: true } },
-            },
-            take: 20,
-        }),
-        db.comment.findMany({
-            where: {
-                authorId: { not: me.id },
-                OR: [
-                    { post: { authorId: me.id } },
-                    { parent: { authorId: me.id } },
-                ],
-            },
-            orderBy: { createdAt: "desc" },
-            include: {
-                author: { select: { id: true, username: true, name: true, image: true } },
-                post: { select: { id: true, title: true } },
-                parent: { select: { authorId: true } },
             },
             take: 20,
         }),
@@ -176,7 +160,7 @@ export async function GET() {
         }),
     ]);
 
-    const followItems: NotificationItem[] = followNotifications.map((n) => {
+    const notificationItems: NotificationItem[] = storedNotifications.map((n) => {
         if (n.type === "TAGGED_IN_POST") {
             const postLabel = n.post?.title?.trim() || "Untitled post";
             return {
@@ -201,6 +185,36 @@ export async function GET() {
                 actor: n.actor,
                 href: n.postId ? `/post/${n.postId}` : "/home",
                 body: "tagged you in their comment on",
+                postTitle: postLabel,
+                postHref: n.postId ? `/post/${n.postId}` : undefined,
+                isRead: n.isRead,
+            };
+        }
+
+        if (n.type === "POST_COMMENT") {
+            const postLabel = n.post?.title?.trim() || "Untitled post";
+            return {
+                id: n.id,
+                type: "POST_COMMENT",
+                createdAt: n.createdAt.toISOString(),
+                actor: n.actor,
+                href: n.postId ? `/post/${n.postId}` : "/home",
+                body: "commented on your post",
+                postTitle: postLabel,
+                postHref: n.postId ? `/post/${n.postId}` : undefined,
+                isRead: n.isRead,
+            };
+        }
+
+        if (n.type === "COMMENT_REPLY") {
+            const postLabel = n.post?.title?.trim() || "Untitled post";
+            return {
+                id: n.id,
+                type: "COMMENT_REPLY",
+                createdAt: n.createdAt.toISOString(),
+                actor: n.actor,
+                href: n.postId ? `/post/${n.postId}` : "/home",
+                body: "replied to your comment on the post",
                 postTitle: postLabel,
                 postHref: n.postId ? `/post/${n.postId}` : undefined,
                 isRead: n.isRead,
@@ -252,24 +266,6 @@ export async function GET() {
             body: "liked your post",
             postTitle: postLabel,
             postHref: `/post/${like.post.id}`,
-            isRead: false,
-        };
-    });
-
-    const commentItems: NotificationItem[] = comments.map((comment) => {
-        const postLabel = comment.post.title?.trim() || "Untitled post";
-        const isReplyToMyComment = comment.parent?.authorId === me.id;
-        return {
-            id: `comment-${comment.id}`,
-            type: "COMMENT",
-            createdAt: comment.createdAt.toISOString(),
-            actor: comment.author,
-            href: `/post/${comment.post.id}`,
-            body: isReplyToMyComment
-                ? "replied to your comment on the post"
-                : "commented on your post",
-            postTitle: postLabel,
-            postHref: `/post/${comment.post.id}`,
             isRead: false,
         };
     });
@@ -346,9 +342,8 @@ export async function GET() {
     ).then((items) => items.filter(Boolean) as NotificationItem[]);
 
     const items = [
-        ...followItems,
+        ...notificationItems,
         ...messageItems,
-        ...commentItems,
         ...likeItems,
         ...shareItems,
         ...ratingItems,

@@ -3,7 +3,10 @@ import { revalidateTag } from "next/cache";
 import { db } from "@/prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { createCommentMentionNotifications } from "@/lib/mentionNotifications";
+import {
+    createCommentMentionNotifications,
+    createCommentNotifications,
+} from "@/lib/mentionNotifications";
 
 export async function GET(
     _req: Request,
@@ -51,6 +54,27 @@ export async function POST(
     if (!content?.trim())
         return NextResponse.json({ message: "Empty comment" }, { status: 400 });
 
+    const [post, parentComment] = await Promise.all([
+        db.post.findUnique({
+            where: { id: postId },
+            select: { authorId: true },
+        }),
+        parentId
+            ? db.comment.findUnique({
+                  where: { id: parentId },
+                  select: { id: true, authorId: true, postId: true },
+              })
+            : Promise.resolve(null),
+    ]);
+
+    if (!post) {
+        return NextResponse.json({ message: "Post not found" }, { status: 404 });
+    }
+
+    if (parentId && (!parentComment || parentComment.postId !== postId)) {
+        return NextResponse.json({ message: "Parent comment not found" }, { status: 404 });
+    }
+
     const comment = await db.comment.create({
         data: {
             content,
@@ -60,12 +84,21 @@ export async function POST(
         },
     });
 
-    await createCommentMentionNotifications({
-        actorId: user.id,
-        postId,
-        commentId: comment.id,
-        content,
-    });
+    await Promise.all([
+        createCommentNotifications({
+            actorId: user.id,
+            postId,
+            commentId: comment.id,
+            postAuthorId: post.authorId,
+            parentAuthorId: parentComment?.authorId,
+        }),
+        createCommentMentionNotifications({
+            actorId: user.id,
+            postId,
+            commentId: comment.id,
+            content,
+        }),
+    ]);
 
     const commentCount = await db.comment.count({ where: { postId } });
     revalidateTag("posts");

@@ -18,9 +18,10 @@ type Notification = {
         | "REQUEST_ACCEPTED"
         | "TAGGED_IN_POST"
         | "TAGGED_IN_COMMENT"
+        | "POST_COMMENT"
+        | "COMMENT_REPLY"
         | "MESSAGE"
         | "LIKE"
-        | "COMMENT"
         | "RATING"
         | "DASHBOARD_SHARED";
     isRead: boolean;
