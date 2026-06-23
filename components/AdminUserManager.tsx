@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ShieldAlert, CheckSquare, Square, ChevronDown, ChevronRight, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, ShieldAlert, CheckSquare, Square, ChevronDown, ChevronRight, RefreshCw, Trash2, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -127,11 +127,11 @@ export default function AdminUserManager() {
 
     const activeUser = selectedUsers.length === 1 ? selectedUsers[0] : null;
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (searchQuery = query) => {
         setState("loading");
         setMessage(null);
         try {
-            const res = await fetch(`/api/admin/users?q=${encodeURIComponent(query)}`, {
+            const res = await fetch(`/api/admin/users?q=${encodeURIComponent(searchQuery)}`, {
                 cache: "no-store",
             });
             if (!res.ok) {
@@ -164,9 +164,13 @@ export default function AdminUserManager() {
     };
 
     useEffect(() => {
-        fetchUsers();
+        const timeoutId = window.setTimeout(() => {
+            void fetchUsers(query);
+        }, 200);
+
+        return () => window.clearTimeout(timeoutId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [query]);
 
     useEffect(() => {
         setPosts([]);
@@ -180,11 +184,6 @@ export default function AdminUserManager() {
         setCommentsPanelOpen(false);
         setActivityPanelOpen(false);
     }, [activeUser?.id]);
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        fetchUsers();
-    };
 
     const handleToggleSelect = (userId: string) => {
         setSelectedIds((prev) =>
@@ -434,17 +433,24 @@ export default function AdminUserManager() {
         <div className="w-full max-w-5xl space-y-6">
             <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-lg shadow-black/10 dark:border-white/10 dark:bg-neutral-900/80 dark:shadow-black/20">
                 <h2 className="text-2xl font-semibold text-black mb-4 dark:text-white">User Directory</h2>
-                <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:max-w-xl">
+                <div className="relative max-w-xl">
                     <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search by username, name, or email"
-                        className="bg-white text-black placeholder:text-zinc-400 border border-black/10 dark:bg-black/60 dark:text-white dark:border-white/20 dark:placeholder:text-white/40"
+                        className="border border-black/10 bg-white pr-10 text-black placeholder:text-zinc-400 dark:border-white/20 dark:bg-black/60 dark:text-white dark:placeholder:text-white/40"
                     />
-                    <Button type="submit" className="bg-black text-white hover:bg-zinc-800 w-full sm:w-auto dark:bg-white/90 dark:text-black dark:hover:bg-white">
-                        Search
-                    </Button>
-                </form>
+                    {query && (
+                        <button
+                            type="button"
+                            onClick={() => setQuery("")}
+                            aria-label="Clear search"
+                            className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white/70"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
 
                 <div className="mt-6 grid gap-4 lg:grid-cols-2">
                     <div className="rounded-xl border border-black/5 bg-zinc-50 p-4 max-h-[480px] overflow-y-auto scrollbar-slim dark:border-white/10 dark:bg-black/40">

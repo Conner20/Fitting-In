@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ChartPoint = {
     date: string;
@@ -10,8 +10,22 @@ type ChartPoint = {
 };
 
 type AdminUserGrowthChartProps = {
-    data: ChartPoint[];
+    seriesByRange: {
+        oneMonth: ChartPoint[];
+        threeMonths: ChartPoint[];
+        oneYear: ChartPoint[];
+        allTime: ChartPoint[];
+    };
 };
+
+type RangeKey = keyof AdminUserGrowthChartProps["seriesByRange"];
+
+const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
+    { key: "oneMonth", label: "1M" },
+    { key: "threeMonths", label: "3M" },
+    { key: "oneYear", label: "1Y" },
+    { key: "allTime", label: "All" },
+];
 
 function formatNumber(value: number) {
     return new Intl.NumberFormat("en-US").format(value);
@@ -41,13 +55,40 @@ function buildPath(data: ChartPoint[], key: "total" | "active", width: number, h
         .join(" ");
 }
 
-export default function AdminUserGrowthChart({ data }: AdminUserGrowthChartProps) {
+export default function AdminUserGrowthChart({ seriesByRange }: AdminUserGrowthChartProps) {
+    const [range, setRange] = useState<RangeKey>("oneMonth");
+    const data = seriesByRange[range];
     const [activeIndex, setActiveIndex] = useState<number | null>(data.length ? data.length - 1 : null);
+
+    useEffect(() => {
+        setActiveIndex(data.length ? data.length - 1 : null);
+    }, [data]);
 
     if (!data.length) {
         return (
-            <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-white px-4 py-10 text-sm text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
-                No user history yet.
+            <div className="mt-6">
+                <div className="mb-4 flex flex-wrap gap-2">
+                    {RANGE_OPTIONS.map((option) => {
+                        const selected = option.key === range;
+                        return (
+                            <button
+                                key={option.key}
+                                type="button"
+                                onClick={() => setRange(option.key)}
+                                className={
+                                    selected
+                                        ? "rounded-full border border-black/10 bg-black px-3 py-1.5 text-xs font-medium text-white dark:border-white/20 dark:bg-white dark:text-black"
+                                        : "rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                                }
+                            >
+                                {option.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="rounded-2xl border border-dashed border-black/10 bg-white px-4 py-10 text-sm text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
+                    No user history yet.
+                </div>
             </div>
         );
     }
@@ -64,6 +105,25 @@ export default function AdminUserGrowthChart({ data }: AdminUserGrowthChartProps
 
     return (
         <div className="mt-6">
+            <div className="mb-4 flex flex-wrap gap-2">
+                {RANGE_OPTIONS.map((option) => {
+                    const selected = option.key === range;
+                    return (
+                        <button
+                            key={option.key}
+                            type="button"
+                            onClick={() => setRange(option.key)}
+                            className={
+                                selected
+                                    ? "rounded-full border border-black/10 bg-black px-3 py-1.5 text-xs font-medium text-white dark:border-white/20 dark:bg-white dark:text-black"
+                                    : "rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                            }
+                        >
+                            {option.label}
+                        </button>
+                    );
+                })}
+            </div>
             <div className="relative overflow-x-auto rounded-2xl border border-black/5 bg-white p-3 dark:border-white/10 dark:bg-[#0b0b0b]">
                 <div className="relative min-w-[720px]">
                     {hoveredPoint && activeIndex !== null && (

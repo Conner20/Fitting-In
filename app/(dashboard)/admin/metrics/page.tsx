@@ -23,6 +23,8 @@ type SimplePageView = {
 };
 
 const CHART_WINDOW_DAYS = 30;
+const THREE_MONTH_WINDOW_DAYS = 90;
+const ONE_YEAR_WINDOW_DAYS = 365;
 const ACTIVE_WINDOW_DAYS = 7;
 const PRODUCTION_ORIGIN = "https://fittingin.co";
 const LANDING_METRICS_RESET_AT = new Date("2026-03-31T00:00:00-04:00");
@@ -46,6 +48,83 @@ function startOfDay(date: Date) {
     const value = new Date(date);
     value.setHours(0, 0, 0, 0);
     return value;
+}
+
+function buildGrowthSeries({
+    users,
+    pageViews,
+    now,
+    windowDays,
+}: {
+    users: Array<{ createdAt: Date }>;
+    pageViews: SimplePageView[];
+    now: Date;
+    windowDays?: number;
+}) {
+    const endDay = startOfDay(now);
+
+    let startDay: Date;
+    if (windowDays) {
+        startDay = startOfDay(new Date(endDay));
+        startDay.setDate(startDay.getDate() - (windowDays - 1));
+    } else {
+        const firstUserCreatedAt = users[0]?.createdAt;
+        const firstPageViewCreatedAt = pageViews[0]?.createdAt;
+        const earliestDate = firstUserCreatedAt && firstPageViewCreatedAt
+            ? new Date(Math.min(firstUserCreatedAt.getTime(), firstPageViewCreatedAt.getTime()))
+            : firstUserCreatedAt ?? firstPageViewCreatedAt ?? now;
+        startDay = startOfDay(earliestDate);
+    }
+
+    const points: ChartPoint[] = [];
+    let userPointer = 0;
+    let cumulativeUsers = 0;
+
+    while (userPointer < users.length && users[userPointer].createdAt < startDay) {
+        cumulativeUsers += 1;
+        userPointer += 1;
+    }
+
+    const totalDays = Math.max(
+        1,
+        Math.round((endDay.getTime() - startDay.getTime()) / 86_400_000) + 1,
+    );
+
+    for (let i = 0; i < totalDays; i++) {
+        const dayStart = startOfDay(new Date(startDay));
+        dayStart.setDate(dayStart.getDate() + i);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+
+        while (userPointer < users.length && users[userPointer].createdAt < dayEnd) {
+            cumulativeUsers += 1;
+            userPointer += 1;
+        }
+
+        const activeWindowStart = new Date(dayStart);
+        activeWindowStart.setDate(activeWindowStart.getDate() - (ACTIVE_WINDOW_DAYS - 1));
+
+        const activeOnDay = getDistinctCount(
+            pageViews
+                .filter(
+                    (view) =>
+                        Boolean(view.userId) &&
+                        isUserActivityPath(view.path) &&
+                        view.createdAt >= activeWindowStart &&
+                        view.createdAt < dayEnd,
+                )
+                .map((view) => view.userId),
+        );
+
+        points.push({
+            date: dayStart.toISOString(),
+            total: cumulativeUsers,
+            active: activeOnDay,
+            label: formatDateLabel(dayStart),
+        });
+    }
+
+    return points;
 }
 
 function isPublicOrAuthPath(path: string) {
@@ -84,8 +163,6 @@ export default async function AdminMetricsPage() {
 
     const now = new Date();
     const chartStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (CHART_WINDOW_DAYS - 1)));
-    const chartSeedStart = startOfDay(new Date(chartStart));
-    chartSeedStart.setDate(chartSeedStart.getDate() - (ACTIVE_WINDOW_DAYS - 1));
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - ACTIVE_WINDOW_DAYS);
 
@@ -95,11 +172,6 @@ export default async function AdminMetricsPage() {
             orderBy: { createdAt: "asc" },
         }),
         db.pageView.findMany({
-            where: {
-                createdAt: {
-                    gte: chartSeedStart,
-                },
-            },
             select: {
                 path: true,
                 origin: true,
@@ -169,43 +241,12 @@ export default async function AdminMetricsPage() {
             percentage: pageViewsWindow ? count / pageViewsWindow : 0,
         }));
 
-    const series: ChartPoint[] = [];
-    let userPointer = 0;
-    let cumulativeUsers = 0;
-
-    for (let i = 0; i < CHART_WINDOW_DAYS; i++) {
-        const dayStart = startOfDay(new Date(chartStart));
-        dayStart.setDate(dayStart.getDate() + i);
-        const dayEnd = new Date(dayStart);
-        dayEnd.setDate(dayEnd.getDate() + 1);
-
-        while (userPointer < users.length && users[userPointer].createdAt < dayEnd) {
-            cumulativeUsers += 1;
-            userPointer += 1;
-        }
-
-        const activeWindowStart = new Date(dayStart);
-        activeWindowStart.setDate(activeWindowStart.getDate() - (ACTIVE_WINDOW_DAYS - 1));
-
-        const activeOnDay = getDistinctCount(
-            pageViews
-                .filter(
-                    (view) =>
-                        Boolean(view.userId) &&
-                        isUserActivityPath(view.path) &&
-                        view.createdAt >= activeWindowStart &&
-                        view.createdAt < dayEnd,
-                )
-                .map((view) => view.userId),
-        );
-
-        series.push({
-            date: dayStart.toISOString(),
-            total: cumulativeUsers,
-            active: activeOnDay,
-            label: formatDateLabel(dayStart),
-        });
-    }
+    const growthSeries = {
+        oneMonth: buildGrowthSeries({ users, pageViews, now, windowDays: CHART_WINDOW_DAYS }),
+        threeMonths: buildGrowthSeries({ users, pageViews, now, windowDays: THREE_MONTH_WINDOW_DAYS }),
+        oneYear: buildGrowthSeries({ users, pageViews, now, windowDays: ONE_YEAR_WINDOW_DAYS }),
+        allTime: buildGrowthSeries({ users, pageViews, now }),
+    };
 
     const activeRatio = totalUsers ? activeUsers / totalUsers : 0;
     const averageActiveVisitsPerDay = CHART_WINDOW_DAYS ? Math.round(pageViewsWindow / CHART_WINDOW_DAYS) : 0;
@@ -308,7 +349,7 @@ export default async function AdminMetricsPage() {
                             </div>
                         </div>
                     </div>
-                    <AdminUserGrowthChart data={series} />
+                    <AdminUserGrowthChart seriesByRange={growthSeries} />
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
