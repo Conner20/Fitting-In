@@ -67,18 +67,18 @@ function UserOnboardingContent() {
     };
 
     return (
-        <div className={`w-full min-h-screen flex flex-col items-center justify-center px-4 py-6 sm:py-10 ${LOCKED_PAGE_CLASS}`}>
+        <div className={`flex min-h-screen w-full flex-col items-center justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:py-10 ${LOCKED_PAGE_CLASS}`}>
             <div className="flex w-full max-w-5xl flex-col items-center">
-                <div className="mb-8 text-center space-y-2">
-                    <p className="text-sm uppercase tracking-[0.2em] text-zinc-400">Onboarding</p>
-                    <h2 className="text-3xl font-semibold">
+                <div className="mb-5 space-y-1.5 text-center sm:mb-8 sm:space-y-2">
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-400 sm:text-sm sm:tracking-[0.2em]">Onboarding</p>
+                    <h2 className="text-2xl font-semibold sm:text-3xl">
                         Hi {userName}, choose your role
                     </h2>
                     <p className="text-sm text-zinc-500">
                         This helps us tailor the experience to your needs.
                     </p>
                 </div>
-                <div className="mb-12 grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mb-7 grid w-full gap-3 sm:mb-12 sm:gap-4 lg:grid-cols-3">
                     {roleOptions.map(({ label }) => {
                         const isSelected = role === label;
                         return (
@@ -87,14 +87,14 @@ function UserOnboardingContent() {
                                 type="button"
                                 aria-pressed={isSelected}
                                 onClick={() => setRole(label)}
-                                className={`flex h-full w-full flex-col gap-2 rounded-2xl border px-4 py-4 text-left transition ${
+                                className={`flex h-full w-full flex-col gap-1.5 rounded-2xl border px-4 py-3.5 text-left transition sm:gap-2 sm:py-4 ${
                                     isSelected
                                         ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
                                         : 'border-zinc-200 bg-white text-zinc-900 hover:border-zinc-400'
                                 }`}
                             >
-                                <span className="text-xl font-semibold">{label}</span>
-                                <span className="text-sm text-zinc-500">
+                                <span className="text-lg font-semibold sm:text-xl">{label}</span>
+                                <span className="text-sm leading-5 text-zinc-500">
                                     {label === 'Trainee'
                                         ? 'Discover gyms, trainers, and a community that fits your goals.'
                                         : label === 'Trainer'
@@ -106,14 +106,14 @@ function UserOnboardingContent() {
                     })}
                 </div>
                 <button
-                    className={`mt-2 inline-flex h-14 w-14 items-center justify-center rounded-full border border-zinc-900 text-zinc-900 transition ${
+                    className={`mt-1 inline-flex h-12 w-12 items-center justify-center rounded-full border border-zinc-900 text-zinc-900 transition sm:mt-2 sm:h-14 sm:w-14 ${
                         role && !submitting ? 'hover:bg-zinc-900 hover:text-white' : 'cursor-not-allowed opacity-30'
                     }`}
                     disabled={!role || submitting}
                     onClick={() => void handleRoleNext()}
                     aria-label="Next"
                 >
-                    <ArrowRight size={28} />
+                    <ArrowRight size={24} className="sm:h-7 sm:w-7" />
                 </button>
             </div>
         </div>

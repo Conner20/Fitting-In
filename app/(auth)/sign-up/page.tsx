@@ -4,8 +4,8 @@ import SignUpForm from "@/components/form/SignUpForm"
 
 const page = () => {
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-neutral-50 px-4">
-            <div className="w-full max-w-sm space-y-6 rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-xl shadow-zinc-100">
+        <div className="flex min-h-screen w-full items-center justify-center bg-neutral-50 px-4 py-4 sm:py-6">
+            <div className="w-full max-w-sm space-y-4 rounded-2xl border border-zinc-200 bg-white/90 p-4 shadow-xl shadow-zinc-100 sm:space-y-6 sm:rounded-3xl sm:p-6">
                 <Suspense
                     fallback={
                         <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-neutral-950">

@@ -142,7 +142,7 @@ const SignUpForm = () => {
 
     return (
         <Form {...form}>
-            <h1 className="text-3xl text-center mb-4 text-black">Sign Up</h1>
+            <h1 className="mb-3 text-center text-2xl text-black sm:mb-4 sm:text-3xl">Sign Up</h1>
             {status === "form" && formError && (
                 <Alert className="mb-4 border border-red-200 bg-red-50 text-red-900 shadow-none">
                     <AlertTitle className="text-red-900">Unable to sign up</AlertTitle>
@@ -150,14 +150,14 @@ const SignUpForm = () => {
                 </Alert>
             )}
             <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     {/* Username */}
                     <FormField
                         control={form.control}
                         name="username"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="mb-2 text-black">Username</FormLabel>
+                                <FormLabel className="mb-1.5 text-black sm:mb-2">Username</FormLabel>
                                 <FormControl className="bg-white">
                                     <Input placeholder="john-doe" {...field} className={LOCKED_INPUT_CLASS} />
                                 </FormControl>
@@ -171,7 +171,7 @@ const SignUpForm = () => {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="mb-2 text-black">Email</FormLabel>
+                                <FormLabel className="mb-1.5 text-black sm:mb-2">Email</FormLabel>
                                 <FormControl className="bg-white">
                                     <Input placeholder="johndoe@email.com" {...field} className={LOCKED_INPUT_CLASS} />
                                 </FormControl>
@@ -185,7 +185,7 @@ const SignUpForm = () => {
                         name="password"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="mb-2 text-black">Password</FormLabel>
+                                <FormLabel className="mb-1.5 text-black sm:mb-2">Password</FormLabel>
                                 <FormControl className="bg-white">
                                     <PasswordInput placeholder="Enter your password" {...field} className={LOCKED_INPUT_CLASS} />
                                 </FormControl>
@@ -199,7 +199,7 @@ const SignUpForm = () => {
                         name="confirmPassword"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="mb-2 text-black">Re-Enter your password</FormLabel>
+                                <FormLabel className="mb-1.5 text-black sm:mb-2">Re-Enter your password</FormLabel>
                                 <FormControl className="bg-white">
                                     <PasswordInput placeholder="Re-Enter your password" {...field} className={LOCKED_INPUT_CLASS} />
                                 </FormControl>
@@ -214,7 +214,7 @@ const SignUpForm = () => {
                         name="location"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="mb-2 text-black">City Location</FormLabel>
+                                <FormLabel className="mb-1.5 text-black sm:mb-2">City Location</FormLabel>
                                 <FormControl className="bg-white">
                                     <LocationAutocomplete
                                         value={field.value}
@@ -237,19 +237,19 @@ const SignUpForm = () => {
                     />
                 </div>
 
-                <Button className="w-full mt-6 bg-green-700 text-white hover:bg-black" type="submit">
+                <Button className="mt-5 w-full bg-green-700 text-white hover:bg-black sm:mt-6" type="submit">
                     Sign Up
                 </Button>
             </form>
 
             <div
-                className="mx-auto my-4 flex w-full items-center justify-evenly text-black dark:text-black before:mr-4 before:block
+                className="mx-auto my-3 flex w-full items-center justify-evenly text-black dark:text-black before:mr-4 before:block
             before:h-px before:flex-grow before:bg-stone-400 after:ml-4 after:block after:h-px after:flex-grow
-        after:bg-stone-400"
+        after:bg-stone-400 sm:my-4"
             >
                 or
             </div>
-            <p className="text-center text-sm text-gray-600 mt-2">
+            <p className="mt-1 text-center text-sm text-gray-600 sm:mt-2">
                 If you already have an account, please&nbsp;
                 <Link className="text-green-500 hover:underline" href="/log-in">
                     Log In
