@@ -17,7 +17,6 @@ import {
   Heart,
   MessageCircle,
   Pencil,
-  UserPen,
   Star,
   X,
   Trash2,
@@ -1012,7 +1011,7 @@ export function GymProfile({
                 <div
                   className={clsx(
                     "mx-auto grid w-full max-w-[312px] gap-2 sm:hidden",
-                    showWebsiteAction ? "grid-cols-4" : "grid-cols-3"
+                    showWebsiteAction ? "grid-cols-3" : "grid-cols-2"
                   )}
                 >
                   {showWebsiteAction && (
@@ -1026,15 +1025,6 @@ export function GymProfile({
                       <span className="max-w-full text-center">Website</span>
                     </button>
                   )}
-                  <button
-                    className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
-                    onClick={() => router.push("/settings")}
-                    aria-label="Edit profile"
-                    title="Edit profile"
-                  >
-                    <UserPen size={16} className="shrink-0" />
-                    <span className="max-w-full text-center">Edit Profile</span>
-                  </button>
                   <button
                     className="inline-flex min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-1 py-2 text-[9px] leading-tight text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     onClick={() => setShowManageRatings(true)}
@@ -1064,16 +1054,7 @@ export function GymProfile({
                       <span>Website</span>
                     </button>
                   )}
-                  <div className="grid w-full grid-cols-[0.96fr_1.04fr] gap-2">
-                    <button
-                      className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
-                      onClick={() => router.push("/settings")}
-                      aria-label="Edit profile"
-                      title="Edit profile"
-                    >
-                      <UserPen size={16} className="shrink-0" />
-                      <span className="whitespace-nowrap">Edit Profile</span>
-                    </button>
+                  <div className="grid w-full grid-cols-1 gap-2">
                     <button
                       className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-[13px] text-zinc-700 transition hover:bg-zinc-100 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                       onClick={() => setShowManageRatings(true)}

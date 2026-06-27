@@ -2,11 +2,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import PrivacyToggle from "./privacy-toggle";
 import MobileHeader from "@/components/MobileHeader";
 import { useRouter } from "next/navigation";
 import { PasswordInput } from "@/components/ui/password-input";
+import { useTheme } from "@/components/ThemeProvider";
 import { genUploader } from "uploadthing/client";
 
 import type { UploadRouter } from "@/app/api/uploadthing/core";
@@ -91,6 +93,7 @@ function formatCurrencyValue(value: number) {
 export default function SettingsPage() {
     const { data: session } = useSession();
     const router = useRouter();
+    const { theme, toggleTheme } = useTheme();
 
     const [loading, setLoading] = useState(true);
     const [profileSaveState, setProfileSaveState] = useState<"idle" | "saving" | "saved">("idle");
@@ -1015,10 +1018,27 @@ export default function SettingsPage() {
                         </div>
                     </section>
 
-                    <section>
-                        <h2 className="font-semibold mb-2">Privacy</h2>
-                        <PrivacyToggle />
-                    </section>
+                    <div className="grid gap-6 md:grid-cols-2 md:items-start">
+                        <section>
+                            <h2 className="font-semibold mb-2">Privacy</h2>
+                            <PrivacyToggle />
+                        </section>
+
+                        <section>
+                            <h2 className="mb-3 font-semibold">Appearance</h2>
+                            <div className="flex items-center justify-between gap-3">
+                                <button
+                                    type="button"
+                                    aria-label="Toggle appearance"
+                                    onClick={toggleTheme}
+                                    className="inline-flex min-w-[96px] items-center justify-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-black hover:text-white dark:border-white/20 dark:text-white dark:hover:bg-white/10"
+                                >
+                                    {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                                    <span>{theme === "dark" ? "Light" : "Dark"}</span>
+                                </button>
+                            </div>
+                        </section>
+                    </div>
                 </div>
 
                 {/* Password management */}

@@ -12,6 +12,7 @@ type MobileHeaderProps = {
     leftAccessory?: React.ReactNode;
     rightAccessory?: React.ReactNode;
     titleAlign?: "center" | "left";
+    onMobileNavVisibilityChange?: (isOpen: boolean) => void;
 };
 
 export default function MobileHeader({
@@ -21,6 +22,7 @@ export default function MobileHeader({
     leftAccessory,
     rightAccessory,
     titleAlign = "center",
+    onMobileNavVisibilityChange,
 }: MobileHeaderProps) {
     const [mobileNavOpen, setMobileNavOpen] = useState(true);
 
@@ -48,6 +50,10 @@ export default function MobileHeader({
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    useEffect(() => {
+        onMobileNavVisibilityChange?.(mobileNavOpen);
+    }, [mobileNavOpen, onMobileNavVisibilityChange]);
 
     return (
         <>

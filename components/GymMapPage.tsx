@@ -252,6 +252,7 @@ export function GymDiscoveryPanel({
     const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [isDesktopViewport, setIsDesktopViewport] = useState(false);
     const [resolvedApiKey, setResolvedApiKey] = useState<string | null>(googleMapsApiKey ?? null);
     const [apiKeyResolved, setApiKeyResolved] = useState(googleMapsApiKey !== undefined);
     const [mapRefitNonce, setMapRefitNonce] = useState(0);
@@ -263,6 +264,15 @@ export function GymDiscoveryPanel({
     const userMapInteractionArmedRef = useRef(false);
 
     useEffect(() => setMounted(true), []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const syncViewport = () => setIsDesktopViewport(window.innerWidth >= 1280);
+        syncViewport();
+        window.addEventListener("resize", syncViewport);
+        return () => window.removeEventListener("resize", syncViewport);
+    }, []);
 
     useEffect(() => {
         setResolvedApiKey(googleMapsApiKey ?? null);
@@ -1036,7 +1046,8 @@ export function GymDiscoveryPanel({
                                                     favorited={selectedGymIsFavorited}
                                                     animating={selectedGymFavoriteAnimating}
                                                     disabled={selectedGymFavoritePending}
-                                                    iconOnly={false}
+                                                    iconOnly={!isDesktopViewport}
+                                                    labelClassName="hidden xl:inline"
                                                     onClick={() => onToggleFavorite(selectedGym.id)}
                                                     title={selectedGymIsFavorited ? "Favorited" : "Favorite"}
                                                     className="sm:pr-3"
@@ -1049,7 +1060,7 @@ export function GymDiscoveryPanel({
                                                 title="Message"
                                             >
                                                 <MessageSquare size={16} />
-                                                <span className="hidden sm:inline">Message</span>
+                                                <span className="hidden xl:inline">Message</span>
                                             </button>
                                             <button
                                                 type="button"
@@ -1058,7 +1069,7 @@ export function GymDiscoveryPanel({
                                                 title="Share"
                                             >
                                                 <Share2 size={16} />
-                                                <span className="hidden sm:inline">Share</span>
+                                                <span className="hidden xl:inline">Share</span>
                                             </button>
                                             <Link
                                                 href={`/u/${encodeURIComponent(selectedGym.username || selectedGym.id)}?rate=1`}
@@ -1066,7 +1077,7 @@ export function GymDiscoveryPanel({
                                                 title="Rate"
                                             >
                                                 <Star size={16} />
-                                                <span className="hidden sm:inline">Rate</span>
+                                                <span className="hidden xl:inline">Rate</span>
                                             </Link>
                                             {selectedGym.gymProfile.showWebsiteButton && selectedGym.gymProfile.website.trim() && (
                                                 <a
@@ -1077,7 +1088,7 @@ export function GymDiscoveryPanel({
                                                     title="Visit website"
                                                 >
                                                     <LinkIcon size={16} />
-                                                    <span className="hidden sm:inline">Website</span>
+                                                    <span className="hidden xl:inline">Website</span>
                                                 </a>
                                             )}
                                         </div>

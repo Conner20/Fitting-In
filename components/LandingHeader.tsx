@@ -1,13 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Moon, Sun } from 'lucide-react';
-import { useTheme } from '@/components/ThemeProvider';
 
 export default function LandingHeader() {
-    const { theme, toggleTheme } = useTheme();
-    const darkMode = theme === 'dark';
-
     return (
         <header
             className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:border-white/10 dark:bg-black/40"
@@ -37,14 +32,6 @@ export default function LandingHeader() {
                     >
                         sign up
                     </Link>
-                    <button
-                        type="button"
-                        aria-label="Toggle theme"
-                        onClick={toggleTheme}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition hover:bg-black hover:text-white dark:border-white/30 dark:text-white dark:hover:bg-white/10"
-                    >
-                        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
                 </nav>
             </div>
         </header>

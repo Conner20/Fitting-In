@@ -11,6 +11,7 @@ type FavoriteButtonProps = {
     compact?: boolean;
     variant?: "plain" | "button";
     className?: string;
+    labelClassName?: string;
     title?: string;
     disabled?: boolean;
 };
@@ -23,6 +24,7 @@ export default function FavoriteButton({
     compact = false,
     variant = "button",
     className,
+    labelClassName,
     title,
     disabled = false,
 }: FavoriteButtonProps) {
@@ -67,7 +69,7 @@ export default function FavoriteButton({
                 )}
             />
             {!iconOnly && (
-                <span className="hidden sm:inline">{favorited ? "Favorited" : "Favorite"}</span>
+                <span className={labelClassName ?? "hidden sm:inline"}>{favorited ? "Favorited" : "Favorite"}</span>
             )}
         </button>
     );

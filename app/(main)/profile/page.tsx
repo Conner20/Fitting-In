@@ -5,6 +5,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 import { TraineeProfile } from "@/components/TraineeProfile";
 import { TrainerProfile } from "@/components/TrainerProfile";
 import { GymProfile } from "@/components/GymProfile";
@@ -118,13 +119,38 @@ export default function ProfilePage() {
 
     const Shell = ({ children }: { children: React.ReactNode }) => (
         <div className="min-h-screen bg-[#f8f8f8] flex flex-col dark:bg-[#050505]">
-            <MobileHeader title={username} href="/profile" />
+            <MobileHeader
+                title={username}
+                href="/profile"
+                rightAccessory={
+                    <button
+                        type="button"
+                        onClick={() => router.push("/settings")}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
+                        aria-label="Edit profile"
+                        title="Edit profile"
+                    >
+                        <Settings size={17} />
+                        <span>Edit Profile</span>
+                    </button>
+                }
+            />
 
             {/* Desktop header */}
-            <header className="hidden lg:flex sticky top-0 z-30 w-full py-6 justify-start pl-[40px] bg-white dark:bg-neutral-900">
+            <header className="hidden lg:flex sticky top-0 z-30 w-full py-6 justify-between items-center pl-[40px] pr-8 bg-white dark:bg-neutral-900">
                 <h1 className="font-roboto text-3xl text-green-700 tracking-tight select-none dark:text-green-400">
                     <span>{username}</span>
                 </h1>
+                <button
+                    type="button"
+                    onClick={() => router.push("/settings")}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
+                    aria-label="Edit profile"
+                    title="Edit profile"
+                >
+                    <Settings size={20} />
+                    <span>Edit Profile</span>
+                </button>
             </header>
 
             {/* Scrollable content */}

@@ -35,18 +35,15 @@ export default function PrivacyToggle() {
         }
     };
 
-    const baseBtn =
-        "px-3 py-1 rounded-full border text-sm transition disabled:opacity-50";
-    const publicStyles = "bg-transparent hover:bg-gray-100 hover:bg-gray-100 dark:text-white dark:hover:bg-white/10";
-    const privateStyles = "bg-gray-900 text-white border-gray-900 hover:bg-black dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200";
+    const buttonClass =
+        "inline-flex min-w-[96px] items-center justify-center rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-black hover:text-white disabled:opacity-50 dark:border-white/20 dark:text-white dark:hover:bg-white/10";
 
     return (
-        <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-300">Account Privacy</span>
+        <div className="flex items-center">
             <button
                 onClick={toggle}
                 disabled={saving || isPrivate === null}
-                className={`${baseBtn} ${isPrivate ? privateStyles : publicStyles}`}
+                className={buttonClass}
                 title="Toggle public/private"
             >
                 {isPrivate ? "Private" : "Public"}

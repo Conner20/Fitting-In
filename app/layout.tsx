@@ -1,6 +1,7 @@
 import Provider from "@/components/Provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fittingin.co";
@@ -56,13 +57,30 @@ export const viewport: Viewport = {
   ],
 };
 
+const themeInitScript = `
+  try {
+    const storedTheme = window.localStorage.getItem("theme");
+    const useDark = storedTheme !== "light";
+    document.documentElement.classList.toggle("dark", useDark);
+  } catch {
+    document.documentElement.classList.add("dark");
+  }
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
+      </head>
       <body className="antialiased font-sans">
         <Provider>
           {children}

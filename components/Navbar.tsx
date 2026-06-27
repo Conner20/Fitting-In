@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home, Search, PlusCircle, BookText, MessageCircle, User, Settings, X
+    Home, Search, PlusCircle, BookText, MessageCircle, User, X
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import CreatePost from "./CreatePost";
@@ -73,17 +73,6 @@ const navItems = [
         href: "/profile",
         icon: (active: boolean) => (
             <User
-                size={32}
-                strokeWidth={active ? 2.5 : 1.5}
-                className={active ? "text-black dark:text-white" : "text-zinc-800 dark:text-zinc-200"}
-            />
-        )
-    },
-    {
-        label: "Settings",
-        href: "/settings",
-        icon: (active: boolean) => (
-            <Settings
                 size={32}
                 strokeWidth={active ? 2.5 : 1.5}
                 className={active ? "text-black dark:text-white" : "text-zinc-800 dark:text-zinc-200"}

@@ -1,15 +1,16 @@
 'use client';
 
-import { Bell, BriefcaseBusiness, Moon, Sun } from "lucide-react";
+import { Bell, BriefcaseBusiness, ChevronRight, Search as SearchIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileHeader from "@/components/MobileHeader";
 import HomeAnnouncement from "@/components/HomeAnnouncement";
 import HomePosts from "@/components/HomePosts";
-import { useTheme } from "@/components/ThemeProvider";
 import NotificationsModal from "@/components/NotificationsModal";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useLiveRefresh } from "@/app/hooks/useLiveRefresh";
+import { useCurrentUserRole } from "@/app/hooks/useCurrentUserRole";
 
 type HomePageShellProps = {
     posts: any;
@@ -28,10 +29,18 @@ type NotificationListItem = {
     createdAt: string;
 };
 
+type HomeSearchResult = {
+    id: string;
+    username: string | null;
+    name: string | null;
+    image: string | null;
+    role: "TRAINEE" | "TRAINER" | "GYM" | null;
+};
+
 export default function HomePageShell({ posts, announcement = null, isAdmin = false }: HomePageShellProps) {
-    const { theme, toggleTheme } = useTheme();
+    const router = useRouter();
     const { data: session } = useSession();
-    const darkMode = theme === "dark";
+    const { role } = useCurrentUserRole();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [notificationCount, setNotificationCount] = useState(0);
     const [lastNotificationsSeenAt, setLastNotificationsSeenAt] = useState(0);
@@ -40,9 +49,18 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
     const [currentAnnouncement, setCurrentAnnouncement] = useState(announcement);
     const [isDeletingAnnouncement, setIsDeletingAnnouncement] = useState(false);
     const [pullDistance, setPullDistance] = useState(0);
+    const [headerSearch, setHeaderSearch] = useState("");
+    const [headerSearchResults, setHeaderSearchResults] = useState<HomeSearchResult[]>([]);
+    const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
+    const [headerSearchLoading, setHeaderSearchLoading] = useState(false);
+    const [headerSearchHasMore, setHeaderSearchHasMore] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(true);
+    const [isDesktop, setIsDesktop] = useState(false);
     const isSignedIn = Boolean(session?.user?.id);
     const touchStartYRef = useRef<number | null>(null);
     const pullActiveRef = useRef(false);
+    const mobileSearchContainerRef = useRef<HTMLDivElement | null>(null);
+    const desktopSearchContainerRef = useRef<HTMLDivElement | null>(null);
     const PULL_THRESHOLD = 72;
 
     const refreshHomeFeed = async () => {
@@ -79,6 +97,31 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
     useEffect(() => {
         setCurrentAnnouncement(announcement);
     }, [announcement]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const syncViewport = () => setIsDesktop(window.innerWidth >= 1024);
+        syncViewport();
+        window.addEventListener("resize", syncViewport);
+        return () => window.removeEventListener("resize", syncViewport);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const handlePointerDown = (event: MouseEvent) => {
+            const target = event.target as Node;
+            const clickedInsideMobile = mobileSearchContainerRef.current?.contains(target);
+            const clickedInsideDesktop = desktopSearchContainerRef.current?.contains(target);
+            if (!clickedInsideMobile && !clickedInsideDesktop) {
+                setHeaderSearchOpen(false);
+            }
+        };
+
+        window.addEventListener("mousedown", handlePointerDown);
+        return () => window.removeEventListener("mousedown", handlePointerDown);
+    }, []);
 
     useLiveRefresh(refreshNotificationCount, { enabled: isSignedIn, interval: 5000 });
 
@@ -120,63 +163,39 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         setNotificationCount(0);
     };
 
-    const ThemeToggle = ({ className = "" }: { className?: string }) => (
-        <button
-            type="button"
-            aria-label="Toggle theme"
-            onClick={toggleTheme}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition hover:bg-black hover:text-white dark:border-white/30 dark:text-white dark:hover:bg-white/10 ${className}`}
-        >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-    );
-
     const AdminButton = ({ className = "" }: { className?: string }) =>
         isAdmin ? (
             <Link
                 href="/admin"
                 aria-label="Admin console"
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition hover:bg-black hover:text-white dark:border-white/30 dark:text-white dark:hover:bg-white/10 ${className}`}
+                className={`inline-flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-zinc-200 bg-zinc-200 px-0 text-zinc-700 transition hover:bg-zinc-300 dark:border-white/20 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 lg:w-auto lg:px-4 ${className}`}
             >
                 <BriefcaseBusiness size={18} />
+                <span className="hidden text-sm font-medium lg:inline">Admin</span>
             </Link>
         ) : null;
 
-    const NotificationsButton = ({ className = "" }: { className?: string }) => (
+    const NotificationsButton = ({
+        className = "",
+    }: {
+        className?: string;
+    }) => (
         <button
             type="button"
             aria-label="Notifications"
             onClick={openNotifications}
-            className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition hover:bg-black hover:text-white dark:border-white/30 dark:text-white dark:hover:bg-white/10 ${className}`}
+            className={`relative inline-flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-zinc-200 bg-zinc-200 px-0 text-zinc-700 transition hover:bg-zinc-300 dark:border-white/20 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700 lg:min-w-[152px] lg:justify-center lg:px-4 ${className}`}
         >
-            <Bell size={18} />
-            {notificationCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
-                    {notificationCount > 9 ? "9+" : notificationCount}
-                </span>
-            )}
+            <span className="relative inline-flex shrink-0">
+                <Bell size={18} />
+                {notificationCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+                        {notificationCount > 9 ? "9+" : notificationCount}
+                    </span>
+                )}
+            </span>
+            <span className="hidden text-sm font-medium lg:inline">Notifications</span>
         </button>
-    );
-
-    const headerActions = (
-        <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <NotificationsButton />
-            <AdminButton />
-        </div>
-    );
-
-    const mobileLeftActions = (
-        <div className="flex items-center gap-2 lg:hidden">
-            <ThemeToggle />
-            <NotificationsButton />
-        </div>
-    );
-
-    const mobileRightActions = (
-        <div className="lg:hidden">
-            <AdminButton />
-        </div>
     );
 
     const handleTouchStart = (event: React.TouchEvent<HTMLElement>) => {
@@ -216,25 +235,254 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         setPullDistance(0);
     };
 
+    const headerSearchPlaceholder =
+        role === "TRAINEE"
+            ? "Find gyms and trainers"
+            : role === "TRAINER"
+                ? "Find clients and gyms"
+                : role === "GYM"
+                    ? "Find members and trainers"
+                    : "Find gyms, trainers, and clients";
+
+    const mobileHeaderSearchWidthClass =
+        role === "TRAINEE"
+            ? "w-[min(69vw,315px)] min-w-[232px]"
+            : role === "TRAINER"
+                ? "w-[min(67vw,304px)] min-w-[224px]"
+                : role === "GYM"
+                    ? "w-[min(74vw,340px)] min-w-[248px]"
+                    : "w-[min(74vw,340px)] min-w-[248px]";
+
+    const desktopHeaderSearchWidthClass =
+        role === "TRAINEE"
+            ? "w-[400px]"
+            : role === "TRAINER"
+                ? "w-[390px]"
+                : role === "GYM"
+                    ? "w-[430px]"
+                    : "w-[430px]";
+
+    const handleHeaderSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const nextQuery = headerSearch.trim();
+        router.push(nextQuery ? `/search?q=${encodeURIComponent(nextQuery)}` : "/search");
+    };
+
+    useEffect(() => {
+        const query = headerSearch.trim();
+
+        if (!query) {
+            setHeaderSearchResults([]);
+            setHeaderSearchHasMore(false);
+            setHeaderSearchLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        setHeaderSearchLoading(true);
+
+        const timeoutId = window.setTimeout(async () => {
+            try {
+                const params = new URLSearchParams({
+                    q: query,
+                    page: "1",
+                    pageSize: "6",
+                });
+                const res = await fetch(`/api/search?${params.toString()}`, { cache: "no-store" });
+                if (!res.ok) throw new Error();
+                const json = await res.json().catch(() => null);
+                if (cancelled) return;
+                const results = Array.isArray(json?.results) ? json.results.filter((user: HomeSearchResult) => Boolean(user.role)) : [];
+                setHeaderSearchResults(results.slice(0, 5));
+                setHeaderSearchHasMore((json?.total ?? results.length) > 5 || results.length > 5);
+            } catch {
+                if (!cancelled) {
+                    setHeaderSearchResults([]);
+                    setHeaderSearchHasMore(false);
+                }
+            } finally {
+                if (!cancelled) {
+                    setHeaderSearchLoading(false);
+                }
+            }
+        }, 180);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeoutId);
+        };
+    }, [headerSearch]);
+
+    const pushHomeSearch = (query: string, selectedUserId?: string) => {
+        const trimmed = query.trim();
+        if (!trimmed) {
+            router.push("/search");
+            return;
+        }
+
+        const params = new URLSearchParams({ q: trimmed });
+        if (selectedUserId) {
+            params.set("selectedId", selectedUserId);
+            params.set("view", "details");
+        }
+        router.push(`/search?${params.toString()}`);
+    };
+
+    const handleBrowseClick = () => {
+        setHeaderSearchOpen(false);
+        pushHomeSearch(headerSearch);
+    };
+
+    const renderHeaderSearchResults = () => {
+        if (!headerSearchOpen || !headerSearch.trim()) return null;
+
+        return (
+            <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-neutral-900">
+                {headerSearchLoading ? (
+                    <div className="px-4 py-3 text-sm text-zinc-500 dark:text-gray-400">Searching...</div>
+                ) : headerSearchResults.length === 0 ? (
+                    <div className="px-4 py-3 text-left text-sm text-zinc-500 dark:text-gray-400">No results</div>
+                ) : (
+                    <>
+                        {headerSearchResults.map((result) => {
+                            const display = result.name || result.username || "User";
+                            return (
+                                <button
+                                    key={result.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setHeaderSearchOpen(false);
+                                        pushHomeSearch(headerSearch, result.id);
+                                    }}
+                                    className="block w-full border-b border-zinc-100 px-4 py-3 text-left transition hover:bg-zinc-50 dark:border-white/5 dark:hover:bg-white/5"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        {result.image ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={result.image}
+                                                alt={display}
+                                                className="h-9 w-9 shrink-0 rounded-full border border-zinc-200 object-cover dark:border-white/10"
+                                            />
+                                        ) : (
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-xs font-semibold text-zinc-700 dark:border-white/10 dark:bg-white/10 dark:text-white">
+                                                {(result.username || result.name || "U").slice(0, 2).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-medium text-zinc-900 dark:text-white">{display}</div>
+                                            {result.role && (
+                                                <div className="mt-0.5 text-xs capitalize text-zinc-500 dark:text-gray-400">
+                                                    {result.role.toLowerCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                        {headerSearchHasMore && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setHeaderSearchOpen(false);
+                                    pushHomeSearch(headerSearch);
+                                }}
+                                className="block w-full px-4 py-3 text-left text-sm font-medium text-green-700 transition hover:bg-zinc-50 dark:text-green-400 dark:hover:bg-white/5"
+                            >
+                                See more results...
+                            </button>
+                        )}
+                    </>
+                )}
+            </div>
+        );
+    };
+
+    const mobileHeaderSearch = (
+        <div ref={mobileSearchContainerRef} className="relative">
+            <form
+                onSubmit={handleHeaderSearchSubmit}
+                className={`relative flex ${mobileHeaderSearchWidthClass} items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-2 pr-[4.75rem] dark:border-white/10 dark:bg-white/5`}
+            >
+                <SearchIcon size={16} className="shrink-0 text-zinc-500 dark:text-gray-400" />
+                <input
+                    value={headerSearch}
+                    onFocus={() => setHeaderSearchOpen(true)}
+                    onChange={(event) => {
+                        setHeaderSearch(event.target.value);
+                        setHeaderSearchOpen(true);
+                    }}
+                    placeholder={headerSearchPlaceholder}
+                    className="flex-1 min-w-0 bg-transparent text-[9px] text-zinc-800 outline-none placeholder:text-zinc-500 sm:text-xs dark:text-white dark:placeholder:text-gray-400"
+                />
+                <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={handleBrowseClick}
+                    tabIndex={headerSearchOpen ? 0 : -1}
+                    aria-hidden={!headerSearchOpen}
+                    className={`absolute right-2 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium text-green-700 transition hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 ${
+                        headerSearchOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+                    }`}
+                >
+                    <span>Browse</span>
+                    <ChevronRight size={12} />
+                </button>
+            </form>
+            {renderHeaderSearchResults()}
+        </div>
+    );
+
     return (
         <>
             <div className="relative flex min-h-screen flex-col bg-[#f8f8f8] text-black transition-colors dark:bg-[#050505] dark:text-white">
                 <MobileHeader
                     title="fitting"
                     href="/"
-                    leftAccessory={mobileLeftActions}
-                    rightAccessory={mobileRightActions}
+                    titleAlign="left"
+                    rightAccessory={mobileHeaderSearch}
+                    onMobileNavVisibilityChange={setMobileNavOpen}
                 />
 
-                <header className="hidden w-full items-center justify-center bg-white px-6 py-5 lg:flex dark:bg-neutral-900">
-                    <div className="absolute left-6 hidden items-center gap-2 lg:flex">
-                        {headerActions}
-                    </div>
+                <header className="hidden w-full items-center justify-between bg-white px-6 py-5 lg:flex dark:bg-neutral-900">
                     <Link href="/" className="text-2xl font-semibold tracking-tight text-green-700 dark:text-green-400">
                         <span>fitt</span>
                         <span className="underline decoration-2 decoration-green-700 underline-offset-[2px] dark:decoration-green-400">in</span>
                         <span>g</span>
                     </Link>
+                    <div ref={desktopSearchContainerRef} className="relative hidden items-center lg:flex">
+                        <form
+                            onSubmit={handleHeaderSearchSubmit}
+                            className={`relative flex ${desktopHeaderSearchWidthClass} items-center gap-3 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-3 pr-[6.5rem] dark:border-white/10 dark:bg-white/5`}
+                        >
+                            <SearchIcon size={18} className="shrink-0 text-zinc-500 dark:text-gray-400" />
+                            <input
+                                value={headerSearch}
+                                onFocus={() => setHeaderSearchOpen(true)}
+                                onChange={(event) => {
+                                    setHeaderSearch(event.target.value);
+                                    setHeaderSearchOpen(true);
+                                }}
+                                placeholder={headerSearchPlaceholder}
+                                className="flex-1 min-w-0 bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-500 dark:text-white dark:placeholder:text-gray-400"
+                            />
+                            <button
+                                type="button"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={handleBrowseClick}
+                                tabIndex={headerSearchOpen ? 0 : -1}
+                                aria-hidden={!headerSearchOpen}
+                                className={`absolute right-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-green-700 transition hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 ${
+                                    headerSearchOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+                                }`}
+                            >
+                                <span>Browse</span>
+                                <ChevronRight size={13} />
+                            </button>
+                        </form>
+                        {renderHeaderSearchResults()}
+                    </div>
                 </header>
 
                 <main
@@ -270,6 +518,32 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
                         <HomePosts initialPosts={posts} refreshToken={feedRefreshToken} />
                     </div>
                 </main>
+
+                <div
+                    className="fixed left-4 z-40 transition-[bottom] duration-200 lg:left-6 lg:transition-none"
+                    style={{
+                        bottom: isDesktop
+                            ? "1.5rem"
+                            : mobileNavOpen
+                                ? "calc(5.5rem + env(safe-area-inset-bottom, 0px))"
+                                : "calc(1rem + env(safe-area-inset-bottom, 0px))",
+                    }}
+                >
+                    <AdminButton className="shadow-sm" />
+                </div>
+
+                <div
+                    className="fixed right-4 z-40 transition-[bottom] duration-200 lg:right-24 lg:transition-none"
+                    style={{
+                        bottom: isDesktop
+                            ? "1.5rem"
+                            : mobileNavOpen
+                                ? "calc(5.5rem + env(safe-area-inset-bottom, 0px))"
+                                : "calc(1rem + env(safe-area-inset-bottom, 0px))",
+                    }}
+                >
+                    <NotificationsButton className="shadow-sm" />
+                </div>
             </div>
             <NotificationsModal
                 open={notificationsOpen}

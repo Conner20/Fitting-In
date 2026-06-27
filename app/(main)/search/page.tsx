@@ -150,6 +150,8 @@ export default function SearchPage() {
 
     // selection for details panel
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [urlSelectedId, setUrlSelectedId] = useState<string | null>(null);
+    const [urlRequestedView, setUrlRequestedView] = useState<'details' | null>(null);
     const selected = useMemo(
         () => data?.results.find((u) => u.id === selectedId) ?? null,
         [data, selectedId]
@@ -231,6 +233,17 @@ export default function SearchPage() {
     }, []);
 
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const nextQuery = params.get('q') ?? '';
+        const nextSelectedId = params.get('selectedId');
+        const nextView = params.get('view');
+        setQ(nextQuery);
+        setUrlSelectedId(nextSelectedId);
+        setUrlRequestedView(nextView === 'details' ? 'details' : null);
+    }, []);
+
+    useEffect(() => {
         let cancelled = false;
 
         const fetchFavorites = async () => {
@@ -285,6 +298,9 @@ export default function SearchPage() {
             setPage(1);
 
             setSelectedId((prev) => {
+                if (urlSelectedId && filteredResults.some((r) => r.id === urlSelectedId)) {
+                    return urlSelectedId;
+                }
                 if (isDesktopViewport && hasActiveSearchFilters) {
                     if (role === 'GYM') {
                         return prev && filteredResults.some((r) => r.id === prev) ? prev : null;
@@ -1161,6 +1177,16 @@ export default function SearchPage() {
     }, [selectedId, visibleResults]);
 
     useEffect(() => {
+        if (!selectedId) return;
+        const selectedIndex = visibleResults.findIndex((result) => result.id === selectedId);
+        if (selectedIndex === -1) return;
+        const nextPage = Math.floor(selectedIndex / pageSize) + 1;
+        if (page !== nextPage) {
+            setPage(nextPage);
+        }
+    }, [page, pageSize, selectedId, visibleResults]);
+
+    useEffect(() => {
         const total = Math.max(1, Math.ceil(visibleResults.length / pageSize));
         if (page > total) {
             setPage(total);
@@ -1269,6 +1295,19 @@ export default function SearchPage() {
             setShowGymMapPanel(false);
         }
     }, [role, selected, visibleResults.length]);
+
+    useEffect(() => {
+        if (!urlSelectedId || !data?.results?.length) return;
+        const matchedUser = data.results.find((user) => user.id === urlSelectedId);
+        if (!matchedUser) return;
+
+        setSelectedId(urlSelectedId);
+        setShowGymMapPanel(matchedUser.role === 'GYM');
+
+        if (!isDesktopViewport && urlRequestedView === 'details') {
+            setMobileView('details');
+        }
+    }, [data?.results, isDesktopViewport, urlRequestedView, urlSelectedId]);
 
     const mobileHeaderActions = (
         <button
@@ -2152,6 +2191,7 @@ function UserDetails({
                                 animating={isFavoriteAnimating}
                                 disabled={isFavoritePending}
                                 iconOnly={isMobile}
+                                labelClassName="sm:hidden xl:inline"
                                 onClick={() => onToggleFavorite(u.id)}
                                 title={isFavorited ? 'Favorited' : 'Favorite'}
                             />
@@ -2162,7 +2202,7 @@ function UserDetails({
                             >
                                 <span className="inline-flex items-center gap-1">
                                     <MessageSquare size={actionIconSize} />
-                                    <span className="hidden sm:inline">Message</span>
+                                    <span className="hidden xl:inline">Message</span>
                                 </span>
                             </button>
                             <button
@@ -2172,7 +2212,7 @@ function UserDetails({
                             >
                                 <span className="inline-flex items-center gap-1">
                                     <Share2 size={actionIconSize} />
-                                    <span className="hidden sm:inline">Share</span>
+                                    <span className="hidden xl:inline">Share</span>
                                 </span>
                             </button>
 
@@ -2184,7 +2224,7 @@ function UserDetails({
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         <Star size={actionIconSize} />
-                                        <span className="hidden sm:inline">Rate</span>
+                                        <span className="hidden xl:inline">Rate</span>
                                     </span>
                                 </Link>
                             )}
@@ -2199,7 +2239,7 @@ function UserDetails({
                                 >
                                     <span className="inline-flex items-center gap-1">
                                         <LinkIcon size={actionIconSize} />
-                                        <span className="hidden sm:inline">Website</span>
+                                        <span className="hidden xl:inline">Website</span>
                                     </span>
                                 </a>
                             )}
