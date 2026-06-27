@@ -1218,7 +1218,7 @@ export default function SearchPage() {
     );
 
     const searchListTabs = (
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-0 flex items-center gap-1.5 lg:mb-2">
             <button
                 type="button"
                 onClick={() => {
@@ -1226,7 +1226,7 @@ export default function SearchPage() {
                     setPage(1);
                 }}
                 className={clsx(
-                    'inline-flex items-center rounded-lg px-3 py-1.5 text-sm transition',
+                    'inline-flex items-center rounded-lg px-2.5 py-1 text-xs transition',
                     listTab === 'all'
                         ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
                         : 'text-zinc-600 hover:bg-zinc-100 dark:text-gray-300 dark:hover:bg-white/10'
@@ -1241,7 +1241,7 @@ export default function SearchPage() {
                     setPage(1);
                 }}
                 className={clsx(
-                    'inline-flex items-center rounded-lg px-3 py-1.5 text-sm transition',
+                    'inline-flex items-center rounded-lg px-2.5 py-1 text-xs transition',
                     listTab === 'favorites'
                         ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
                         : 'text-zinc-600 hover:bg-zinc-100 dark:text-gray-300 dark:hover:bg-white/10'
@@ -1805,7 +1805,7 @@ export default function SearchPage() {
                     <>
                 <div className="lg:hidden">
                     {mobileView === 'list' && (
-                        <div className="px-4 pb-0 pt-4 space-y-4">
+                        <div className="flex h-[calc(100dvh-12rem-env(safe-area-inset-bottom,0px))] flex-col gap-3 overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] pt-3">
                             {searchListTabs}
                             {loading ? (
                                 <div className="flex items-center justify-center rounded-xl border bg-white py-6 text-sm text-gray-500 dark:bg-neutral-900 dark:border-white/10 dark:text-gray-300">
@@ -1817,14 +1817,14 @@ export default function SearchPage() {
                             ) : visibleResults.length ? (
                                 <>
                                     <div
-                                        className="max-h-[calc(100dvh-21rem-env(safe-area-inset-bottom,0px))] space-y-3 overflow-y-auto scrollbar-slim"
+                                        className="min-h-0 flex-1 space-y-3 overflow-y-auto scrollbar-slim"
                                         ref={mobileListRef}
                                     >
                                         {paginatedResults.map((u) => renderMobileCard(u))}
                                     </div>
-                                    <div className="flex items-center justify-between pt-1 text-xs text-gray-600 dark:text-gray-400">
+                                    <div className="flex shrink-0 items-center justify-between pt-0.5 text-[11px] text-gray-600 dark:text-gray-400">
                                         <button
-                                            className="px-2 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-40 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
+                                            className="rounded border bg-white px-2 py-0.5 hover:bg-gray-50 disabled:opacity-40 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                             disabled={page === 1}
                                             onClick={() => setPage((p) => Math.max(1, p - 1))}
                                         >
@@ -1834,7 +1834,7 @@ export default function SearchPage() {
                                             Page {page} of {totalPages}
                                         </span>
                                         <button
-                                            className="px-2 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-40 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
+                                            className="rounded border bg-white px-2 py-0.5 hover:bg-gray-50 disabled:opacity-40 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                             disabled={page === totalPages}
                                             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                         >
