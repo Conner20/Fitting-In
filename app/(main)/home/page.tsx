@@ -25,15 +25,17 @@ export default async function Home() {
         redirect("/");
     }
 
+    const sessionRole = (session.user as { role?: "TRAINEE" | "TRAINER" | "GYM" | null }).role ?? null;
+
     // Resolve the viewer's user id (if signed in)
-    const viewerId = session?.user?.email
-        ? (
-            await db.user.findUnique({
-                where: { email: session.user.email.toLowerCase() },
-                select: { id: true },
-            })
-        )?.id ?? null
+    const viewer = session?.user?.email
+        ? await db.user.findUnique({
+            where: { email: session.user.email.toLowerCase() },
+            select: { id: true, role: true },
+        })
         : null;
+
+    const viewerId = viewer?.id ?? null;
 
     if (!viewerId) {
         redirect("/");
@@ -137,5 +139,12 @@ export default async function Home() {
 
     const isAdmin = await hasAdminAccessByEmail(session.user.email);
 
-    return <HomePageShell posts={formatted as any} announcement={announcement as HomeAnnouncement} isAdmin={isAdmin} />;
+    return (
+        <HomePageShell
+            posts={formatted as any}
+            announcement={announcement as HomeAnnouncement}
+            isAdmin={isAdmin}
+            initialRole={sessionRole ?? viewer?.role ?? null}
+        />
+    );
 }

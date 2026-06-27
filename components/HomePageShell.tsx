@@ -23,6 +23,7 @@ type HomePageShellProps = {
         createdAt: string;
     } | null;
     isAdmin?: boolean;
+    initialRole?: "TRAINEE" | "TRAINER" | "GYM" | null;
 };
 
 type NotificationListItem = {
@@ -37,7 +38,7 @@ type HomeSearchResult = {
     role: "TRAINEE" | "TRAINER" | "GYM" | null;
 };
 
-export default function HomePageShell({ posts, announcement = null, isAdmin = false }: HomePageShellProps) {
+export default function HomePageShell({ posts, announcement = null, isAdmin = false, initialRole = null }: HomePageShellProps) {
     const router = useRouter();
     const { data: session } = useSession();
     const { role } = useCurrentUserRole();
@@ -56,11 +57,7 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
     const [headerSearchHasMore, setHeaderSearchHasMore] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(true);
     const [isDesktop, setIsDesktop] = useState(false);
-    const [stableRole, setStableRole] = useState<"TRAINEE" | "TRAINER" | "GYM" | null>(() => {
-        if (typeof window === "undefined") return null;
-        const storedRole = window.localStorage.getItem("home-search-role");
-        return storedRole === "TRAINEE" || storedRole === "TRAINER" || storedRole === "GYM" ? storedRole : null;
-    });
+    const [stableRole, setStableRole] = useState<"TRAINEE" | "TRAINER" | "GYM" | null>(initialRole);
     const isSignedIn = Boolean(session?.user?.id);
     const touchStartYRef = useRef<number | null>(null);
     const pullActiveRef = useRef(false);
@@ -102,9 +99,6 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
     useEffect(() => {
         if (!role) return;
         setStableRole(role);
-        if (typeof window !== "undefined") {
-            window.localStorage.setItem("home-search-role", role);
-        }
     }, [role]);
 
     useEffect(() => {
@@ -248,7 +242,8 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         setPullDistance(0);
     };
 
-    const effectiveRole = role ?? stableRole;
+    const sessionRole = (session?.user as { role?: "TRAINEE" | "TRAINER" | "GYM" | null } | undefined)?.role ?? null;
+    const effectiveRole = role ?? sessionRole ?? stableRole ?? initialRole;
 
     const headerSearchPlaceholder =
         effectiveRole === "TRAINEE"
@@ -257,7 +252,7 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
                 ? "Find clients and gyms"
                 : effectiveRole === "GYM"
                     ? "Find members and trainers"
-                    : "Find gyms, trainers, and clients";
+                    : "";
 
     const mobileHeaderSearchWidthClass =
         effectiveRole === "TRAINEE"
