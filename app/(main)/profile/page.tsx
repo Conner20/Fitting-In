@@ -122,6 +122,7 @@ export default function ProfilePage() {
             <MobileHeader
                 title={username}
                 href="/profile"
+                titleAlign="left"
                 rightAccessory={
                     <button
                         type="button"
@@ -138,13 +139,13 @@ export default function ProfilePage() {
 
             {/* Desktop header */}
             <header className="hidden lg:flex sticky top-0 z-30 w-full py-6 justify-between items-center pl-[40px] pr-8 bg-white dark:bg-neutral-900">
-                <h1 className="font-roboto text-3xl text-green-700 tracking-tight select-none dark:text-green-400">
-                    <span>{username}</span>
+                <h1 className="min-w-0 flex-1 pr-6 font-roboto text-3xl text-green-700 tracking-tight select-none dark:text-green-400">
+                    <span className="block truncate">{username}</span>
                 </h1>
                 <button
                     type="button"
                     onClick={() => router.push("/settings")}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                     aria-label="Edit profile"
                     title="Edit profile"
                 >

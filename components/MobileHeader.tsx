@@ -70,13 +70,13 @@ export default function MobileHeader({
                 {titleAlign === "left" ? (
                     <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
                         <h1 className="min-w-0 flex-1 text-left font-roboto text-3xl tracking-tight select-none text-green-700 dark:text-green-400">
-                            <Link href={href} className="cursor-pointer">
+                            <Link href={href} className="block truncate cursor-pointer">
                                 {title.toLowerCase() === "fitting" ? (
                                     <span className="font-semibold">
                                         fitt<span className="underline decoration-2 decoration-green-600 underline-offset-[2px] dark:decoration-green-400">in</span>g
                                     </span>
                                 ) : (
-                                    <span>{title}</span>
+                                    <span className="block truncate">{title}</span>
                                 )}
                             </Link>
                         </h1>
