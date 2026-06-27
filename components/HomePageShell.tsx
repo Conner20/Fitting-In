@@ -246,12 +246,12 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
 
     const mobileHeaderSearchWidthClass =
         role === "TRAINEE"
-            ? "w-[min(69vw,315px)] min-w-[232px]"
+            ? "w-[min(67vw,300px)] max-w-[calc(100vw-8.5rem)] min-w-0"
             : role === "TRAINER"
-                ? "w-[min(67vw,304px)] min-w-[224px]"
+                ? "w-[min(65vw,290px)] max-w-[calc(100vw-8.5rem)] min-w-0"
                 : role === "GYM"
-                    ? "w-[min(74vw,340px)] min-w-[248px]"
-                    : "w-[min(74vw,340px)] min-w-[248px]";
+                    ? "w-[min(67vw,300px)] max-w-[calc(100vw-8.5rem)] min-w-0"
+                    : "w-[min(67vw,300px)] max-w-[calc(100vw-8.5rem)] min-w-0";
 
     const desktopHeaderSearchWidthClass =
         role === "TRAINEE"
@@ -403,7 +403,9 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         <div ref={mobileSearchContainerRef} className="relative">
             <form
                 onSubmit={handleHeaderSearchSubmit}
-                className={`relative flex ${mobileHeaderSearchWidthClass} items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-2 pr-[4.75rem] dark:border-white/10 dark:bg-white/5`}
+                className={`relative flex ${mobileHeaderSearchWidthClass} items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-2 dark:border-white/10 dark:bg-white/5 ${
+                    headerSearchOpen ? "pr-[4.75rem]" : "pr-3"
+                }`}
             >
                 <SearchIcon size={16} className="shrink-0 text-zinc-500 dark:text-gray-400" />
                 <input
@@ -454,7 +456,9 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
                     <div ref={desktopSearchContainerRef} className="relative hidden items-center lg:flex">
                         <form
                             onSubmit={handleHeaderSearchSubmit}
-                            className={`relative flex ${desktopHeaderSearchWidthClass} items-center gap-3 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-3 pr-[6.5rem] dark:border-white/10 dark:bg-white/5`}
+                            className={`relative flex ${desktopHeaderSearchWidthClass} items-center gap-3 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-3 dark:border-white/10 dark:bg-white/5 ${
+                                headerSearchOpen ? "pr-[6.5rem]" : "pr-4"
+                            }`}
                         >
                             <SearchIcon size={18} className="shrink-0 text-zinc-500 dark:text-gray-400" />
                             <input
