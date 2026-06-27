@@ -56,6 +56,11 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
     const [headerSearchHasMore, setHeaderSearchHasMore] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(true);
     const [isDesktop, setIsDesktop] = useState(false);
+    const [stableRole, setStableRole] = useState<"TRAINEE" | "TRAINER" | "GYM" | null>(() => {
+        if (typeof window === "undefined") return null;
+        const storedRole = window.localStorage.getItem("home-search-role");
+        return storedRole === "TRAINEE" || storedRole === "TRAINER" || storedRole === "GYM" ? storedRole : null;
+    });
     const isSignedIn = Boolean(session?.user?.id);
     const touchStartYRef = useRef<number | null>(null);
     const pullActiveRef = useRef(false);
@@ -93,6 +98,14 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         if (!isSignedIn) return;
         refreshNotificationCount();
     }, [isSignedIn]);
+
+    useEffect(() => {
+        if (!role) return;
+        setStableRole(role);
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem("home-search-role", role);
+        }
+    }, [role]);
 
     useEffect(() => {
         setCurrentAnnouncement(announcement);
@@ -235,30 +248,32 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         setPullDistance(0);
     };
 
+    const effectiveRole = role ?? stableRole;
+
     const headerSearchPlaceholder =
-        role === "TRAINEE"
+        effectiveRole === "TRAINEE"
             ? "Find gyms and trainers"
-            : role === "TRAINER"
+            : effectiveRole === "TRAINER"
                 ? "Find clients and gyms"
-                : role === "GYM"
+                : effectiveRole === "GYM"
                     ? "Find members and trainers"
                     : "Find gyms, trainers, and clients";
 
     const mobileHeaderSearchWidthClass =
-        role === "TRAINEE"
+        effectiveRole === "TRAINEE"
             ? "w-[min(67vw,300px)] max-w-[calc(100vw-8.5rem)] min-w-0"
-            : role === "TRAINER"
+            : effectiveRole === "TRAINER"
                 ? "w-[min(65vw,290px)] max-w-[calc(100vw-8.5rem)] min-w-0"
-                : role === "GYM"
+                : effectiveRole === "GYM"
                     ? "w-[min(67vw,300px)] max-w-[calc(100vw-8.5rem)] min-w-0"
                     : "w-[min(67vw,300px)] max-w-[calc(100vw-8.5rem)] min-w-0";
 
     const desktopHeaderSearchWidthClass =
-        role === "TRAINEE"
+        effectiveRole === "TRAINEE"
             ? "w-[400px]"
-            : role === "TRAINER"
+            : effectiveRole === "TRAINER"
                 ? "w-[390px]"
-                : role === "GYM"
+                : effectiveRole === "GYM"
                     ? "w-[430px]"
                     : "w-[430px]";
 
