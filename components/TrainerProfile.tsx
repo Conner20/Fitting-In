@@ -795,7 +795,7 @@ export function TrainerProfile({
             <aside
                 className={clsx(
                     "w-full bg-white flex flex-col items-center pt-6 pb-6 shadow-sm lg:shadow-none dark:bg-neutral-900 dark:border-b dark:border-white/5 dark:text-gray-100",
-                    "lg:w-72 lg:pt-8 lg:pb-0 lg:sticky lg:top-[84px] lg:self-start lg:min-h-[calc(100vh)] lg:border-r lg:border-white/10"
+                    "lg:w-72 lg:pt-8 lg:pb-0 lg:self-stretch lg:border-r lg:border-white/10"
                 )}
             >
                 <div className="w-full px-6 flex flex-col items-center gap-4">
