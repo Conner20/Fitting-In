@@ -413,11 +413,11 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
         <div ref={mobileSearchContainerRef} className="relative">
             <form
                 onSubmit={handleHeaderSearchSubmit}
-                className={`relative flex ${mobileHeaderSearchWidthClass} items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-2 dark:border-white/15 dark:bg-white/5 ${
+                className={`relative flex ${mobileHeaderSearchWidthClass} items-center gap-2 rounded-lg border border-white/10 bg-[#050505] px-3 py-2 ${
                     headerSearchOpen ? "pr-[4.75rem]" : "pr-3"
                 }`}
             >
-                <SearchIcon size={18} className="shrink-0 text-gray-500 dark:text-gray-400" />
+                <SearchIcon size={18} className="shrink-0 text-gray-400" />
                 <input
                     value={headerSearch}
                     onFocus={() => setHeaderSearchOpen(true)}
@@ -426,7 +426,7 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
                         setHeaderSearchOpen(true);
                     }}
                     placeholder={headerSearchPlaceholder}
-                    className="flex-1 min-w-0 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-500 dark:text-white dark:placeholder:text-gray-400"
+                    className="flex-1 min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-gray-400"
                 />
                 <button
                     type="button"
@@ -466,11 +466,11 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
                     <div ref={desktopSearchContainerRef} className="relative hidden items-center lg:flex">
                         <form
                             onSubmit={handleHeaderSearchSubmit}
-                            className={`relative flex ${desktopHeaderSearchWidthClass} items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-2 dark:border-white/15 dark:bg-white/5 ${
+                            className={`relative flex ${desktopHeaderSearchWidthClass} items-center gap-2 rounded-lg border border-white/10 bg-[#050505] px-3 py-2 ${
                                 headerSearchOpen ? "pr-[6.5rem]" : "pr-3"
                             }`}
                         >
-                            <SearchIcon size={18} className="shrink-0 text-gray-500 dark:text-gray-400" />
+                            <SearchIcon size={18} className="shrink-0 text-gray-400" />
                             <input
                                 value={headerSearch}
                                 onFocus={() => setHeaderSearchOpen(true)}
@@ -479,7 +479,7 @@ export default function HomePageShell({ posts, announcement = null, isAdmin = fa
                                     setHeaderSearchOpen(true);
                                 }}
                                 placeholder={headerSearchPlaceholder}
-                                className="flex-1 min-w-0 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-500 dark:text-white dark:placeholder:text-gray-400"
+                                className="flex-1 min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-gray-400"
                             />
                             <button
                                 type="button"

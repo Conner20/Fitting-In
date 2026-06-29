@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from "clsx";
-import { Heart } from "lucide-react";
+import { Bookmark } from "lucide-react";
 
 type FavoriteButtonProps = {
     favorited: boolean;
@@ -29,6 +29,7 @@ export default function FavoriteButton({
     disabled = false,
 }: FavoriteButtonProps) {
     const isPlain = variant === "plain";
+    const stateLabel = favorited ? "Saved" : "Save";
 
     return (
         <button
@@ -39,8 +40,8 @@ export default function FavoriteButton({
                 onClick();
             }}
             disabled={disabled}
-            title={title ?? (favorited ? "Favorited" : "Favorite")}
-            aria-label={favorited ? "Favorited" : "Favorite"}
+            title={stateLabel}
+            aria-label={stateLabel}
             className={clsx(
                 isPlain
                     ? compact
@@ -51,17 +52,17 @@ export default function FavoriteButton({
                         : "inline-flex h-9 w-9 cursor-default items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-50/80 p-0 text-sm transition hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2",
                 isPlain
                     ? favorited
-                        ? "text-red-500 font-bold"
-                        : "text-gray-400 hover:text-red-400 dark:text-gray-300 dark:hover:text-red-500"
+                        ? "font-bold text-yellow-500"
+                        : "text-gray-400 hover:text-yellow-500 dark:text-gray-300 dark:hover:text-yellow-400"
                     : favorited
-                        ? "border-red-200/90 text-red-500 hover:bg-red-50 dark:border-red-400/30 dark:text-red-500 dark:hover:bg-red-500/10"
-                        : "text-zinc-500 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400",
+                        ? "border-yellow-200/90 text-yellow-500 hover:bg-yellow-50 dark:border-yellow-400/30 dark:text-yellow-400 dark:hover:bg-yellow-500/10"
+                        : "text-zinc-500 hover:text-yellow-500 dark:text-gray-300 dark:hover:text-yellow-400",
                 disabled && "pointer-events-none opacity-60",
                 `transition-none sm:transition-all ${isPlain ? "sm:duration-200" : "sm:duration-300"} ease-out`,
                 className
             )}
         >
-            <Heart
+            <Bookmark
                 size={18}
                 className={clsx(
                     `transition-none sm:transition-all ${isPlain ? "sm:duration-200" : "sm:duration-300"}`,
@@ -69,7 +70,7 @@ export default function FavoriteButton({
                 )}
             />
             {!iconOnly && (
-                <span className={labelClassName ?? "hidden sm:inline"}>{favorited ? "Favorited" : "Favorite"}</span>
+                <span className={labelClassName ?? "hidden sm:inline"}>{stateLabel}</span>
             )}
         </button>
     );

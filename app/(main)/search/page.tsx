@@ -525,12 +525,12 @@ export default function SearchPage() {
 
     const mobileFilters = (
         <div className="px-4 py-4 space-y-2 bg-white dark:bg-neutral-900">
-            <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-2 dark:border-white/15 dark:bg-white/5">
-                <SearchIcon size={18} className="text-gray-500 dark:text-gray-400" />
+            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#050505] px-3 py-2">
+                <SearchIcon size={18} className="text-gray-400" />
                 <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    className="flex-1 outline-none text-sm bg-transparent dark:text-white"
+                    className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-400"
                     placeholder="Search by name, @username, or gym"
                 />
                 <button
@@ -539,9 +539,9 @@ export default function SearchPage() {
                     aria-label="Clear search"
                     tabIndex={q ? 0 : -1}
                     className={clsx(
-                        "shrink-0 rounded-md p-1 text-gray-500 transition dark:text-gray-400",
+                        "shrink-0 rounded-md p-1 text-gray-400 transition",
                         q
-                            ? "hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-white"
+                            ? "hover:bg-white/10 hover:text-white"
                             : "pointer-events-none opacity-0"
                     )}
                 >
@@ -1155,6 +1155,12 @@ export default function SearchPage() {
         );
     };
 
+    const handleChangePage = (nextPage: number) => {
+        setSelectedId(null);
+        setShowGymMapPanel(role === 'GYM' && visibleResults.length > 0);
+        setPage(nextPage);
+    };
+
     const allResults = data?.results ?? [];
     const favoriteResults = useMemo(
         () => allResults.filter((user) => favoriteIdSet.has(user.id)),
@@ -1247,7 +1253,7 @@ export default function SearchPage() {
                         : 'text-zinc-600 hover:bg-zinc-100 dark:text-gray-300 dark:hover:bg-white/10'
                 )}
             >
-                Favorites
+                Saved
                 <span className="ml-1.5 text-xs opacity-70">({favoriteResults.length})</span>
             </button>
         </div>
@@ -1339,12 +1345,12 @@ export default function SearchPage() {
                     </h1>
 
                     <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <div className="flex min-w-[220px] max-w-[520px] flex-1 items-center gap-2 rounded-lg border border-zinc-200 bg-white/80 px-3 py-2 dark:border-white/15 dark:bg-white/5">
-                            <SearchIcon size={18} className="text-gray-500 dark:text-gray-400" />
+                        <div className="flex min-w-[220px] max-w-[520px] flex-1 items-center gap-2 rounded-lg border border-white/10 bg-[#050505] px-3 py-2">
+                            <SearchIcon size={18} className="text-gray-400" />
                             <input
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
-                                className="flex-1 outline-none text-sm bg-transparent dark:text-white"
+                                className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-400"
                                 placeholder="Search by name, @username, or gym"
                             />
                             <button
@@ -1353,9 +1359,9 @@ export default function SearchPage() {
                                 aria-label="Clear search"
                                 tabIndex={q ? 0 : -1}
                                 className={clsx(
-                                    "shrink-0 rounded-md p-1 text-gray-500 transition dark:text-gray-400",
+                                    "shrink-0 rounded-md p-1 text-gray-400 transition",
                                     q
-                                        ? "hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/10 dark:hover:text-white"
+                                        ? "hover:bg-white/10 hover:text-white"
                                         : "pointer-events-none opacity-0"
                                 )}
                             >
@@ -1826,7 +1832,7 @@ export default function SearchPage() {
                                         <button
                                             className="rounded border bg-white px-2 py-0.5 hover:bg-gray-50 disabled:opacity-40 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                             disabled={page === 1}
-                                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                            onClick={() => handleChangePage(Math.max(1, page - 1))}
                                         >
                                             Previous
                                         </button>
@@ -1836,7 +1842,7 @@ export default function SearchPage() {
                                         <button
                                             className="rounded border bg-white px-2 py-0.5 hover:bg-gray-50 disabled:opacity-40 dark:border-white/20 dark:bg-white/5 dark:text-gray-100 dark:hover:bg-white/10"
                                             disabled={page === totalPages}
-                                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                            onClick={() => handleChangePage(Math.min(totalPages, page + 1))}
                                         >
                                             Next
                                         </button>
@@ -2006,7 +2012,7 @@ export default function SearchPage() {
                                             <button
                                                 className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-50 dark:border-white/20 dark:text-gray-100 dark:hover:bg-white/10"
                                                 disabled={page === 1}
-                                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                                onClick={() => handleChangePage(Math.max(1, page - 1))}
                                             >
                                                 Previous
                                             </button>
@@ -2016,9 +2022,7 @@ export default function SearchPage() {
                                             <button
                                                 className="px-2 py-1 rounded border disabled:opacity-40 hover:bg-gray-50 dark:border-white/20 dark:text-gray-100 dark:hover:bg-white/10"
                                                 disabled={page === totalPages}
-                                                onClick={() =>
-                                                    setPage((p) => Math.min(totalPages, p + 1))
-                                                }
+                                                onClick={() => handleChangePage(Math.min(totalPages, page + 1))}
                                             >
                                                 Next
                                             </button>
