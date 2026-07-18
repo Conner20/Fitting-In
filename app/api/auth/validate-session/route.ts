@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { withPrismaReadRetry } from "@/lib/prismaRetry";
 import { db } from "@/prisma/client";
 
-export async function GET() {
+async function validateSession() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
         return NextResponse.json({ valid: false }, { status: 401 });
@@ -20,4 +21,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ valid: true });
+}
+
+export async function GET() {
+    return withPrismaReadRetry(validateSession);
 }
