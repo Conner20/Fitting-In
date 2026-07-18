@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const PAGE_SIZE = 10; // 🔹 10 posts per request
-const MAX_POST_IMAGES = 3;
+const MAX_POST_IMAGES = 10;
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
             if (files.length > MAX_POST_IMAGES) {
                 return NextResponse.json(
-                    { message: "You can upload up to 3 images per post." },
+                    { message: `You can upload up to ${MAX_POST_IMAGES} images per post.` },
                     { status: 400 }
                 );
             }

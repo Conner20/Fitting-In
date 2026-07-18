@@ -3,10 +3,11 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { UTApi, UTFile } from "uploadthing/server";
+import { createR2ObjectKey, deleteR2Object, isR2Configured, putR2Object, r2KeyFromUrl } from "@/lib/r2";
 
 type UploadResult = {
     url: string;
-    provider: "uploadthing" | "local";
+    provider: "r2" | "uploadthing" | "local";
     storageKey?: string;
 };
 
@@ -63,6 +64,17 @@ export async function storeImageFile(
     opts: { folder?: string; prefix?: string } = {},
 ): Promise<UploadResult> {
     const prefix = sanitizePrefix(opts.prefix);
+    if (isR2Configured) {
+        const contentType = file.type || "application/octet-stream";
+        const key = createR2ObjectKey({
+            userId: prefix,
+            purpose: opts.folder || "uploads",
+            contentType,
+        });
+        const url = await putR2Object(key, new Uint8Array(await file.arrayBuffer()), contentType);
+        return { url, storageKey: key, provider: "r2" };
+    }
+
     if (utapi) {
         const namedFile = await toUTFile(file, prefix);
         const uploaded = await utapi.uploadFiles(namedFile, {
@@ -137,6 +149,12 @@ function extractUploadthingKey(url: string) {
 
 export async function deleteStoredFile(url?: string | null) {
     if (!url) return;
+
+    const r2Key = r2KeyFromUrl(url);
+    if (r2Key) {
+        await deleteR2Object(r2Key).catch(() => {});
+        return;
+    }
 
     if (utapi && isUploadthingUrl(url)) {
         const key = extractUploadthingKey(url);
