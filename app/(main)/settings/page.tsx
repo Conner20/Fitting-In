@@ -9,9 +9,8 @@ import MobileHeader from "@/components/MobileHeader";
 import { useRouter } from "next/navigation";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useTheme } from "@/components/ThemeProvider";
-import { genUploader } from "uploadthing/client";
 
-import type { UploadRouter } from "@/app/api/uploadthing/core";
+import { cleanupR2Uploads, uploadImagesToR2, type R2ClientUpload } from "@/lib/r2-upload-client";
 
 type LocationSuggestion = {
     id: string;
@@ -67,7 +66,6 @@ type SettingsProfileSnapshot = {
     hasPendingImage: boolean;
 };
 
-const { uploadFiles } = genUploader<UploadRouter>();
 
 function formatPhoneNumber(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -386,6 +384,7 @@ export default function SettingsPage() {
 
     // Save ONLY the main profile (name, location, bio, avatar)
     const saveProfile = async () => {
+        let completedUpload: R2ClientUpload | null = null;
         try {
             const form = new FormData();
             form.append("bio", bio);
@@ -424,22 +423,18 @@ export default function SettingsPage() {
             }
 
             if (file) {
-                const uploadedFiles = await uploadFiles("postMedia", {
-                    files: [file],
-                });
-                const imageUrl = uploadedFiles
-                    .map((uploadedFile) => uploadedFile.serverData?.url || uploadedFile.ufsUrl)
-                    .find(Boolean);
-
-                if (!imageUrl) {
-                    throw new Error("Image upload failed");
-                }
-
-                form.append("imageUrl", imageUrl);
+                const [uploaded] = await uploadImagesToR2([file], "avatars");
+                if (!uploaded) throw new Error("Image upload failed");
+                completedUpload = uploaded;
+                form.append("imageUrl", uploaded.publicUrl);
             }
 
             const res = await fetch("/api/user/profile", { method: "PATCH", body: form });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                if (completedUpload) await cleanupR2Uploads([completedUpload.key]);
+                completedUpload = null;
+                throw new Error();
+            }
             const me = await res.json();
 
             setImageUrl(me.image || null);
@@ -519,6 +514,7 @@ export default function SettingsPage() {
             });
 
         } catch {
+            if (completedUpload) await cleanupR2Uploads([completedUpload.key]);
             setProfileError("Failed to save profile.");
             throw new Error("Profile save failed");
         }

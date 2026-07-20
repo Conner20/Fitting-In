@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { deleteStoredFile, storeImageFile } from "@/lib/storage";
 import { buildPollPayload } from "@/lib/postPoll";
 
-const MAX_POST_IMAGES = 3;
+const MAX_POST_IMAGES = 10;
 
 export async function GET(
     _req: Request,
@@ -200,7 +200,7 @@ export async function PATCH(
             .filter((file): file is File => file instanceof File && file.size > 0);
 
         if (retainedImageUrls.length + files.length > MAX_POST_IMAGES) {
-            return NextResponse.json({ message: "You can upload up to 3 images per post." }, { status: 400 });
+            return NextResponse.json({ message: `You can upload up to ${MAX_POST_IMAGES} images per post.` }, { status: 400 });
         }
 
         for (const file of files) {

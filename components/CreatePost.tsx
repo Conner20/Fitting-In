@@ -2,11 +2,10 @@
 
 import { X, Image as ImageIcon, Trash2, LayoutList, BarChart3, Plus } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import { genUploader } from "uploadthing/client";
 
-import type { UploadRouter } from "@/app/api/uploadthing/core";
 import MentionSuggestions from "@/components/ui/mention-suggestions";
 import { getActiveMentionQuery, replaceMentionAtCursor, type MentionSearchResult } from "@/lib/mentions";
+import { cleanupR2Uploads, uploadImagesToR2, type R2ClientUpload } from "@/lib/r2-upload-client";
 
 type SelectedImage = {
     id: string;
@@ -15,8 +14,7 @@ type SelectedImage = {
 };
 
 const MAX_IMAGE_BYTES = 16 * 1024 * 1024;
-const MAX_POST_IMAGES = 3;
-const { uploadFiles } = genUploader<UploadRouter>();
+const MAX_POST_IMAGES = 10;
 
 export default function CreatePost({
     onClose,
@@ -65,7 +63,7 @@ export default function CreatePost({
         const nextImages: SelectedImage[] = [];
         for (const file of files) {
             if (file.size > MAX_IMAGE_BYTES) {
-                setError("Each image must be 8MB or smaller.");
+                setError("Each image must be 16MB or smaller.");
                 continue;
             }
             if (!file.type.startsWith("image/")) {
@@ -92,7 +90,7 @@ export default function CreatePost({
             }
 
             combined.slice(MAX_POST_IMAGES).forEach((image) => URL.revokeObjectURL(image.previewUrl));
-            setError("You can upload up to 3 images per post.");
+            setError(`You can upload up to ${MAX_POST_IMAGES} images per post.`);
             return combined.slice(0, MAX_POST_IMAGES);
         });
         e.target.value = "";
@@ -287,16 +285,13 @@ export default function CreatePost({
         }
 
         setLoading(true);
+        let completedUploads: R2ClientUpload[] = [];
         try {
-            const uploadedFiles = images.length
-                ? await uploadFiles("postMedia", {
-                    files: images.map((image) => image.file),
-                })
-                : [];
-
-            const imageUrls = uploadedFiles
-                .map((file) => file.serverData?.url || file.ufsUrl)
-                .filter(Boolean);
+            completedUploads = await uploadImagesToR2(
+                images.map((image) => image.file),
+                "posts",
+            );
+            const imageUrls = completedUploads.map((upload) => upload.publicUrl);
 
             const res = await fetch("/api/posts", {
                 method: "POST",
@@ -329,6 +324,7 @@ export default function CreatePost({
                 }
 
                 setError(message);
+                await cleanupR2Uploads(completedUploads.map((upload) => upload.key));
             } else {
                 // ✅ tell any listeners (like TraineeProfile) to refresh posts
                 if (typeof window !== "undefined") {
@@ -345,6 +341,7 @@ export default function CreatePost({
                 onClose();
             }
         } catch (err: any) {
+            await cleanupR2Uploads(completedUploads.map((upload) => upload.key));
             const rawMessage =
                 typeof err?.message === "string"
                     ? err.message
@@ -537,7 +534,7 @@ export default function CreatePost({
 
                     <div>
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">Attach up to 3 photos (optional)</label>
+                            <label className="text-sm font-medium">Attach up to {MAX_POST_IMAGES} photos (optional)</label>
                             {images.length > 0 && (
                                 <button
                                     type="button"
@@ -561,9 +558,9 @@ export default function CreatePost({
                                     disabled={loading}
                                 >
                                     <ImageIcon size={22} className="mb-1" />
-                                    <span className="text-sm text-zinc-600 dark:text-gray-200">Click to choose up to 3 images</span>
+                                    <span className="text-sm text-zinc-600 dark:text-gray-200">Click to choose up to {MAX_POST_IMAGES} images</span>
                                     <span className="text-[11px] text-zinc-400 mt-1 dark:text-gray-400">
-                                        PNG, JPG, WEBP, GIF · up to 16MB each
+                                        Up to {MAX_POST_IMAGES} images · 16MB each
                                     </span>
                                 </button>
                             ) : (

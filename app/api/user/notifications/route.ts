@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { withPrismaReadRetry } from "@/lib/prismaRetry";
 import { db } from "@/prisma/client";
 
 type LiteActor = {
@@ -39,7 +40,7 @@ type NotificationItem = {
 const actorName = (actor: Pick<LiteActor, "username" | "name">) =>
     actor.username || actor.name || "User";
 
-export async function GET() {
+async function getNotifications() {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -356,6 +357,10 @@ export async function GET() {
         items,
         seenAt: me.notificationsSeenAt?.toISOString() ?? null,
     });
+}
+
+export async function GET() {
+    return withPrismaReadRetry(getNotifications);
 }
 
 export async function POST() {
