@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomInt } from "node:crypto";
 
 import { db } from "@/prisma/client";
 import { sendEmailVerificationCode } from "@/lib/mail";
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
         }
 
         await db.verificationToken.deleteMany({ where: { identifier: normalized } });
-        const rawToken = String(Math.floor(100000 + Math.random() * 900000));
+        const rawToken = String(randomInt(100000, 1000000));
         await db.verificationToken.create({
             data: {
                 identifier: normalized,

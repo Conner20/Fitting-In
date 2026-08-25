@@ -2,6 +2,7 @@
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { hasAdminAccessByEmail } from '@/lib/admin';
 import { db } from '@/prisma/client';
 
 /** ---------------- Auth helper (same pattern as workoutActions) ---------------- */
@@ -11,6 +12,9 @@ async function requireMe() {
 
     if (!sUser?.id && !sUser?.email) {
         throw new Error('Unauthorized');
+    }
+    if (!sUser.email || !(await hasAdminAccessByEmail(sUser.email))) {
+        throw new Error('Forbidden');
     }
 
     const me = await db.user.findFirst({
@@ -458,4 +462,3 @@ export async function deleteCustomFoodServer(id: string): Promise<{ deleted: boo
     await db.nutritionCustomFood.delete({ where: { id } });
     return { deleted: true };
 }
-

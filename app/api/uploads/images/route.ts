@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { hasAdminAccessByEmail } from "@/lib/admin";
 import { sha256Hex } from "@/lib/token";
 import { db } from "@/prisma/client";
 
@@ -74,7 +75,11 @@ export async function POST(req: Request) {
     const inviteToken = new URL(req.url).searchParams.get("invite")?.trim();
     const invite = inviteToken ? await db.gymInvite.findUnique({ where: { tokenHash: sha256Hex(inviteToken) }, select: { usedAt: true, expiresAt: true } }) : null;
     const validInvite = Boolean(invite && !invite.usedAt && invite.expiresAt > new Date());
-    if (!session?.user?.email && !(session as any)?.user?.id && !validInvite) {
+    const signedInUploader = session?.user?.email
+        ? await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { role: true } })
+        : null;
+    const canUpload = Boolean(validInvite || (session?.user?.email && ((await hasAdminAccessByEmail(session.user.email)) || signedInUploader?.role === "GYM")));
+    if (!canUpload) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 

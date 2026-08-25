@@ -73,7 +73,7 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
     [
         ["name", "gym name"], ["address", "street address"], ["city", "city"], ["state", "state"],
         ["country", "country"], ["phone", "phone"], ["contactEmail", "contact email"], ["website", "website"],
-        ["gymType", "gym type"], ["dayPassDetails", "day pass details"],
+        ["gymType", "gym type"], ["dayPassDetails", "day pass details"], ["dayPassUrl", "day pass URL"],
         ["hours", "hours"], ["coverPhotoUrl", "cover photo"],
     ].forEach(([key, label]) => requireText(key as keyof typeof data, label));
     requireList("amenities", "amenities");

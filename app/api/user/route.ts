@@ -1,4 +1,5 @@
 import { hash } from "bcrypt";
+import { randomInt } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sendEmailVerificationCode } from "@/lib/mail";
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     const input = schema.parse(await request.json());
     const email = input.email.trim().toLowerCase();
     if (await db.user.findUnique({ where: { email }, select: { id: true } })) return NextResponse.json({ message: "An account with this email already exists." }, { status: 409 });
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const password = await hash(input.password, 10);
     const user = await db.$transaction(async tx => {
       const created = await tx.user.create({ data: { email, password, role: "TRAINEE" }, select: { id: true } });

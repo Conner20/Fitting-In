@@ -7,7 +7,8 @@ export default async function DayPassContinuePage({params}:{params:Promise<{gymI
   const { gymId } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect(`/log-in?callbackUrl=${encodeURIComponent(`/day-pass/${gymId}`)}`);
-  const gym = await db.gym.findFirst({ where: { id: gymId, isPublished: true }, select: { website: true } });
-  if (!gym?.website) redirect("/");
-  redirect(/^https?:\/\//i.test(gym.website) ? gym.website : `https://${gym.website}`);
+  const gym = await db.gym.findFirst({ where: { id: gymId, isPublished: true }, select: { dayPassUrl: true, website: true } });
+  const destination = gym?.dayPassUrl || gym?.website;
+  if (!destination) redirect("/");
+  redirect(/^https?:\/\//i.test(destination) ? destination : `https://${destination}`);
 }
