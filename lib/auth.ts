@@ -10,10 +10,12 @@ export const authOptions: NextAuthOptions = {
     secret: env.NEXTAUTH_SECRET,
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24, // 24 hours
+        // Browsers do not support a literally infinite cookie. One hundred years
+        // gives Fitting In a practically permanent sign-in on a trusted device.
+        maxAge: 60 * 60 * 24 * 365 * 100,
     },
     jwt: {
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 365 * 100,
     },
     pages: {
         signIn: '/log-in',
@@ -36,12 +38,9 @@ export const authOptions: NextAuthOptions = {
                 if(!existingUser) {
                     return null;
                 }
-                if(existingUser.password) {
-                    const passwordMatch = await compare(credentials.password, existingUser.password);
-                    if (!passwordMatch) {
-                        return null;
-                    }
-                }
+                if (!existingUser.password) return null;
+                const passwordMatch = await compare(credentials.password, existingUser.password);
+                if (!passwordMatch) return null;
                 if (!existingUser.emailVerified) {
                     throw new Error("EMAIL_NOT_VERIFIED");
                 }

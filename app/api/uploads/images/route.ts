@@ -1,11 +1,14 @@
 // app/api/uploads/images/route.ts
 // Multipart image uploads for DMs.
 // - If AWS env vars are set *and* @aws-sdk/client-s3 is installed, uploads go to S3.
-// - Otherwise, images are saved locally under /public/uploads/messages and served statically.
+// - Otherwise, gym images are saved locally under /public/uploads/gyms.
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { hasAdminAccessByEmail } from "@/lib/admin";
+import { sha256Hex } from "@/lib/token";
+import { db } from "@/prisma/client";
 
 export const runtime = "nodejs";
 
@@ -47,7 +50,7 @@ async function saveToS3(file: File) {
     const s3 = new S3Client({ region: S3_REGION });
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const key = `messages/${Date.now()}-${randomUUID()}-${safeName(file.name || "upload")}`;
+    const key = `gyms/${Date.now()}-${randomUUID()}-${safeName(file.name || "upload")}`;
 
     await s3.send(
         new PutObjectCommand({
@@ -69,7 +72,14 @@ async function saveToS3(file: File) {
  */
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email && !(session as any)?.user?.id) {
+    const inviteToken = new URL(req.url).searchParams.get("invite")?.trim();
+    const invite = inviteToken ? await db.gymInvite.findUnique({ where: { tokenHash: sha256Hex(inviteToken) }, select: { usedAt: true, expiresAt: true } }) : null;
+    const validInvite = Boolean(invite && !invite.usedAt && invite.expiresAt > new Date());
+    const signedInUploader = session?.user?.email
+        ? await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { role: true } })
+        : null;
+    const canUpload = Boolean(validInvite || (session?.user?.email && ((await hasAdminAccessByEmail(session.user.email)) || signedInUploader?.role === "GYM")));
+    if (!canUpload) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -116,8 +126,8 @@ export async function POST(req: Request) {
                 }
             }
             const uploaded = await storeImageFile(f, {
-                folder: "messages",
-                prefix: `message-${randomUUID()}`,
+                folder: "gyms",
+                prefix: `gym-${randomUUID()}`,
             });
             urls.push(uploaded.url);
         }

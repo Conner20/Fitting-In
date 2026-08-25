@@ -9,7 +9,7 @@ import { PasswordInput } from "../ui/password-input";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { signIn } from 'next-auth/react'
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 
@@ -19,10 +19,11 @@ const FormSchema = z.object({
 })
 
 const inputClass =
-    "bg-white text-black border border-zinc-200 placeholder:text-zinc-500 focus-visible:border-black focus-visible:ring-black/20";
+    "border border-white/10 bg-white/[.06] text-white placeholder:text-white/35 focus-visible:border-[#22c55e] focus-visible:ring-[#22c55e]/20";
 
 const LogInForm = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showResendPrompt, setShowResendPrompt] = useState(false);
     const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -50,7 +51,8 @@ const LogInForm = () => {
             setErrorMessage(null);
             setShowResendPrompt(false);
             router.refresh();
-            router.push('/home')
+            const callbackUrl = searchParams?.get("callbackUrl");
+            router.push(callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : "/")
         }
     }
 
@@ -72,7 +74,7 @@ const LogInForm = () => {
 
     return (
         <Form {...form}>
-            <h1 className="text-3xl text-center mb-4 text-black">Log In</h1>
+            <h1 className="text-3xl text-center mb-6 text-white">Log In</h1>
             <form onSubmit={form.handleSubmit(onSubmit)} className='w-full'>
                 {errorMessage && (
                     <Alert className="mb-4 border border-red-200 bg-red-50 text-red-900 shadow-none">
@@ -106,8 +108,8 @@ const LogInForm = () => {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="mb-2 text-black">Email</FormLabel>
-                                <FormControl className="bg-white">
+                                <FormLabel className="mb-2 text-white">Email</FormLabel>
+                                <FormControl>
                                     <Input placeholder="Enter your email" {...field} className={inputClass} />
                                 </FormControl>
                                 <FormMessage />
@@ -120,12 +122,12 @@ const LogInForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <div className="flex items-center justify-between">
-                                    <FormLabel className="mb-2 text-black">Password</FormLabel>
-                                    <Link href="/forgot-password" className="text-xs text-green-600 hover:underline">
+                                    <FormLabel className="mb-2 text-white">Password</FormLabel>
+                                    <Link href="/forgot-password" className="text-xs text-[#22c55e] hover:underline">
                                         Forgot password?
                                     </Link>
                                 </div>
-                                <FormControl className="bg-white">
+                                <FormControl>
                                     <PasswordInput placeholder="Enter your password" {...field} className={inputClass} />
                                 </FormControl>
                                 <FormMessage />
@@ -134,12 +136,12 @@ const LogInForm = () => {
                     />
                 </div>
 
-                <Button className='w-full mt-6 bg-green-700 text-white hover:bg-black' type="submit">Log In</Button>
+                <Button className='w-full mt-6 bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]' type="submit">Log In</Button>
             </form>
 
-            <p className="text-center text-sm text-gray-600 mt-2 text-gray-600">
+            <p className="mt-3 text-center text-sm text-white/45">
                 If you don&apos;t have an account, please&nbsp;
-                <Link className='text-green-600 hover:underline' href='/sign-up'>Sign Up</Link>
+                <Link className='font-semibold text-[#22c55e] hover:underline' href='/sign-up'>Sign Up</Link>
             </p>
         </Form>
     );

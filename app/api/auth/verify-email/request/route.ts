@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
+import { randomInt } from "node:crypto";
 
 import { db } from "@/prisma/client";
-import { generateRawToken } from "@/lib/token";
-import { getBaseUrl } from "@/lib/base-url";
-import { sendEmailVerificationEmail } from "@/lib/mail";
+import { sendEmailVerificationCode } from "@/lib/mail";
 
 export async function POST(req: Request) {
     try {
@@ -19,17 +18,16 @@ export async function POST(req: Request) {
         }
 
         await db.verificationToken.deleteMany({ where: { identifier: normalized } });
-        const rawToken = generateRawToken(32);
+        const rawToken = String(randomInt(100000, 1000000));
         await db.verificationToken.create({
             data: {
                 identifier: normalized,
                 token: rawToken,
-                expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
+                expires: new Date(Date.now() + 1000 * 60 * 10),
             },
         });
 
-        const verifyUrl = `${getBaseUrl()}/verify-email?token=${rawToken}`;
-        await sendEmailVerificationEmail(normalized, verifyUrl);
+        await sendEmailVerificationCode(normalized, rawToken);
 
         return NextResponse.json({ ok: true });
     } catch (error) {

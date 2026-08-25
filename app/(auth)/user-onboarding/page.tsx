@@ -6,9 +6,8 @@ import { useSession } from 'next-auth/react';
 import { ArrowRight } from 'lucide-react';
 
 const roleOptions = [
-    { label: "Trainee" },
-    { label: "Trainer" },
-    { label: "Gym" },
+    { label: "Gym visitor", role: "TRAINEE" },
+    { label: "Gym", role: "GYM" },
 ];
 
 const LOCKED_PAGE_CLASS = "bg-neutral-50 text-zinc-900 dark:bg-neutral-50 dark:text-zinc-900";
@@ -29,11 +28,11 @@ function UserOnboardingContent() {
             console.error("Session refresh failed:", error);
         }
 
-        router.replace("/home");
+        router.replace("/");
         router.refresh();
 
         if (typeof window !== "undefined") {
-            window.location.assign("/home");
+            window.location.assign("/");
         }
     };
 
@@ -47,7 +46,7 @@ function UserOnboardingContent() {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({
-                    role: role.toUpperCase(),
+                    role,
                 }),
             });
 
@@ -77,15 +76,15 @@ function UserOnboardingContent() {
                                 Hi {userName}, choose your role
                             </h2>
                         </div>
-                        <div className="grid w-full gap-4 sm:gap-4 lg:grid-cols-3">
-                            {roleOptions.map(({ label }) => {
-                                const isSelected = role === label;
+                        <div className="grid w-full gap-4 sm:grid-cols-2">
+                            {roleOptions.map(({ label, role: roleValue }) => {
+                                const isSelected = role === roleValue;
                                 return (
                                     <button
                                         key={label}
                                         type="button"
                                         aria-pressed={isSelected}
-                                        onClick={() => setRole(label)}
+                                        onClick={() => setRole(roleValue)}
                                         className={`flex h-full w-full flex-col gap-1.5 rounded-2xl border px-4 py-4 text-left transition sm:gap-2 ${
                                             isSelected
                                                 ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
@@ -94,11 +93,9 @@ function UserOnboardingContent() {
                                     >
                                         <span className="text-lg font-semibold sm:text-xl">{label}</span>
                                         <span className="text-sm leading-5 text-zinc-500">
-                                            {label === 'Trainee'
-                                                ? 'Discover gyms, trainers, and a community that fits your goals.'
-                                                : label === 'Trainer'
-                                                    ? 'Grow your brand, attract clients, and find new opportunities.'
-                                                    : 'Showcase your facility, attract members, and connect with trainers.'}
+                                            {label === 'Gym visitor'
+                                                ? 'Compare gyms, save favorites, and find day passes.'
+                                                : 'Verify and maintain your gym listing and day-pass destination.'}
                                         </span>
                                     </button>
                                 );
