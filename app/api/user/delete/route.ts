@@ -7,44 +7,6 @@ import { compare } from "bcrypt";
 
 async function deleteUserAndRelations(userId: string) {
     await db.$transaction(async (tx) => {
-        const trackedVisitorIds = await tx.pageView.findMany({
-            where: {
-                userId,
-                visitorId: {
-                    not: null,
-                },
-            },
-            select: {
-                visitorId: true,
-            },
-            distinct: ["visitorId"],
-        });
-
-        const visitorIds = trackedVisitorIds
-            .map((entry) => entry.visitorId)
-            .filter((value): value is string => Boolean(value));
-
-        await tx.pageView.deleteMany({
-            where: {
-                OR: [
-                    { userId },
-                    ...(visitorIds.length ? [{ visitorId: { in: visitorIds } }] : []),
-                ],
-            },
-        });
-        await tx.like.deleteMany({ where: { userId } });
-        await tx.comment.deleteMany({ where: { authorId: userId } });
-        await tx.follow.deleteMany({
-            where: {
-                OR: [{ followerId: userId }, { followingId: userId }],
-            },
-        });
-        await tx.message.deleteMany({
-            where: {
-                OR: [{ senderId: userId }, { sharedUserId: userId }],
-            },
-        });
-        await tx.post.deleteMany({ where: { authorId: userId } });
         await tx.user.delete({ where: { id: userId } });
     });
 }

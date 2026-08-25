@@ -1,0 +1,40 @@
+import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
+import { authOptions } from "@/lib/auth";
+import { hasAdminAccessByEmail } from "@/lib/admin";
+import { db } from "@/prisma/client";
+
+type Context = { params: Promise<{ id: string }> };
+
+export async function PATCH(req: Request, { params }: Context) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) {
+        return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+    const reviewer = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true } });
+    if (!reviewer) return NextResponse.json({ message: "Admin user not found." }, { status: 404 });
+    const { id } = await params;
+    const body = await req.json().catch(() => ({}));
+    const status = body.status === "APPROVED" ? "APPROVED" : body.status === "REJECTED" ? "REJECTED" : null;
+    if (!status) return NextResponse.json({ message: "Status must be APPROVED or REJECTED." }, { status: 400 });
+    const claim = await db.gymClaim.findUnique({ where: { id }, select: { id: true, gymId: true, claimantId: true, status: true } });
+    if (!claim) return NextResponse.json({ message: "Claim not found." }, { status: 404 });
+    if (claim.status !== "PENDING") return NextResponse.json({ message: "Claim has already been reviewed." }, { status: 409 });
+    const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim() : null;
+    const result = await db.$transaction(async (tx) => {
+        if (status === "APPROVED") {
+            await tx.gymAccess.upsert({
+                where: { gymId_userId: { gymId: claim.gymId, userId: claim.claimantId } },
+                create: { gymId: claim.gymId, userId: claim.claimantId },
+                update: {},
+            });
+            await tx.gym.update({ where: { id: claim.gymId }, data: { isVerified: true } });
+        }
+        return tx.gymClaim.update({
+            where: { id },
+            data: { status, reviewNote, reviewedById: reviewer.id, reviewedAt: new Date() },
+            include: { gym: true, claimant: { select: { id: true, name: true, username: true, email: true } } },
+        });
+    });
+    return NextResponse.json({ claim: result });
+}

@@ -1,11 +1,23 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TRAINEE
+  TRAINER
+  GYM
+}
+
+enum GymClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Account {
@@ -21,8 +33,7 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -35,533 +46,150 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-enum Role {
-  TRAINEE
-  TRAINER
-  GYM
-}
-
-enum FollowStatus {
-  PENDING
-  ACCEPTED
-}
-
-enum NotificationType {
-  FOLLOW_REQUEST
-  FOLLOWED_YOU
-  REQUEST_ACCEPTED
-  TAGGED_IN_POST
-  TAGGED_IN_COMMENT
-  POST_COMMENT
-  COMMENT_REPLY
-}
-
-enum RatingStatus {
-  PENDING
-  APPROVED
-  DECLINED
-}
-
-enum DistanceUnit {
-  mi
-  km
-}
-
-enum TraineeTrainerStatus {
-  LOOKING
-  TRAINING_WITH
-}
-
-enum TraineeGymStatus {
-  LOOKING
-  MEMBER
-}
-
-enum TrainerGymStatus {
-  LOOKING
-  TRAINER
-}
-
-enum PostType {
-  STANDARD
-  POLL
-}
-
 model User {
-  id            String    @id @default(cuid())
-  username      String?   @unique
-  password      String?
-  location      String?
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  role          Role?
-  isAdmin       Boolean   @default(false)
-  isPrivate     Boolean   @default(false)
-  bio           String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  lastLoginAt   DateTime?
-  notificationsSeenAt DateTime?
-
-  post           Post[]
-  pollVotes      PollVote[]
-  accounts       Account[]
-  sessions       Session[]
-  likes          Like[]
-  comments       Comment[]
-  traineeProfile TraineeProfile?
-  trainerProfile TrainerProfile?
-  gymProfile     GymProfile?
-
-  following Follow[] @relation("UserFollows")
-  followers Follow[] @relation("UserFollowedBy")
-  favoritesGiven FavoriteUser[] @relation("FavoriteUsersByFavoriter")
-  favoritesReceived FavoriteUser[] @relation("FavoriteUsersByFavorited")
-
-  notifications      Notification[] @relation("UserNotifications")
-  actorNotifications Notification[] @relation("UserActorNotifications")
-
-  conversationParticipants ConversationParticipant[] @relation("UserConversationParticipants")
-  messagesSent             Message[]                 @relation("UserSentMessages")
-
-  // Inverse side of Message.sharedUser
-  sharedInMessages Message[] @relation("SharedUser")
-
-  ratingsAuthored Rating[] @relation("RatingsByUser")
-
-  searchGalleryImages SearchGalleryImage[]
-
-  // --- Workouts ---
-  workoutExercises WorkoutExercise[]
-  workoutSets      WorkoutSet[]
-  cardioSessions   CardioSession[]
-  cardioActivities CardioActivityEntry[]
-
-  // --- Nutrition & Bodyweight ---
+  id                   String                @id @default(cuid())
+  username             String?               @unique
+  password             String?
+  location             String?
+  name                 String?
+  email                String?               @unique
+  emailVerified        DateTime?             @map("email_verified")
+  image                String?
+  role                 Role?
+  isAdmin              Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @default(now()) @updatedAt
+  lastLoginAt          DateTime?
+  accounts             Account[]
+  sessions             Session[]
+  gymAccesses          GymAccess[]
+  gymClaims            GymClaim[]
+  gymClaimsReviewed    GymClaim[]            @relation("GymClaimReviewer")
+  gymInvitesCreated    GymInvite[]           @relation("GymInviteCreator")
+  gymFavorites         GymFavorite[]
+  landingEvents        LandingEvent[]
   nutritionCustomFoods NutritionCustomFood[]
   nutritionEntries     NutritionEntry[]
   bodyweightEntries    BodyweightEntry[]
   nutritionSettings    NutritionSettings?
-
-  // --- Wellness ---
-  sleepEntries     SleepEntry[]
-  waterEntries     WaterEntry[]
-  wellnessSettings WellnessSettings?
-
-  dashboardSharesGranted  DashboardShare[] @relation("DashboardShareOwner")
-  dashboardSharesReceived DashboardShare[] @relation("DashboardShareViewer")
-  pageViews              PageView[]
-  notificationDismissals NotificationDismissal[]
-  announcementsCreated   Announcement[] @relation("AnnouncementCreator")
-  traineesTrainingWith   TraineeProfile[] @relation("TraineeAssociatedTrainer")
 }
 
-model Announcement {
-  id         String   @id @default(cuid())
-  title      String
-  content    String
-  imageUrl   String?
-  imageUrls  String[] @default([])
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
-  createdBy  User?    @relation("AnnouncementCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById String?
+model Gym {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  address        String
+  phone          String         @default("")
+  website        String         @default("")
+  isVerified     Boolean        @default(false)
+  isPublished    Boolean        @default(true)
+  gymType        String?
+  city           String?
+  state          String?
+  country        String?
+  lat            Float?
+  lng            Float?
+  amenities      String[]       @default([])
+  equipment      String[]       @default([])
+  dayPassPrice   Float?
+  dayPassDetails String?
+  dayPassUrl     String?
+  hours          String?
+  contactEmail   String?
+  coverPhotoUrl  String?
+  photoUrls      String[]       @default([])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+  access         GymAccess[]
+  claims         GymClaim[]
+  invites        GymInvite[]
+  favorites      GymFavorite[]
+  landingEvents  LandingEvent[]
 
-  @@index([active, createdAt])
+  @@index([name])
+  @@index([isPublished, isVerified])
 }
 
-model DashboardShare {
+model GymAccess {
   id        String   @id @default(cuid())
-  owner     User     @relation("DashboardShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId   String
-  viewer    User     @relation("DashboardShareViewer", fields: [viewerId], references: [id], onDelete: Cascade)
-  viewerId  String
-  workouts  Boolean  @default(false)
-  wellness  Boolean  @default(false)
-  nutrition Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@unique([ownerId, viewerId])
-}
-
-model TraineeProfile {
-  id     String   @id @default(cuid())
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String   @unique
-  goals  String[] // Array of selected goals
-
-  trainerStatus       TraineeTrainerStatus?
-  associatedTrainerId String?
-  associatedTrainer   User?                 @relation("TraineeAssociatedTrainer", fields: [associatedTrainerId], references: [id], onDelete: SetNull)
-  gymStatus           TraineeGymStatus?
-  gymName             String?
-  gymPlaceId          String?
-
-  city    String?
-  state   String?
-  country String?
-  lat     Float?
-  lng     Float?
-  bio     String?
-}
-
-model TrainerProfile {
-  id       String   @id @default(cuid())
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   String   @unique
-  services String[] // Array of offered services
-
-  website          String?
-  showWebsiteButton Boolean @default(false)
-
-  gymStatus  TrainerGymStatus?
-  gymName    String?
-  gymPlaceId String?
-
-  city       String?
-  state      String?
-  country    String?
-  lat        Float?
-  lng        Float?
-  hourlyRate Float?
-  rating     Float?
-  clients    Int?      @default(0)
-  bio        String?
-
-  ratingsReceived Rating[] @relation("RatingsToTrainer")
-}
-
-model GymProfile {
-  id      String @id @default(cuid())
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String @unique
-  name    String
-  address String
-  phone   String
-  website String
-  showWebsiteButton Boolean @default(false)
-  hiringTrainers   Boolean @default(false)
-  isVerified Boolean @default(false)
-  fee     Float
-
-  city      String?
-  state     String?
-  country   String?
-  lat       Float?
-  lng       Float?
-  amenities String[]
-  bio       String?
-
-  rating   Float?
-  clients  Int      @default(0)
-
-  ratingsReceived Rating[] @relation("RatingsToGym")
-}
-
-model PageView {
-  id        String   @id @default(cuid())
-  path      String
-  origin    String?
-  visitorId String?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String?
-
-  @@index([path])
-  @@index([origin])
-  @@index([createdAt])
-  @@index([visitorId])
-}
-
-model NotificationDismissal {
-  id             String   @id @default(cuid())
-  notificationId String
-  createdAt      DateTime @default(now())
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-
-  @@unique([userId, notificationId])
-  @@index([userId, createdAt])
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-model Post {
-  id           String      @id @default(cuid())
-  title        String
-  content      String
-  type         PostType    @default(STANDARD)
-  pollQuestion String?
-  createdAt    DateTime    @default(now())
-  author       User        @relation(fields: [authorId], references: [id])
-  authorId     String
-
-  likes       Like[]
-  comments    Comment[]
-  imageUrl    String?
-  imageUrls   String[]     @default([])
-  pollOptions PollOption[]
-  pollVotes   PollVote[]
-  notifications Notification[] @relation("PostNotifications")
-
-  // Inverse side of Message.sharedPost
-  sharedInMessages Message[] @relation("SharedPost")
-}
-
-model PollOption {
-  id     String @id @default(cuid())
-  text   String
-  order  Int
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId String
-
-  votes PollVote[]
-
-  @@index([postId, order])
-}
-
-model PollVote {
-  id        String     @id @default(cuid())
-  createdAt DateTime   @default(now())
-  post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String
-  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  optionId  String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  gymId     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-
-  @@unique([postId, userId])
-  @@index([optionId])
-}
-
-model Like {
-  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  updatedAt DateTime @default(now()) @updatedAt
 
-  @@unique([postId, userId])
+  @@unique([gymId, userId])
+  @@index([userId])
 }
 
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
+model GymClaim {
+  id           String         @id @default(cuid())
+  gym          Gym            @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  gymId        String
+  claimant     User           @relation(fields: [claimantId], references: [id], onDelete: Cascade)
+  claimantId   String
+  status       GymClaimStatus @default(PENDING)
+  businessRole String?
+  evidence     String?
+  reviewNote   String?
+  reviewedBy   User?          @relation("GymClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
 
-  // Replies
-  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  parentId String?
-  replies  Comment[] @relation("CommentReplies")
-  notifications Notification[] @relation("CommentNotifications")
+  @@unique([gymId, claimantId])
+  @@index([status, createdAt])
+  @@index([claimantId])
 }
 
-model Follow {
-  id          String       @id @default(cuid())
-  follower    User         @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
-  followerId  String
-  following   User         @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
-  followingId String
-  status      FollowStatus @default(ACCEPTED)
-  createdAt   DateTime     @default(now())
+model GymInvite {
+  id          String    @id @default(cuid())
+  gym         Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  gymId       String
+  tokenHash   String    @unique
+  createdBy   User      @relation("GymInviteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
 
-  // Opposite side of Notification.follow
-  notifications Notification[] @relation("FollowNotifications")
-
-  @@unique([followerId, followingId]) // a user can follow another once
+  @@index([gymId, expiresAt])
 }
 
-model FavoriteUser {
-  id          String   @id @default(cuid())
-  favoriter   User     @relation("FavoriteUsersByFavoriter", fields: [favoriterId], references: [id], onDelete: Cascade)
-  favoriterId String
-  favorited   User     @relation("FavoriteUsersByFavorited", fields: [favoritedId], references: [id], onDelete: Cascade)
-  favoritedId String
-  createdAt   DateTime @default(now())
-
-  @@unique([favoriterId, favoritedId])
-  @@index([favoriterId, createdAt])
-  @@index([favoritedId, createdAt])
-}
-
-model Notification {
-  id   String           @id @default(cuid())
-  type NotificationType
-
-  // Recipient (the user who receives the notification)
-  user   User   @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  // Actor (the user who triggered the notification)
-  actor   User   @relation("UserActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
-  actorId String
-
-  // Optional link to a follow row (for follow requests, followed you, request accepted)
-  follow   Follow? @relation("FollowNotifications", fields: [followId], references: [id], onDelete: Cascade)
-  followId String?
-
-  post   Post?    @relation("PostNotifications", fields: [postId], references: [id], onDelete: Cascade)
-  postId String?
-
-  comment   Comment? @relation("CommentNotifications", fields: [commentId], references: [id], onDelete: Cascade)
-  commentId String?
-
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-model SearchGalleryImage {
+model GymFavorite {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  url       String
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  gymId     String
   createdAt DateTime @default(now())
+
+  @@unique([userId, gymId])
+  @@index([gymId])
 }
 
-model Conversation {
-  id           String                    @id @default(cuid())
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  name         String?
-  participants ConversationParticipant[]
-  messages     Message[]
-  dmKey        String?                    @unique
-
-  @@index([updatedAt])
-}
-
-model ConversationParticipant {
-  id             String       @id @default(cuid())
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  conversationId String
-
-  // renamed relation to a named one that matches User.conversationParticipants
-  user   User   @relation("UserConversationParticipants", fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  @@unique([conversationId, userId])
-}
-
-model Message {
-  id             String       @id @default(cuid())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  conversationId String
-
-  sender   User   @relation("UserSentMessages", fields: [senderId], references: [id])
-  senderId String
-
-  content    String
-  imageUrls  String[] @default([])
+model LandingEvent {
+  id         String   @id @default(cuid())
+  eventType  String
+  visitorId  String
+  visitId    String
+  path       String   @default("/")
+  gym        Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  gymId      String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?
+  metadata   Json?
+  durationMs Int?
   createdAt  DateTime @default(now())
-  readAt     DateTime?
 
-  // Share relations (FK side specifies fields/references)
-  sharedUser   User? @relation("SharedUser", fields: [sharedUserId], references: [id])
-  sharedUserId String?
-
-  sharedPost   Post? @relation("SharedPost", fields: [sharedPostId], references: [id])
-  sharedPostId String?
-
-  @@index([conversationId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([visitorId, createdAt])
+  @@index([visitId])
+  @@index([gymId, createdAt])
+  @@index([userId, createdAt])
 }
-
-model Rating {
-  id        String       @id @default(cuid())
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  // who left the rating (backed by User.ratingsAuthored)
-  rater     User         @relation("RatingsByUser", fields: [raterId], references: [id], onDelete: Cascade)
-  raterId   String
-
-  // target (exactly one of these should be set; enforce in your API)
-  trainer   TrainerProfile? @relation("RatingsToTrainer", fields: [trainerId], references: [id])
-  trainerId String?
-
-  gym       GymProfile?     @relation("RatingsToGym", fields: [gymId], references: [id])
-  gymId     String?
-
-  stars     Int
-  comment   String?
-  status    RatingStatus  @default(PENDING)
-
-  @@index([raterId])
-  @@index([trainerId, status])
-  @@index([gymId, status])
-  @@unique([raterId, trainerId])
-  @@unique([raterId, gymId])
-}
-
-model WorkoutExercise {
-  id     String @id @default(cuid())
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-  name   String
-
-  sets   WorkoutSet[]
-
-  @@unique([userId, name], name: "userId_name")
-}
-
-model WorkoutSet {
-  id         String          @id @default(cuid())
-  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  exercise   WorkoutExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  exerciseId String
-
-  weight Float
-  sets   Int
-  reps   Int
-  date   DateTime            // store at UTC midnight for the day
-
-  @@index([userId, date])
-  @@index([exerciseId, date])
-}
-
-model CardioActivityEntry {
-  id      String @id @default(cuid())
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String
-  name    String
-  sessions CardioSession[]
-
-  @@unique([userId, name], name: "user_activity_name")
-}
-
-model CardioSession {
-  id           String              @id @default(cuid())
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-
-  activity     CardioActivityEntry? @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  activityId   String?              // <-- TEMPORARILY OPTIONAL
-
-  date         DateTime
-  timeMinutes  Int
-  distance     Float?
-  distanceUnit DistanceUnit         @default(mi)
-  calories     Int?
-  createdAt    DateTime             @default(now())
-
-  @@index([userId, activityId, date])
-}
-
-// ------------------------ Nutrition & Bodyweight -------------------------
 
 enum MealType {
   breakfast
@@ -571,46 +199,37 @@ enum MealType {
 }
 
 model NutritionCustomFood {
-  id      String @id @default(cuid())
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String
-
-  name    String
-  grams   Float
-  kcal    Float
-  p       Float
-  c       Float
-  f       Float
-
-  createdAt DateTime @default(now())
-
+  id        String           @id @default(cuid())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  grams     Float
+  kcal      Float
+  p         Float
+  c         Float
+  f         Float
+  createdAt DateTime         @default(now())
   entries   NutritionEntry[]
 
   @@index([userId, name])
 }
 
 model NutritionEntry {
-  id      String   @id @default(cuid())
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  String
-
-  date    DateTime // UTC midnight
-  meal    MealType
-
+  id           String               @id @default(cuid())
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  date         DateTime
+  meal         MealType
   customFood   NutritionCustomFood? @relation(fields: [customFoodId], references: [id])
   customFoodId String?
-
-  foodName String
-  servings Float
-
-  // per-one-serving macros
-  kcal Float
-  p    Float
-  c    Float
-  f    Float
-
-  time      String?
-  createdAt DateTime @default(now())
+  foodName     String
+  servings     Float
+  kcal         Float
+  p            Float
+  c            Float
+  f            Float
+  time         String?
+  createdAt    DateTime             @default(now())
 
   @@index([userId, date])
   @@index([userId, meal, date])
@@ -620,8 +239,7 @@ model BodyweightEntry {
   id     String   @id @default(cuid())
   user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
-
-  date   DateTime // UTC midnight
+  date   DateTime
   weight Float
 
   @@unique([userId, date])
@@ -629,53 +247,22 @@ model BodyweightEntry {
 }
 
 model NutritionSettings {
-  id     String @id @default(cuid())
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String @unique
-
-  goalKcal    Float @default(2800)
-  goalProtein Float @default(200)
-  goalFat     Float @default(80)
-  goalCarb    Float @default(300)
-
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String   @unique
+  goalKcal      Float    @default(2800)
+  goalProtein   Float    @default(200)
+  goalFat       Float    @default(80)
+  goalCarb      Float    @default(300)
   heatmapLevels Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
-// ------------------------ Wellness (NEW) -------------------------
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
 
-model SleepEntry {
-  id     String   @id @default(cuid())
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  date   DateTime // UTC midnight
-  hours  Float?   // nullable = “no data” day
-
-  @@unique([userId, date])
-  @@index([userId, date])
-}
-
-model WaterEntry {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-
-  date      DateTime // UTC midnight
-  liters    Float
-  createdAt DateTime @default(now())
-
-  @@index([userId, date])
-}
-
-model WellnessSettings {
-  id        String @id @default(cuid())
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String @unique
-
-  waterGoal Float  @default(3.2)
-  unit      String?
-  bwRange   String?
+  @@unique([identifier, token])
 }

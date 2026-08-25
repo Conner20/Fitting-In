@@ -10,10 +10,12 @@ export const authOptions: NextAuthOptions = {
     secret: env.NEXTAUTH_SECRET,
     session: {
         strategy: "jwt",
-        maxAge: 60 * 60 * 24, // 24 hours
+        // Browsers do not support a literally infinite cookie. One hundred years
+        // gives Fitting In a practically permanent sign-in on a trusted device.
+        maxAge: 60 * 60 * 24 * 365 * 100,
     },
     jwt: {
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 365 * 100,
     },
     pages: {
         signIn: '/log-in',

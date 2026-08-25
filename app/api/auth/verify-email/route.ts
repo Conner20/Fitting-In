@@ -4,6 +4,23 @@ import { SignJWT } from "jose";
 import { db } from "@/prisma/client";
 import { env } from "@/lib/env";
 
+export async function POST(req: Request) {
+    try {
+        const body = await req.json() as { email?: string; code?: string };
+        const email = body.email?.trim().toLowerCase();
+        const code = body.code?.trim();
+        if (!email || !/^\d{6}$/.test(code || "")) return NextResponse.json({ error: "Enter the 6-digit code." }, { status: 400 });
+        const token = await db.verificationToken.findFirst({ where: { identifier: email, token: code } });
+        if (!token || token.expires < new Date()) return NextResponse.json({ error: "That code is invalid or expired." }, { status: 400 });
+        await db.user.update({ where: { email }, data: { emailVerified: new Date() } });
+        await db.verificationToken.deleteMany({ where: { identifier: email } });
+        return NextResponse.json({ ok: true });
+    } catch (error) {
+        console.error("[verify-email-code]", error);
+        return NextResponse.json({ error: "Unable to verify the code." }, { status: 500 });
+    }
+}
+
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
@@ -33,7 +50,10 @@ export async function GET(req: Request) {
         await db.verificationToken.deleteMany({ where: { identifier: vt.identifier } });
 
         const displayName = user.username ?? user.name ?? "there";
-        const callbackUrl = `/user-onboarding?username=${encodeURIComponent(displayName)}`;
+        const gymInvite = req.headers.get("cookie")?.match(/(?:^|; )gym_invite=([^;]+)/)?.[1];
+        const callbackUrl = gymInvite
+            ? `/gym-invite/${encodeURIComponent(decodeURIComponent(gymInvite))}?claim=1`
+            : `/user-onboarding?username=${encodeURIComponent(displayName)}`;
 
         const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
         const tokenPayload = {
@@ -53,6 +73,7 @@ export async function GET(req: Request) {
             path: "/",
             maxAge: 60 * 60 * 24, // 1 day
         });
+        if (gymInvite) res.cookies.delete("gym_invite");
 
         return res;
     } catch (error) {

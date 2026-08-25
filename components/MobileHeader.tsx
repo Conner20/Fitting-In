@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 import clsx from "clsx";
 
 type MobileHeaderProps = {
@@ -57,7 +56,7 @@ export default function MobileHeader({
 
     return (
         <>
-            <header className="lg:hidden w-full bg-white py-5 px-4 sm:px-6 relative flex items-center z-20 dark:bg-neutral-900">
+            <header className="relative z-20 flex min-h-16 w-full items-center bg-white px-4 py-3 lg:hidden sm:px-6 dark:bg-neutral-900">
                 <div
                     className="absolute inset-x-0 top-0 bg-white dark:bg-neutral-900 lg:hidden"
                     style={{ height: 'env(safe-area-inset-top, 0px)' }}
@@ -69,7 +68,7 @@ export default function MobileHeader({
                 )}
                 {titleAlign === "left" ? (
                     <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                        <h1 className="min-w-0 flex-1 text-left font-roboto text-3xl tracking-tight select-none text-green-700 dark:text-green-400">
+                        <h1 className="min-w-0 flex-1 select-none text-left font-roboto text-2xl tracking-tight text-[#22c55e] sm:text-3xl">
                             <Link href={href} className="block truncate cursor-pointer">
                                 {title.toLowerCase() === "fitting" ? (
                                     <span className="font-semibold">
@@ -87,7 +86,7 @@ export default function MobileHeader({
                 ) : (
                     <>
                         <h1
-                            className="w-full text-center font-roboto text-3xl tracking-tight select-none text-green-700 dark:text-green-400"
+                            className="w-full select-none truncate px-10 text-center font-roboto text-2xl tracking-tight text-[#22c55e] sm:text-3xl"
                         >
                             <Link href={href} className="cursor-pointer">
                                 {title.toLowerCase() === "fitting" ? (
@@ -112,7 +111,6 @@ export default function MobileHeader({
                 </div>
             )}
 
-            <Navbar mobileOpen={mobileNavOpen} />
         </>
     );
 }

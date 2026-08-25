@@ -1,8 +1,7 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-const nextDir = join(process.cwd(), ".next");
-
-if (existsSync(nextDir)) {
-  rmSync(nextDir, { recursive: true, force: true });
+for (const directory of [".next", ".next-dev"]) {
+  const nextDir = join(process.cwd(), directory);
+  if (existsSync(nextDir)) rmSync(nextDir, { recursive: true, force: true });
 }

@@ -163,31 +163,9 @@ export async function fetchAllNutritionData(
         throw err;
     }
 
-    let targetUserId = viewerId!;
-    let viewingUser: { id: string; name: string | null; username: string | null } | null = null;
-    const requestedView = viewUserId && viewUserId !== viewerId ? viewUserId : null;
-
-    if (requestedView) {
-        const share = await db.dashboardShare.findUnique({
-            where: { ownerId_viewerId: { ownerId: requestedView, viewerId: viewerId! } },
-            select: {
-                nutrition: true,
-                owner: { select: { id: true, name: true, username: true } },
-            },
-        });
-        if (!share?.nutrition) {
-            return {
-                requiresAuth: true,
-                viewingUser: null,
-                entries: [],
-                bodyweights: [],
-                customFoods: [],
-                settings: defaultSettings(),
-            };
-        }
-        targetUserId = requestedView;
-        viewingUser = share.owner;
-    }
+    const targetUserId = viewerId!;
+    const viewingUser: { id: string; name: string | null; username: string | null } | null = null;
+    void viewUserId;
 
     const [entries, bodyweights, customFoods, settings] = await Promise.all([
         db.nutritionEntry.findMany({
@@ -480,3 +458,4 @@ export async function deleteCustomFoodServer(id: string): Promise<{ deleted: boo
     await db.nutritionCustomFood.delete({ where: { id } });
     return { deleted: true };
 }
+

@@ -158,3 +158,9 @@ export const sendEmailVerificationEmail: Mailer = async (to, verifyUrl) => {
 
     await sendMail(to, subject, html, "[verify-email]", `[verify-email] ${to}: ${verifyUrl}`);
 };
+
+export async function sendEmailVerificationCode(to: string, code: string) {
+    const subject = `${code} is your Fitting In verification code`;
+    const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:40px 20px;text-align:center"><p style="color:#16a34a;font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase">Fitting In</p><h1 style="font-size:26px;color:#111827">Verify your email</h1><p style="color:#64748b">Enter this six-digit code in Fitting In. It expires in 10 minutes.</p><div style="margin:28px 0;font-size:38px;font-weight:800;letter-spacing:10px;color:#111827">${code}</div><p style="font-size:13px;color:#94a3b8">If you did not request this code, you can ignore this email.</p></div>`;
+    await sendMail(to, subject, html, "[verification-code]", `[verification-code] ${to}: ${code}`);
+}

@@ -15,6 +15,8 @@ const PUBLIC_PATHS = [
     "/legal/support",
 ];
 
+const RETAINED_PAGE_PREFIXES = ["/admin", "/gym-invite"];
+
 const startsWithAny = (pathname: string, prefixes: string[]) =>
     prefixes.some((prefix) => pathname.startsWith(prefix));
 
@@ -34,10 +36,16 @@ export async function middleware(req: NextRequest) {
 
     const isPublic =
         PUBLIC_PATHS.includes(pathname) ||
-        startsWithAny(pathname, ["/verify-email", "/reset-password"]);
+        startsWithAny(pathname, ["/verify-email", "/reset-password", "/gym-invite/"]);
 
     if (isPublic) {
         return NextResponse.next();
+    }
+
+    // Product pages are intentionally limited to discovery, authentication,
+    // policies, gym verification and administration.
+    if (!startsWithAny(pathname, RETAINED_PAGE_PREFIXES)) {
+        return NextResponse.redirect(new URL("/", req.url));
     }
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
