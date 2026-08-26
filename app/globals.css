@@ -306,6 +306,11 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
   color: #22c55e !important;
 }
 
+.gym-owner-back-button:hover {
+  border-color: #fff !important;
+  color: #fff !important;
+}
+
 :is(button, a)[class*="bg-red-600"]:hover,
 :is(button, a)[class*="bg-[#e66b6b]"]:hover {
   border-color: #e66b6b !important;

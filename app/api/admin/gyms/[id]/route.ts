@@ -38,6 +38,18 @@ export async function DELETE(_req: Request, { params }: Context) {
         return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
     const { id } = await params;
-    await db.gym.delete({ where: { id } });
+    await db.$transaction(async (tx) => {
+        const associatedUsers = await tx.gymAccess.findMany({
+            where: { gymId: id },
+            select: { userId: true },
+        });
+        await tx.gym.delete({ where: { id } });
+        for (const { userId } of associatedUsers) {
+            const remainingGymAccess = await tx.gymAccess.count({ where: { userId } });
+            if (remainingGymAccess === 0) {
+                await tx.user.update({ where: { id: userId }, data: { role: "TRAINEE" } });
+            }
+        }
+    });
     return NextResponse.json({ message: "Gym listing deleted." });
 }

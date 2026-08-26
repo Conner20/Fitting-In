@@ -1,5 +1,7 @@
 import { db } from "@/prisma/client";
 
+const GYM_TYPES = new Set(["Open gym", "Personal training gym", "Group training gym", "Specialty gym/studio"]);
+
 export function gymSlug(name: string) {
     const base = name
         .normalize("NFKD")
@@ -73,9 +75,10 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
     [
         ["name", "gym name"], ["address", "street address"], ["city", "city"], ["state", "state"],
         ["country", "country"], ["phone", "phone"], ["contactEmail", "contact email"], ["website", "website"],
-        ["gymType", "gym type"], ["dayPassDetails", "day pass details"], ["dayPassUrl", "day pass URL"],
+        ["gymType", "gym type"], ["dayPassDetails", "day pass details"],
         ["hours", "hours"], ["coverPhotoUrl", "cover photo"],
     ].forEach(([key, label]) => requireText(key as keyof typeof data, label));
+    if (!data.gymType || !GYM_TYPES.has(data.gymType)) missing.push("gym type");
     requireList("amenities", "amenities");
     requireList("equipment", "equipment");
     requireList("photoUrls", "amenity photos");
