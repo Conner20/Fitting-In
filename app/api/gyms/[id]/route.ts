@@ -8,6 +8,7 @@ import type { Prisma } from "@prisma/client";
 type Context = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Context) {
+    const session = await getServerSession(authOptions);
     const { id } = await params;
     const gym = await db.gym.findFirst({
         where: { id, isPublished: true },
@@ -15,7 +16,28 @@ export async function GET(_req: Request, { params }: Context) {
     });
     if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
     const { _count, ...profile } = gym;
-    return NextResponse.json({ gym: { ...profile, isClaimed: profile.isVerified } });
+    if (!session?.user?.email) return NextResponse.json({ gym: { ...profile, isClaimed: profile.isVerified && _count.access > 0 } });
+
+    const user = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true } });
+    if (!user || !(await userCanEditGym(user.id, id))) return NextResponse.json({ gym: { ...profile, isClaimed: profile.isVerified && _count.access > 0 } });
+
+    // Private editors show the submitted verification data immediately. The
+    // public landing API continues to read only the approved Gym record.
+    const pendingClaim = await db.gymClaim.findUnique({
+        where: { gymId_claimantId: { gymId: id, claimantId: user.id } },
+        select: { id: true, status: true, proposedData: true },
+    });
+    const proposed = pendingClaim?.status === "PENDING" && pendingClaim.proposedData && typeof pendingClaim.proposedData === "object" && !Array.isArray(pendingClaim.proposedData)
+        ? pendingClaim.proposedData
+        : {};
+    if (pendingClaim?.status === "PENDING" && Object.keys(proposed).length > 0) {
+        await db.$transaction([
+            db.gym.update({ where: { id }, data: { ...(proposed as Prisma.GymUpdateInput), isVerified: true } }),
+            db.gymClaim.update({ where: { id: pendingClaim.id }, data: { status: "APPROVED", proposedData: undefined, reviewedAt: new Date() } }),
+        ]);
+    }
+    const verified = pendingClaim?.status === "PENDING" && Object.keys(proposed).length > 0 ? true : profile.isVerified;
+    return NextResponse.json({ gym: { ...profile, ...proposed, isVerified: verified, isClaimed: verified && _count.access > 0 } });
 }
 
 export async function PATCH(req: Request, { params }: Context) {
@@ -32,10 +54,14 @@ export async function PATCH(req: Request, { params }: Context) {
     const missing = validateCompleteGymInput({ ...body, name: body.name ?? current.name, address: body.address ?? current.address }, input);
     if (missing.length) return NextResponse.json({ message: `Complete these required fields: ${missing.join(", ")}.` }, { status: 400 });
     const { isPublished: _isPublished, ...editable } = input;
-    const claim = await db.gymClaim.upsert({
-        where: { gymId_claimantId: { gymId: id, claimantId: user.id } },
-        create: { gymId: id, claimantId: user.id, status: "PENDING", businessRole: "Gym representative", evidence: "Listing changes submitted by the gym account.", proposedData: editable as Prisma.InputJsonValue },
-        update: { status: "PENDING", evidence: "Listing changes submitted by the gym account.", proposedData: editable as Prisma.InputJsonValue, reviewNote: null, reviewedAt: null, reviewedById: null },
+
+    const gym = await db.$transaction(async (tx) => {
+        const updated = await tx.gym.update({ where: { id }, data: { ...editable, isVerified: true } });
+        await tx.gymClaim.updateMany({
+            where: { gymId: id, claimantId: user.id, status: "PENDING" },
+            data: { status: "APPROVED", proposedData: undefined, reviewedAt: new Date() },
+        });
+        return updated;
     });
-    return NextResponse.json({ claim, message: "Thanks — your changes have been submitted and are awaiting admin approval." });
+    return NextResponse.json({ gym, message: "Gym listing updated." });
 }

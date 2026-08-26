@@ -17,13 +17,12 @@ export async function GET(req: Request) {
         where: query ? { OR: [{ name: { contains: query, mode: "insensitive" } }, { address: { contains: query, mode: "insensitive" } }] } : {},
         include: {
             _count: { select: { access: true } },
-            claims: { where: { status: "PENDING" }, select: { id: true } },
-            invites: { select: { proposedData: true } },
+            access: { select: { user: { select: { email: true } } }, orderBy: { createdAt: "asc" } },
         },
         orderBy: { name: "asc" },
         take: 200,
     });
-    return NextResponse.json({ gyms: gyms.map((gym) => ({ ...gym, awaitingApproval: gym.claims.length > 0 || (!gym.isVerified && gym.invites.some((invite) => Boolean(invite.proposedData))), isClaimed: gym.isVerified && gym._count.access > 0 })) });
+    return NextResponse.json({ gyms: gyms.map((gym) => ({ ...gym, isClaimed: gym.isVerified && gym._count.access > 0, ownerEmails: gym.access.map(({ user }) => user.email).filter(Boolean) })) });
 }
 
 export async function POST(req: Request) {

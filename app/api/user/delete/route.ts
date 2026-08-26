@@ -7,7 +7,22 @@ import { compare } from "bcrypt";
 
 async function deleteUserAndRelations(userId: string) {
     await db.$transaction(async (tx) => {
+        const ownedGyms = await tx.gymAccess.findMany({
+            where: { userId },
+            select: { gymId: true },
+        });
         await tx.user.delete({ where: { id: userId } });
+
+        // A verified listing remains claimed only while at least one gym user
+        // has access. When its final owner is deleted, return the listing to a
+        // clean, reusable unverified state and invalidate all old claim links.
+        for (const { gymId } of ownedGyms) {
+            const remainingOwners = await tx.gymAccess.count({ where: { gymId } });
+            if (remainingOwners > 0) continue;
+            await tx.gym.update({ where: { id: gymId }, data: { isVerified: false } });
+            await tx.gymClaim.deleteMany({ where: { gymId } });
+            await tx.gymInvite.deleteMany({ where: { gymId } });
+        }
     });
 }
 

@@ -7,7 +7,6 @@ import { ArrowRight } from 'lucide-react';
 
 const roleOptions = [
     { label: "Gym visitor", role: "TRAINEE" },
-    { label: "Gym", role: "GYM" },
 ];
 
 const LOCKED_PAGE_CLASS = "bg-neutral-50 text-zinc-900 dark:bg-neutral-50 dark:text-zinc-900";
@@ -76,7 +75,7 @@ function UserOnboardingContent() {
                                 Hi {userName}, choose your role
                             </h2>
                         </div>
-                        <div className="grid w-full gap-4 sm:grid-cols-2">
+                        <div className="grid w-full gap-4">
                             {roleOptions.map(({ label, role: roleValue }) => {
                                 const isSelected = role === roleValue;
                                 return (
@@ -93,9 +92,7 @@ function UserOnboardingContent() {
                                     >
                                         <span className="text-lg font-semibold sm:text-xl">{label}</span>
                                         <span className="text-sm leading-5 text-zinc-500">
-                                            {label === 'Gym visitor'
-                                                ? 'Compare gyms, save favorites, and find day passes.'
-                                                : 'Verify and maintain your gym listing and day-pass destination.'}
+                                            Compare gyms, save favorites, and find day passes.
                                         </span>
                                     </button>
                                 );
