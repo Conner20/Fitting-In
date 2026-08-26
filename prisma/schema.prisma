@@ -132,6 +132,7 @@ model GymClaim {
   status       GymClaimStatus @default(PENDING)
   businessRole String?
   evidence     String?
+  proposedData Json?
   reviewNote   String?
   reviewedBy   User?          @relation("GymClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedById String?
@@ -153,6 +154,7 @@ model GymInvite {
   createdById String
   expiresAt   DateTime
   usedAt      DateTime?
+  proposedData Json?
   createdAt   DateTime  @default(now())
 
   @@index([gymId, expiresAt])

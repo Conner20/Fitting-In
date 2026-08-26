@@ -4,11 +4,12 @@ import { db } from "@/prisma/client";
 export async function GET() {
     const gyms = await db.gym.findMany({
         where: { isPublished: true }, orderBy: { name: "asc" },
-        select: { id: true, name: true, city: true, state: true, address: true, lat: true, lng: true, gymType: true, equipment: true, amenities: true, hours: true, phone: true, website: true, coverPhotoUrl: true, photoUrls: true, dayPassPrice: true, dayPassDetails: true, dayPassUrl: true },
+        select: { id: true, name: true, city: true, state: true, address: true, lat: true, lng: true, gymType: true, equipment: true, amenities: true, hours: true, phone: true, website: true, coverPhotoUrl: true, photoUrls: true, dayPassPrice: true, dayPassDetails: true, dayPassUrl: true, isVerified: true },
     });
     return NextResponse.json({ gyms: gyms.map((gym) => ({
         id: gym.id,
         name: gym.name,
+        isVerified: gym.isVerified,
         area: [gym.city, gym.state].filter(Boolean).join(", "),
         address: gym.address,
         lat: gym.lat,

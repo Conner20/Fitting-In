@@ -2,8 +2,7 @@
 
 import { ChangeEvent, FormEvent, cloneElement, isValidElement, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, X } from "lucide-react";
-import { Card as LandingGymCard, LandingMapProfilePreview, type LandingGym } from "@/components/GymDiscoveryLanding";
+import { Check, ImagePlus, X } from "lucide-react";
 import GymHoursEditor from "@/components/GymHoursEditor";
 
 type FormState = {
@@ -36,18 +35,28 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [addressOpen, setAddressOpen] = useState(false);
     const [needsAccount, setNeedsAccount] = useState(false);
+    const [verificationComplete, setVerificationComplete] = useState<"guest" | "user" | null>(null);
+    const [pendingClaimId, setPendingClaimId] = useState<string | null>(null);
+    const [pendingInviteId, setPendingInviteId] = useState<string | null>(null);
+    const [approvedFeedback, setApprovedFeedback] = useState(false);
+    const approvedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const autoClaimStarted = useRef(false);
+
+    useEffect(() => () => { if (approvedTimer.current) clearTimeout(approvedTimer.current); }, []);
 
     useEffect(() => {
         if (!inviteToken || !autoClaim || autoClaimStarted.current) return;
         autoClaimStarted.current = true; setSaving(true);
         fetch(`/api/gym-invites/${encodeURIComponent(inviteToken)}/claim`, { method: "POST" }).then(async (response) => {
             const result = await response.json().catch(() => ({}));
-            setMessage(result.message ?? (response.ok ? "Your claim was submitted." : "Unable to submit your claim."));
+            if (response.ok) setVerificationComplete("user");
+            else setMessage(result.message ?? "Unable to submit your claim.");
         }).finally(() => setSaving(false));
     }, [autoClaim, inviteToken]);
 
     function populate(gym: Record<string, any>) {
+        setPendingClaimId(typeof gym.pendingClaimId === "string" ? gym.pendingClaimId : null);
+        setPendingInviteId(typeof gym.pendingInviteId === "string" ? gym.pendingInviteId : null);
         setForm({
             name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType ?? "", dayPassPrice: gym.dayPassPrice == null ? "" : String(gym.dayPassPrice), dayPassDetails: gym.dayPassDetails ?? "", dayPassUrl: gym.dayPassUrl ?? "", hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
         });
@@ -63,7 +72,7 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
         }).catch((error) => setMessage(error.message)).finally(() => setLoading(false));
     }, [gymId, initialGym, ownerMode]);
 
-    const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {setForm((current) => ({ ...current, [key]: value }));setValidationErrors([])};
+    const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {setForm((current) => ({ ...current, [key]: value }))};
 
     useEffect(() => {
         const query = form.address.trim();
@@ -111,19 +120,33 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
         if(!form.coverPhotoUrl)errors.push("Cover photo is required.");
         if(!form.photoUrls.length)errors.push("At least one amenity photo is required.");
         if(form.dayPassUrl&&!/^[a-z][a-z\d+.-]*:\/\//i.test(form.dayPassUrl)&&!form.dayPassUrl.includes("."))errors.push("Day pass URL must be a valid destination, such as gym.com/day-pass.");
-        if(errors.length){setValidationErrors(errors);setSaving(false);return}
+        if(errors.length){setValidationErrors(errors);setSaving(false);if(inviteToken)window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"}));return}
         const payload = { ...form, dayPassPrice: form.dayPassPrice, amenities: lines(form.amenities), equipment: lines(form.equipment) };
+        if (pendingClaimId && !inviteToken && !ownerMode) {
+            const response = await fetch(`/api/admin/gym-claims/${pendingClaimId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "APPROVED", gymData: payload }) });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok) { setPendingClaimId(null); setApprovedFeedback(true); setMessage("Gym listing approved and published."); if (approvedTimer.current) clearTimeout(approvedTimer.current); approvedTimer.current = setTimeout(() => { setApprovedFeedback(false); approvedTimer.current = null; }, 2000); router.refresh(); }
+            else setMessage(result.message ?? "Unable to approve gym listing.");
+            setSaving(false); return;
+        }
+        if (pendingInviteId && gymId && !inviteToken && !ownerMode) {
+            const response = await fetch(`/api/admin/gyms/${gymId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, approveInviteId: pendingInviteId }) });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok) { setPendingInviteId(null); setApprovedFeedback(true); setMessage("Gym listing approved and published."); if (approvedTimer.current) clearTimeout(approvedTimer.current); approvedTimer.current = setTimeout(() => { setApprovedFeedback(false); approvedTimer.current = null; }, 2000); router.refresh(); }
+            else setMessage(result.message ?? "Unable to approve gym listing.");
+            setSaving(false); return;
+        }
         const endpoint = inviteToken ? `/api/gym-invites/${encodeURIComponent(inviteToken)}/claim` : ownerMode ? (gymId ? `/api/gyms/${gymId}` : "/api/user/gyms") : gymId ? `/api/admin/gyms/${gymId}` : "/api/admin/gyms";
         const response = await fetch(endpoint, { method: inviteToken || gymId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         const result = await response.json().catch(() => ({}));
         if (response.ok && inviteToken) {
             const claimResponse = await fetch(`/api/gym-invites/${encodeURIComponent(inviteToken)}/claim`, { method: "POST" });
             const claimResult = await claimResponse.json().catch(() => ({}));
-            if (claimResponse.ok) setMessage(claimResult.message ?? "Information verified and claim submitted.");
-            else if (claimResponse.status === 401) { setMessage("Your changes were saved. Create or log in to a Gym account to maintain this listing."); setNeedsAccount(true); }
+            if (claimResponse.ok) setVerificationComplete("user");
+            else if (claimResponse.status === 401) { setVerificationComplete("guest"); setNeedsAccount(true); }
             else setMessage(claimResult.message ?? "Information saved, but the claim could not be submitted.");
         }
-        else if (response.ok) { setMessage(gymId ? "Gym listing updated." : "Gym listing created."); if (!gymId) router.replace(`/admin/gyms/${result.gym.id}`); }
+        else if (response.ok) { setMessage(result.message ?? (gymId ? "Gym listing updated." : "Gym listing created.")); if (!gymId && result.gym?.id) router.replace(`/admin/gyms/${result.gym.id}`); }
         else setMessage(result.message ?? "Unable to save gym listing.");
         setSaving(false);
     }
@@ -138,12 +161,10 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     }
 
     if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><span className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-700 border-t-transparent" /></div>;
+    if (verificationComplete && inviteToken) return <div className="fixed inset-0 z-[5000] grid min-h-screen place-items-center bg-zinc-50 p-5 text-zinc-950 dark:bg-neutral-950 dark:text-white"><div className="w-full max-w-xl rounded-3xl border border-black/10 bg-white p-7 text-center shadow-xl sm:p-10 dark:border-white/10 dark:bg-white/5"><div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#22c55e]/15 text-[#22c55e]"><Check size={28} strokeWidth={3}/></div><h1 className="mt-5 text-2xl font-black">Thank you!</h1><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-600 dark:text-zinc-300">{verificationComplete==="guest"?"Your information has been submitted for approval. Create an account to claim this listing and manage it going forward.":"Your information has been submitted for approval."}</p>{verificationComplete==="guest"?<a href={`/sign-up?invite=${encodeURIComponent(inviteToken)}`} className="mt-7 inline-flex rounded-full bg-[#22c55e] px-6 py-3 text-sm font-black text-black">Create an account</a>:<a href="/" className="mt-7 inline-flex rounded-full bg-[#22c55e] px-6 py-3 text-sm font-black text-black">Return to Fitting In</a>}</div></div>;
     const input = "mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-600 dark:border-white/10 dark:bg-black/20";
     const label = "text-sm font-medium text-zinc-700 dark:text-zinc-200";
-    const location = [form.city, form.state, form.country].filter(Boolean).join(", ") || form.address;
-    const previewGym: LandingGym = { id: gymId || "preview", name: form.name || "Gym name", area: location || "Gym location", address: form.address || "Street address", distance: 0, type: form.gymType || "Open gym", equipment: lines(form.equipment), amenities: lines(form.amenities), hours: form.hours || "Contact gym for hours", phone: form.phone, site: form.website, photo: form.coverPhotoUrl || form.photoUrls[0] || "", photoUrls: form.photoUrls, dayPassPrice: form.dayPassPrice ? Number(form.dayPassPrice) : null, dayPassDetails: form.dayPassDetails, dayPassUrl: form.dayPassUrl };
-
-    return <form noValidate onSubmit={submit} className="grid gap-8 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,.95fr)]">
+    return <form noValidate onSubmit={submit} className={`mx-auto max-w-4xl ${validationErrors.length?"gym-listing-validation-active":""}`}>
         <div className="space-y-6">
             {validationErrors.length>0&&<div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p className="font-semibold">Please correct the following fields:</p><ul className="mt-2 list-disc space-y-1 pl-5">{validationErrors.map(error=><li key={error}>{error}</li>)}</ul></div>}
             {message && <p className={`rounded-xl border p-3 text-sm ${/unable|failed|invalid|required|error/i.test(message)?"border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200":"border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"}`}>{message}</p>}
@@ -164,11 +185,9 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
                 </div>
             </EditorSection>
             <EditorSection title="Facility details"><Field label="Hours"><GymHoursEditor value={form.hours} onChange={(value) => update("hours", value)} /></Field><div><h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Amenities</h3><p className="mt-1 text-xs text-zinc-500">Select every amenity available at this gym. These choices power search and membership access.</p><StructuredChecklist options={AMENITY_OPTIONS} selected={lines(form.amenities)} onChange={(items)=>update("amenities",items.join("\n"))} otherLabel="Other amenities" /></div><div><h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Equipment</h3><p className="mt-1 text-xs text-zinc-500">Select all equipment available at this location.</p><StructuredChecklist options={EQUIPMENT_OPTIONS} selected={lines(form.equipment)} onChange={(items)=>update("equipment",items.join("\n"))} otherLabel="Other equipment" /></div></EditorSection>
-            <EditorSection title="Photos" description="Add a wide cover photo and photos that showcase the gym's amenities."><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-4 text-sm font-medium hover:bg-zinc-50 dark:border-white/20 dark:hover:bg-white/5"><ImagePlus size={18} />{form.coverPhotoUrl ? "Replace cover photo" : "Upload cover photo"}<input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(event) => uploadSingle(event, "coverPhotoUrl")} /></label>{form.coverPhotoUrl&&<PhotoRemovalPreview label="Cover photo" url={form.coverPhotoUrl} remove={()=>update("coverPhotoUrl","")}/>}<details><summary className="cursor-pointer text-xs text-zinc-500">Or enter a cover photo URL</summary><div className="mt-3"><Field label="Cover photo URL"><input className={input} value={form.coverPhotoUrl} onChange={(e) => update("coverPhotoUrl", e.target.value)} /></Field></div></details><label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-4 text-sm font-medium hover:bg-zinc-50 dark:border-white/20 dark:hover:bg-white/5"><ImagePlus size={18} />{uploading ? "Uploading…" : "Upload amenity photos"}<input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={uploadImages} /></label><div className="grid grid-cols-3 gap-2">{form.photoUrls.map((url) => <div key={url} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100"><img src={url} alt="" className="h-full w-full object-cover" /><button type="button" aria-label="Remove amenity photo" onClick={() => update("photoUrls", form.photoUrls.filter((item) => item !== url))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"><X size={13} /></button></div>)}</div></EditorSection>
-            {!inviteToken && !ownerMode && <EditorSection title="Publishing"><Toggle label="Publish this listing" checked={form.isPublished} onChange={(value) => update("isPublished", value)} /><p className="text-xs text-zinc-500">New listings remain unclaimed and unverified regardless of publishing status.</p></EditorSection>}
-            {inviteToken ? <div className="flex justify-center py-2 pb-[max(.5rem,env(safe-area-inset-bottom))]"><button disabled={saving} className="verify-information-button min-w-52 rounded-xl bg-emerald-700 px-7 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50">{saving ? "Saving…" : "Verify information"}</button></div> : <div className="sticky bottom-2 z-10 flex flex-wrap items-center gap-2 rounded-2xl border bg-white/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur dark:border-white/10 dark:bg-neutral-900/95 sm:bottom-3 sm:flex-nowrap sm:gap-3">{gymId && !ownerMode && <button type="button" onClick={deleteGym} disabled={saving} className="order-3 w-full rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 sm:order-none sm:mr-auto sm:w-auto dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950">Delete listing</button>}{!ownerMode && <button type="button" onClick={() => router.push("/admin/gyms")} className="flex-1 rounded-xl border px-4 py-2.5 text-sm sm:flex-none">Cancel</button>}<button disabled={saving} className="flex-1 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 sm:ml-auto sm:flex-none">{saving ? "Saving…" : gymId ? "Save listing" : "Create listing"}</button></div>}
+            <EditorSection title="Photos" description="Add a wide cover photo and photos that showcase the gym's amenities."><label className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${validationErrors.length&&!form.coverPhotoUrl?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{form.coverPhotoUrl ? "Replace cover photo" : "Upload cover photo"}<input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(event) => uploadSingle(event, "coverPhotoUrl")} /></label>{form.coverPhotoUrl&&<PhotoRemovalPreview label="Cover photo" url={form.coverPhotoUrl} remove={()=>update("coverPhotoUrl","")}/>}<details><summary className="cursor-pointer text-xs text-zinc-500">Or enter a cover photo URL</summary><div className="mt-3"><Field label="Cover photo URL"><input className={input} value={form.coverPhotoUrl} onChange={(e) => update("coverPhotoUrl", e.target.value)} /></Field></div></details><label className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${validationErrors.length&&!form.photoUrls.length?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{uploading ? "Uploading…" : "Upload amenity photos"}<input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={uploadImages} /></label><div className="grid grid-cols-3 gap-2">{form.photoUrls.map((url) => <div key={url} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100"><img src={url} alt="" className="h-full w-full object-cover" /><button type="button" aria-label="Remove amenity photo" onClick={() => update("photoUrls", form.photoUrls.filter((item) => item !== url))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"><X size={13} /></button></div>)}</div></EditorSection>
+            {inviteToken ? <div className="flex justify-center py-2 pb-[max(.5rem,env(safe-area-inset-bottom))]"><button disabled={saving} className="verify-information-button min-w-52 rounded-xl border border-transparent bg-[#22c55e] px-7 py-3 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-black hover:text-[#22c55e] disabled:opacity-50">{saving ? "Saving…" : "Verify information"}</button></div> : <div className="flex flex-wrap items-center justify-center gap-3 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">{gymId && !ownerMode && <button type="button" onClick={deleteGym} disabled={saving} className="rounded-xl border border-transparent bg-[#e66b6b] px-5 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#e66b6b] hover:bg-zinc-50 hover:text-[#e66b6b] dark:hover:bg-neutral-950">Delete listing</button>}<button disabled={saving||approvedFeedback} className="rounded-xl border border-transparent bg-[#22c55e] px-6 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-zinc-50 hover:text-[#22c55e] disabled:cursor-default dark:hover:bg-neutral-950">{approvedFeedback?<span className="flex animate-[copy-confirm_.35s_ease-out] items-center gap-2"><Check size={16} strokeWidth={3}/>Approved!</span>:saving?"Saving…":ownerMode?"Submit changes":(pendingClaimId||pendingInviteId)?"Approve listing":gymId?"Save listing":"Create listing"}</button></div>}
         </div>
-        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start"><div><p className="mb-3 text-xs font-semibold uppercase tracking-[.14em] text-zinc-500">Landing-page listing preview</p><LandingGymCard gym={previewGym} active={false} compared={false} compareMode={false} select={() => undefined} /></div><div><p className="mb-3 text-xs font-semibold uppercase tracking-[.14em] text-zinc-500">Map profile preview</p><LandingMapProfilePreview gym={previewGym} /></div><p className="text-xs leading-5 text-zinc-500">This interactive preview uses the public map profile UI with visitor action buttons hidden.</p></aside>
     </form>;
 }
 
@@ -176,4 +195,3 @@ function StructuredChecklist({options,selected,onChange,otherLabel}:{options:str
 function EditorSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) { return <section className="space-y-4 rounded-2xl border border-black/10 bg-white p-4 sm:p-5 dark:border-white/10 dark:bg-white/5"><div><h2 className="text-lg font-semibold">{title}</h2>{description && <p className="mt-1 text-sm text-zinc-500">{description}</p>}</div>{children}</section>; }
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) { const content=label==="Pricing details"&&isValidElement(children)?cloneElement(children as React.ReactElement<{required?:boolean}>,{required:false}):children;return <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}{label==="Pricing details"&&<span className="ml-2 text-xs font-normal text-zinc-400">Optional</span>}{hint && <span className="ml-2 text-xs font-normal text-zinc-400">{hint}</span>}{content}</label>; }
 function PhotoRemovalPreview({label,url,remove}:{label:string;url:string;remove:()=>void}){return <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-white/10 dark:bg-white/5"><img src={url} alt={label} className="h-28 w-full object-cover"/><span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white">{label}</span><button type="button" aria-label={`Remove ${label.toLowerCase()}`} onClick={remove} className="absolute right-2 top-2 rounded-full bg-black/75 p-1.5 text-white transition hover:bg-red-600"><X size={15}/></button></div>}
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200/70 bg-zinc-50 p-3 text-sm font-medium text-zinc-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-100"><span>{label}</span><span className="relative h-5 w-5 shrink-0"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="peer h-5 w-5 appearance-none rounded border border-zinc-400 bg-zinc-100 transition checked:border-emerald-700 checked:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:border-zinc-500 dark:bg-zinc-800 dark:checked:border-emerald-500 dark:checked:bg-emerald-500 dark:focus-visible:ring-offset-neutral-900" /><svg aria-hidden="true" viewBox="0 0 20 20" className="pointer-events-none absolute inset-0 h-5 w-5 scale-75 fill-none stroke-white stroke-[2.5] opacity-0 transition peer-checked:scale-100 peer-checked:opacity-100"><path d="m5 10 3 3 7-7" /></svg></span></label>; }

@@ -1,35 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Copy, MapPin, Plus, Search, Share2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, CheckCircle2, Copy, MapPin, Plus, Search, Share2 } from "lucide-react";
 
-type Gym = { id: string; name: string; address: string; coverPhotoUrl: string | null; isPublished: boolean; isVerified: boolean; isClaimed: boolean; claims: { id: string }[] };
-type Claim = { id: string; businessRole: string | null; evidence: string | null; gym: Gym; claimant: { name: string | null; username: string | null; email: string | null } };
-
+type Gym = { id: string; name: string; address: string; coverPhotoUrl: string | null; isPublished: boolean; isVerified: boolean; isClaimed: boolean; awaitingApproval: boolean; claims: { id: string }[] };
 export default function AdminGymManager() {
     const [gyms, setGyms] = useState<Gym[]>([]);
-    const [claims, setClaims] = useState<Claim[]>([]);
     const [query, setQuery] = useState("");
     const [message, setMessage] = useState("");
+    const [copiedGymId, setCopiedGymId] = useState<string | null>(null);
+    const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const load = useCallback(async () => {
-        const [gymResponse, claimResponse] = await Promise.all([
-            fetch(`/api/admin/gyms?q=${encodeURIComponent(query)}`, { cache: "no-store" }),
-            fetch("/api/admin/gym-claims", { cache: "no-store" }),
-        ]);
+        const gymResponse = await fetch(`/api/admin/gyms?q=${encodeURIComponent(query)}`, { cache: "no-store" });
         if (gymResponse.ok) setGyms((await gymResponse.json()).gyms);
-        if (claimResponse.ok) setClaims((await claimResponse.json()).claims);
     }, [query]);
 
     useEffect(() => { const timer = window.setTimeout(() => void load(), 200); return () => window.clearTimeout(timer); }, [load]);
-
-    async function reviewClaim(id: string, status: "APPROVED" | "REJECTED") {
-        const response = await fetch(`/api/admin/gym-claims/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-        const result = await response.json().catch(() => ({}));
-        setMessage(response.ok ? `Claim ${status.toLowerCase()}.` : result.message ?? "Unable to review claim.");
-        if (response.ok) await load();
-    }
+    useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
 
     async function shareGym(gym: Gym) {
         setMessage("");
@@ -38,11 +27,12 @@ export default function AdminGymManager() {
         if (!response.ok) { setMessage(result.message ?? "Unable to create a share link."); return; }
         try {
             await navigator.clipboard.writeText(result.url);
-            setMessage(`Verification link for ${gym.name} copied to your clipboard. It expires in 14 days.`);
         } catch {
             window.prompt("Copy this gym verification link:", result.url);
-            setMessage(`Verification link created for ${gym.name}. It expires in 14 days.`);
         }
+        setCopiedGymId(gym.id);
+        if (copyTimer.current) clearTimeout(copyTimer.current);
+        copyTimer.current = setTimeout(() => { setCopiedGymId((current) => current === gym.id ? null : current); copyTimer.current = null; }, 2000);
     }
 
     return <div className="space-y-10">
@@ -56,12 +46,11 @@ export default function AdminGymManager() {
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {gyms.map((gym) => <article key={gym.id} className="group overflow-hidden rounded-2xl border border-black/10 bg-white transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5">
                     <Link href={`/admin/gyms/${gym.id}`} className="block"><div className="relative h-28 bg-zinc-100 dark:bg-white/10">{gym.coverPhotoUrl && <img src={gym.coverPhotoUrl} alt="" className="h-full w-full object-cover" />}</div>
-                    <div className="p-4"><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="truncate font-semibold">{gym.name}</p>{gym.isVerified && <CheckCircle2 size={15} className="shrink-0 text-[#22c55e]" />}</div><p className="mt-1 flex items-start gap-1 text-xs text-zinc-500"><MapPin size={13} className="shrink-0" />{gym.address}</p></div><div className="mt-4 flex gap-2 text-[10px] font-semibold uppercase tracking-wide"><span className="rounded-full bg-zinc-100 px-2 py-1 dark:bg-white/10">{gym.isClaimed ? "Claimed" : "Unclaimed"}</span><span className="rounded-full bg-zinc-100 px-2 py-1 dark:bg-white/10">{gym.isPublished ? "Published" : "Draft"}</span></div></div></Link>
-                    <div className="border-t border-black/5 p-3 dark:border-white/10"><button type="button" onClick={() => void shareGym(gym)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#22c55e] px-3 py-2 text-sm font-semibold text-[#22c55e] transition hover:bg-[#22c55e]/10"><Share2 size={15}/><Copy size={14}/>Copy verification link</button></div>
+                    <div className="p-4"><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="truncate font-semibold">{gym.name}</p>{gym.isVerified && <CheckCircle2 size={15} className="shrink-0 text-[#22c55e]" />}</div><p className="mt-1 flex items-start gap-1 text-xs text-zinc-500"><MapPin size={13} className="shrink-0" />{gym.address}</p></div><div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wide"><span className={`rounded-full border px-2 py-1 ${gym.isClaimed?"border-[#22c55e]/40 bg-[#22c55e]/10 text-[#16803d] dark:text-[#86efac]":"border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-white/60"}`}>{gym.isClaimed?"Claimed":"Unclaimed"}</span><span className={`rounded-full border px-2 py-1 ${gym.isVerified?"border-[#22c55e]/40 bg-[#22c55e]/10 text-[#16803d] dark:text-[#86efac]":"border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-white/60"}`}>{gym.isVerified?"Verified":"Unverified"}</span>{gym.awaitingApproval&&<span className="normal-case tracking-normal text-amber-700 dark:text-amber-300">Awaiting admin approval</span>}</div></div></Link>
+                    <div className="border-t border-black/5 p-3 dark:border-white/10"><button type="button" onClick={() => void shareGym(gym)} className={`flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-[#22c55e] px-3 py-2 text-sm font-semibold transition-all duration-300 ${copiedGymId===gym.id?"scale-[1.02] bg-[#22c55e] text-black":"text-[#22c55e] hover:bg-[#22c55e]/10"}`}>{copiedGymId===gym.id?<span className="flex animate-[copy-confirm_.35s_ease-out] items-center gap-2"><Check size={16} strokeWidth={3}/>Copied!</span>:<span className="flex items-center gap-2"><Share2 size={15}/><Copy size={14}/>Copy verification link</span>}</button></div>
                 </article>)}
                 {gyms.length === 0 && <p className="text-sm text-zinc-500">No gym listings found.</p>}
             </div>
         </section>
-        <section><h2 className="text-xl font-semibold">Claims awaiting review</h2><div className="mt-3 space-y-3">{claims.length === 0 && <p className="text-sm text-zinc-500">No pending claims.</p>}{claims.map((claim) => <article key={claim.id} className="rounded-xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5"><p className="font-medium">{claim.gym.name}</p><p className="text-sm text-zinc-500">{claim.claimant.name || claim.claimant.username || claim.claimant.email} · {claim.businessRole || "Role not provided"}</p>{claim.evidence && <p className="mt-2 text-sm">{claim.evidence}</p>}<div className="mt-3 flex gap-2"><button onClick={() => reviewClaim(claim.id, "APPROVED")} className="rounded-lg bg-[#22c55e] px-3 py-2 text-sm font-bold text-black transition hover:bg-[#19a94e]">Approve and verify</button><button onClick={() => reviewClaim(claim.id, "REJECTED")} className="rounded-lg border px-3 py-2 text-sm transition hover:border-[#22c55e] hover:text-[#22c55e]">Reject</button></div></article>)}</div></section>
     </div>;
 }

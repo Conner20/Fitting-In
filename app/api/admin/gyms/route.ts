@@ -18,11 +18,12 @@ export async function GET(req: Request) {
         include: {
             _count: { select: { access: true } },
             claims: { where: { status: "PENDING" }, select: { id: true } },
+            invites: { select: { proposedData: true } },
         },
         orderBy: { name: "asc" },
         take: 200,
     });
-    return NextResponse.json({ gyms: gyms.map((gym) => ({ ...gym, isClaimed: gym._count.access > 0 })) });
+    return NextResponse.json({ gyms: gyms.map((gym) => ({ ...gym, awaitingApproval: gym.claims.length > 0 || (!gym.isVerified && gym.invites.some((invite) => Boolean(invite.proposedData))), isClaimed: gym.isVerified && gym._count.access > 0 })) });
 }
 
 export async function POST(req: Request) {

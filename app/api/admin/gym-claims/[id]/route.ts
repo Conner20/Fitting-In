@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
+import type { Prisma } from "@prisma/client";
+import { cleanGymInput, validateCompleteGymInput } from "@/lib/gyms";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -17,10 +19,18 @@ export async function PATCH(req: Request, { params }: Context) {
     const body = await req.json().catch(() => ({}));
     const status = body.status === "APPROVED" ? "APPROVED" : body.status === "REJECTED" ? "REJECTED" : null;
     if (!status) return NextResponse.json({ message: "Status must be APPROVED or REJECTED." }, { status: 400 });
-    const claim = await db.gymClaim.findUnique({ where: { id }, select: { id: true, gymId: true, claimantId: true, status: true } });
+    const claim = await db.gymClaim.findUnique({ where: { id }, select: { id: true, gymId: true, claimantId: true, status: true, proposedData: true } });
     if (!claim) return NextResponse.json({ message: "Claim not found." }, { status: 404 });
     if (claim.status !== "PENDING") return NextResponse.json({ message: "Claim has already been reviewed." }, { status: 409 });
     const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim() : null;
+    let reviewedGymData: Prisma.GymUpdateInput | null = null;
+    if (status === "APPROVED" && body.gymData && typeof body.gymData === "object") {
+        const cleaned = cleanGymInput(body.gymData as Record<string, unknown>);
+        const missing = validateCompleteGymInput(body.gymData as Record<string, unknown>, cleaned);
+        if (missing.length) return NextResponse.json({ message: `Complete these required fields: ${missing.join(", ")}.` }, { status: 400 });
+        const { isPublished: _isPublished, ...editable } = cleaned;
+        reviewedGymData = editable;
+    }
     const result = await db.$transaction(async (tx) => {
         if (status === "APPROVED") {
             await tx.gymAccess.upsert({
@@ -28,11 +38,12 @@ export async function PATCH(req: Request, { params }: Context) {
                 create: { gymId: claim.gymId, userId: claim.claimantId },
                 update: {},
             });
-            await tx.gym.update({ where: { id: claim.gymId }, data: { isVerified: true } });
+            const proposedData = reviewedGymData ?? (claim.proposedData && typeof claim.proposedData === "object" && !Array.isArray(claim.proposedData) ? claim.proposedData as Prisma.GymUpdateInput : {});
+            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true } });
         }
         return tx.gymClaim.update({
             where: { id },
-            data: { status, reviewNote, reviewedById: reviewer.id, reviewedAt: new Date() },
+            data: { status, reviewNote, reviewedById: reviewer.id, reviewedAt: new Date(), ...(status === "APPROVED" ? { proposedData: undefined } : {}) },
             include: { gym: true, claimant: { select: { id: true, name: true, username: true, email: true } } },
         });
     });

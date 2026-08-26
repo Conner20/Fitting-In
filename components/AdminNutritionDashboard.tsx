@@ -503,51 +503,20 @@ function NutritionContent() {
     const unselectedTabClass =
         "flex-1 rounded-lg px-4 py-2 text-center font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white";
 
-    const mobileTabs = <AdminNav active="nutrition" mobile />;
-
-    const mobileHeaderControls = (
-        <>
-            <button
-                onClick={() => setShareModalOpen(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 text-zinc-700 transition hover:bg-zinc-100 dark:border-white/20 dark:text-white dark:hover:bg-white/10"
-                aria-label="Share nutrition dashboard"
-            >
-                <Share2 size={18} />
-            </button>
-            <div className="relative w-[158px] shrink-0">
-                <select
-                    value={selectedViewUser ?? ''}
-                    onChange={(e) => handleViewChange(e.target.value || null)}
-                    className="h-10 w-full appearance-none rounded-lg border border-zinc-200 bg-transparent px-3 pr-8 text-sm font-medium leading-tight text-zinc-700 transition hover:bg-zinc-100 focus:border-zinc-300 focus:outline-none focus:ring-0 dark:border-white/20 dark:text-white dark:hover:bg-white/10 dark:focus:border-white/30"
-                >
-                    <option value="">My dashboard</option>
-                    {availableIncoming.map((entry) => (
-                        <option key={entry.owner.id} value={entry.owner.id}>
-                            {shareDisplayName(entry.owner)}
-                        </option>
-                    ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-white/80" />
-            </div>
-        </>
-    );
-
     return (
         <>
         <div className="flex min-h-screen flex-col bg-[#f8f8f8] text-black dark:bg-[#050505] dark:text-white xl:h-screen xl:overflow-hidden">
-            <MobileHeader title="nutrition" href="/admin/nutrition" subContent={mobileTabs} titleAlign="left" />
+            <MobileHeader title="fitting" href="/" />
 
             {/* Header */}
-            <header className="hidden lg:flex w-full flex-none items-center justify-between bg-white px-[40px] py-5 dark:bg-neutral-900 dark:border-b dark:border-white/10">
-                <h1 className="select-none font-roboto text-3xl text-green-700 tracking-tight dark:text-green-400">nutrition log</h1>
-                <div className="flex flex-1 flex-wrap items-center justify-end gap-4">
-                    
-                    <AdminNav active="nutrition" />
-                </div>
+            <header className="hidden border-b border-black/5 bg-white px-10 py-6 dark:border-white/10 dark:bg-[#050505] lg:block">
+                <Link href="/" aria-label="Return to Fitting In" className="text-[22px] font-black text-[#22c55e]">fitt<span className="underline">in</span>g</Link>
+                <div className="mt-4"><AdminNav active="nutrition" /></div>
             </header>
             {shareError && (
                 <p className="hidden px-[40px] pb-2 text-xs text-red-500 lg:block">{shareError}</p>
             )}
+            <div className="px-4 pt-4 lg:hidden"><AdminNav active="nutrition" mobile /></div>
 
             {/* Content */}
             <div className="w-full flex-1 overflow-y-auto overflow-x-hidden px-2 pb-6 pt-4 sm:px-4 xl:px-6 xl:pb-4 xl:pt-4 xl:overflow-y-auto scrollbar-slim">
@@ -2229,5 +2198,3 @@ function EditLevelsModal({
         </div>
     );
 }
-
-

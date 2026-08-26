@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { cleanGymInput, userCanEditGym, validateCompleteGymInput } from "@/lib/gyms";
 import { db } from "@/prisma/client";
+import type { Prisma } from "@prisma/client";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -14,7 +15,7 @@ export async function GET(_req: Request, { params }: Context) {
     });
     if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
     const { _count, ...profile } = gym;
-    return NextResponse.json({ gym: { ...profile, isClaimed: _count.access > 0 } });
+    return NextResponse.json({ gym: { ...profile, isClaimed: profile.isVerified } });
 }
 
 export async function PATCH(req: Request, { params }: Context) {
@@ -31,6 +32,10 @@ export async function PATCH(req: Request, { params }: Context) {
     const missing = validateCompleteGymInput({ ...body, name: body.name ?? current.name, address: body.address ?? current.address }, input);
     if (missing.length) return NextResponse.json({ message: `Complete these required fields: ${missing.join(", ")}.` }, { status: 400 });
     const { isPublished: _isPublished, ...editable } = input;
-    const gym = await db.gym.update({ where: { id }, data: editable });
-    return NextResponse.json({ gym });
+    const claim = await db.gymClaim.upsert({
+        where: { gymId_claimantId: { gymId: id, claimantId: user.id } },
+        create: { gymId: id, claimantId: user.id, status: "PENDING", businessRole: "Gym representative", evidence: "Listing changes submitted by the gym account.", proposedData: editable as Prisma.InputJsonValue },
+        update: { status: "PENDING", evidence: "Listing changes submitted by the gym account.", proposedData: editable as Prisma.InputJsonValue, reviewNote: null, reviewedAt: null, reviewedById: null },
+    });
+    return NextResponse.json({ claim, message: "Thanks — your changes have been submitted and are awaiting admin approval." });
 }

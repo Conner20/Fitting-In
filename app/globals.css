@@ -77,11 +77,22 @@
 }
 
 .gym-verification-page .verify-information-button:hover:not(:disabled) {
-  background-color: #16a34a !important;
+  border-color: #22c55e !important;
+  background-color: #000 !important;
+  color: #22c55e !important;
 }
 
 .gym-verification-page input[type="checkbox"] {
   accent-color: #22c55e !important;
+}
+
+.gym-listing-validation-active :is(input, select, textarea):required:invalid {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, .28) !important;
+}
+
+.gym-listing-validation-active :is(input, select, textarea):required:valid {
+  box-shadow: none;
 }
 
 :root {
@@ -175,30 +186,45 @@ body {
   }
 }
 
-.scrollbar-slim {
+* {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+  scrollbar-color: #303630 transparent;
 }
 
-.scrollbar-slim::-webkit-scrollbar {
-  width: 8px;
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
 }
 
-.scrollbar-slim::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.scrollbar-slim::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
+.scrollbar-slim,
+* {
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 28px;
+  border: 1px solid transparent;
   border-radius: 9999px;
+  background: #303630;
+  background-clip: padding-box;
 }
 
-.dark .scrollbar-slim {
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+*::-webkit-scrollbar-thumb:hover {
+  background: #424a42;
+  background-clip: padding-box;
 }
 
-.dark .scrollbar-slim::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+*::-webkit-scrollbar-corner {
+  background: #0b0d0b;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background: #303630;
+  border-radius: 9999px;
 }
 
 .scrollbar-hidden {
@@ -219,9 +245,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .filter-pill{display:inline-flex;flex:none;align-items:center;gap:.4rem;white-space:nowrap;border:1px solid #ccd3c9;border-radius:999px;background:white;padding:.55rem .85rem;color:#344038;font-size:.78rem;font-weight:700}.filter-pill:hover{background:#f0f4ed}.filter-pill svg{width:14px;height:14px}.filter-pill b{display:grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:#22c55e;color:#080a08;font-size:10px}.gym-map{overflow:hidden;background-color:#e8ece5;background-image:linear-gradient(32deg,transparent 47%,rgba(255,255,255,.9) 48% 50%,transparent 51%),linear-gradient(102deg,transparent 47%,rgba(255,255,255,.78) 48% 50%,transparent 51%),linear-gradient(162deg,transparent 48%,rgba(255,255,255,.7) 49% 51%,transparent 52%),repeating-linear-gradient(90deg,transparent 0 69px,rgba(151,163,148,.18) 70px 71px),repeating-linear-gradient(0deg,transparent 0 62px,rgba(151,163,148,.18) 63px 64px)}.gym-map:before{content:"";position:absolute;inset:-20%;transform:rotate(-18deg);border:38px solid rgba(137,176,190,.45);border-radius:45%;pointer-events:none}
+main>header a[href="/admin"].filter-pill{border-color:#22c55e;padding:.5rem 1rem;color:#22c55e;font-size:.75rem;font-weight:900;transition:transform .2s ease,background-color .2s ease}main>header a[href="/admin"].filter-pill:hover{transform:translateY(-2px);background:rgb(34 197 94 / 10%)}main>header .filter-pill:has(.lucide-star){align-items:center;line-height:1}main>header .filter-pill .lucide-star{display:block;flex:none;align-self:center}.dark main>header .filter-pill .lucide-star{fill:currentColor}
 .dark main>header,.dark main>section>aside{background:#090b09;border-color:rgba(255,255,255,.1)}.dark main>header form{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}.dark .filter-pill{background:#111411;border-color:rgba(255,255,255,.14);color:#e9eee9}.dark .filter-pill:hover{background:#192019}.dark .gym-map{background-color:#0b100c;background-image:linear-gradient(32deg,transparent 47%,rgba(72,91,77,.28) 48% 50%,transparent 51%),linear-gradient(102deg,transparent 47%,rgba(72,91,77,.22) 48% 50%,transparent 51%),linear-gradient(162deg,transparent 48%,rgba(72,91,77,.2) 49% 51%,transparent 52%),repeating-linear-gradient(90deg,transparent 0 69px,rgba(110,139,116,.1) 70px 71px),repeating-linear-gradient(0deg,transparent 0 62px,rgba(110,139,116,.1) 63px 64px)}.dark .gym-map:before{border-color:rgba(44,91,69,.42)}
 .map-price-pin{display:grid;place-items:center;width:54px;height:34px;border:2px solid #22c55e;border-radius:999px;background:#111411;color:#fff;font-size:11px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:.2s ease}.map-price-pin:hover,.map-price-pin.active{transform:scale(1.12);border-color:#22c55e;background:#22c55e;color:#080a08}.leaflet-control-zoom a{background:#111411!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important}.leaflet-control-attribution{background:rgba(9,11,9,.78)!important;color:#aaa!important}.leaflet-control-attribution a{color:#22c55e!important}
-.map-price-pin strong{display:block;font:inherit;line-height:1}.map-price-pin.favorite{display:flex;width:70px;align-items:center;justify-content:center;gap:5px;border-color:#22c55e;box-shadow:0 0 0 3px rgb(34 197 94 / 25%),0 8px 22px rgba(0,0,0,.42)}.map-price-pin.favorite .map-favorite-star{display:inline-flex;height:14px;width:14px;flex:none;align-items:center;justify-content:center;color:#22c55e;font-size:13px;line-height:1;transform:translateY(-.25px)}.map-price-pin.favorite.active .map-favorite-star,.map-price-pin.favorite:hover .map-favorite-star{color:#080a08}
+.map-price-pin strong{display:block;font:inherit;line-height:1}.map-price-pin.favorite{display:flex;width:70px;align-items:center;justify-content:center;gap:5px;border-color:#22c55e;box-shadow:0 0 0 3px rgb(34 197 94 / 25%),0 8px 22px rgba(0,0,0,.42)}.map-price-pin.favorite .map-favorite-star{display:inline-flex;height:14px;width:14px;flex:none;align-items:center;justify-content:center;color:#22c55e;line-height:1;transform:translateY(-.25px)}.map-price-pin.favorite .map-favorite-star svg{display:block;height:14px;width:14px}.map-price-pin.favorite.active .map-favorite-star,.map-price-pin.favorite:hover .map-favorite-star{color:#080a08}
 .leaflet-tile-pane{filter:brightness(.52) saturate(.9) contrast(1.08)}.dark main>header a[href="/"]{color:#22c55e}.dark main>header a[href="/sign-up"]{background:#22c55e;color:#080a08}.dark main>header button[title="Use current location"]{color:#22c55e}
 .sort-under-location{display:inline-flex;align-items:center;gap:.25rem;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:#111411;padding:.2rem .35rem .2rem .75rem;color:rgba(255,255,255,.58);font-size:.72rem;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.18)}.sort-under-location:focus-within{border-color:rgba(255,255,255,.3);box-shadow:0 0 0 3px rgba(255,255,255,.06)}.sort-under-location select{border:0!important;background:transparent!important;padding:.35rem .55rem!important;color:#fff;font-size:.75rem}.dark main>section>aside>div:first-child p{display:none}
 .dark main>section>aside>div:first-child>button:hover{border-color:#22c55e;background:#22c55e;color:#080a08;box-shadow:0 0 0 4px rgba(34,197,94,.12)}
@@ -246,3 +273,228 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
   body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
 }
 @media(min-width:768px){main>section>aside:first-child{position:relative;width:min(var(--gym-list-width,510px),70vw)!important;flex:0 0 min(var(--gym-list-width,510px),70vw);container-name:gym-list;container-type:inline-size;transition:width .12s ease-out,flex-basis .12s ease-out}main>section>aside:first-child:after{content:"";position:absolute;right:-5px;top:0;bottom:0;z-index:50;width:10px;cursor:col-resize;background:transparent;transition:background .15s ease}main>section>aside:first-child:hover:after{background:rgba(34,197,94,.18)}body.resizing-gym-list,body.resizing-gym-list *{cursor:col-resize!important;user-select:none!important}body.resizing-gym-list main>section>aside:first-child{transition:none}body.resizing-gym-list main>section>aside:first-child:after{background:#22c55e}}@container gym-list (min-width:600px){article.group>div>div:first-child{width:30%}article.group h2{font-size:1.2rem}article.group>div>div:last-child{padding:1.15rem}}
+
+/* Primary and destructive actions share typography, border weight, and motion. */
+:is(button, a)[class*="bg-[#22c55e]"],
+:is(button, a)[class*="bg-emerald-700"],
+:is(button, a)[class*="bg-red-600"],
+:is(button, a)[class*="bg-[#e66b6b]"] {
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  font-weight: 900;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+:is(button, a)[class*="bg-[#22c55e]"]:hover,
+:is(button, a)[class*="bg-emerald-700"]:hover {
+  border-color: #22c55e !important;
+  background-color: #f8f8f8 !important;
+  color: #22c55e !important;
+}
+
+.dark :is(button, a)[class*="bg-[#22c55e]"]:hover,
+.dark :is(button, a)[class*="bg-emerald-700"]:hover {
+  background-color: #050505 !important;
+}
+
+.verify-information-button:hover {
+  border-color: #22c55e !important;
+  background-color: #000 !important;
+  color: #22c55e !important;
+}
+
+:is(button, a)[class*="bg-red-600"]:hover,
+:is(button, a)[class*="bg-[#e66b6b]"]:hover {
+  border-color: #e66b6b !important;
+  background-color: #f8f8f8 !important;
+  color: #e66b6b !important;
+}
+
+.dark :is(button, a)[class*="bg-red-600"]:hover,
+.dark :is(button, a)[class*="bg-[#e66b6b]"]:hover {
+  background-color: #050505 !important;
+}
+
+main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
+  border-color: #22c55e !important;
+  background-color: #22c55e !important;
+  color: #111411 !important;
+  box-shadow: inset 0 0 0 1px #22c55e;
+}
+
+@keyframes copy-confirm {
+  0% { opacity: 0; transform: translateY(8px) scale(.92); }
+  65% { transform: translateY(-1px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Phone layouts only. Desktop styling intentionally remains above these rules. */
+@media (max-width: 767px) {
+  /* Landing discovery header and workspace */
+  main:has(> header form[role="search"]),
+  main:has(> header form[action]) {
+    width: 100%;
+  }
+
+  main > header > div:first-child > form[onsubmit],
+  main > header > div:first-child > form {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    flex-basis: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  main:has(> header form) > header > div:first-child > form > input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  main:has(> header form) > header > div:first-child > form > button[type="button"] {
+    min-width: 42px;
+    padding-right: .7rem;
+    padding-left: .7rem;
+  }
+
+  main:has(> header form) > header > div:first-child {
+    padding-top: max(.5rem, env(safe-area-inset-top));
+  }
+
+  main:has(> header form) > header > div:nth-child(2) {
+    height: auto;
+    min-height: 54px;
+    gap: .5rem;
+    padding: .45rem .75rem;
+    scroll-padding-inline: .75rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main:has(> header form) > header > div:nth-child(2) > span {
+    display: none;
+  }
+
+  main:has(> header form) > section {
+    min-height: 0;
+  }
+
+  main:has(> header form) > section > aside:first-child > div:first-child {
+    padding: .85rem .75rem .65rem;
+  }
+
+  main:has(> header form) > section > aside:first-child > div:nth-child(2),
+  main:has(> header form) > section > aside:first-child > div:last-child {
+    padding-left: .75rem;
+    padding-right: .75rem;
+  }
+
+  main:has(> header form) article.group:hover {
+    transform: none;
+  }
+
+  main:has(> header form) article.group > div {
+    min-height: 126px;
+  }
+
+  /* Keep the map usable while an iPhone-sized profile is open as a bottom sheet. */
+  main:has(> header form) > section > div > aside {
+    top: auto;
+    right: .5rem;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom));
+    left: .5rem;
+    width: auto;
+    max-width: none;
+    height: min(62dvh, 590px);
+    gap: .5rem;
+    padding: .4rem;
+    border-radius: 1rem;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main:has(> header form) > section > div > aside .gym-profile-presence {
+    width: calc(100vw - 1.8rem) !important;
+    min-width: calc(100vw - 1.8rem);
+    scroll-snap-align: center;
+  }
+
+  main:has(> header form) > section > div > aside article > div:first-child > div:first-child {
+    height: 10.5rem;
+  }
+
+  main:has(> header form) > section > div > aside article > div:last-child {
+    padding: .75rem;
+    padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+  }
+
+  main:has(> header form) .leaflet-control-zoom a {
+    width: 42px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    font-size: 22px !important;
+  }
+
+  main:has(> header form) .leaflet-bottom.leaflet-right {
+    bottom: 3.9rem;
+  }
+
+  /* Bottom sheets, dialogs, and filters */
+  [role="dialog"],
+  .gym-verification-page form {
+    max-width: 100%;
+  }
+
+  .gym-verification-page section {
+    border-radius: 1rem;
+    padding: .9rem;
+  }
+
+  .gym-verification-page form > div > div:last-child > button,
+  .gym-verification-page .verify-information-button {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .gym-verification-page form > div > div:last-child {
+    align-items: stretch;
+    padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+  }
+
+  .gym-verification-page input[type="file"] + * {
+    max-width: 100%;
+  }
+
+  /* Admin data remains complete and is swipe-scrollable instead of squeezing. */
+  main table {
+    white-space: nowrap;
+  }
+
+  main table td,
+  main table th {
+    padding-right: .8rem;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) > section {
+    padding-top: 1.25rem;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+
+  nav[aria-label="Admin sections"] {
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  nav[aria-label="Admin sections"] > a {
+    min-height: 44px;
+    scroll-snap-align: start;
+  }
+
+  /* Modal controls should remain above the iPhone home indicator. */
+  .fixed.inset-0 > form,
+  .fixed.inset-0 > div {
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem);
+    overflow-y: auto;
+  }
+}

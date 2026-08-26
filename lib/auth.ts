@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { compare } from "bcrypt";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { hasAdminAccessByEmail } from "@/lib/admin";
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(db),
@@ -73,6 +74,7 @@ export const authOptions: NextAuthOptions = {
 
             if(user) {
                 const sessionUser = user as { id?: string; email?: string | null; name?: string | null; role?: string | null; username?: string | null };
+                const email = sessionUser.email ?? (typeof token.email === "string" ? token.email : null);
                 return {
                     ...token,
                     sub: sessionUser.id ?? token.sub,
@@ -80,8 +82,10 @@ export const authOptions: NextAuthOptions = {
                     name: sessionUser.name ?? token.name,
                     username: sessionUser.username,
                     role: sessionUser.role ?? token.role,
+                    isAdmin: await hasAdminAccessByEmail(email),
                 }
             }
+            if (typeof token.email === "string") token.isAdmin = await hasAdminAccessByEmail(token.email);
             return token
         },
         async session({ session, token }) {
@@ -94,6 +98,7 @@ export const authOptions: NextAuthOptions = {
                     name: typeof token.name === "string" ? token.name : session.user?.name,
                     username: token.username,
                     role: typeof token.role === "string" ? token.role : undefined,
+                    isAdmin: Boolean(token.isAdmin),
                 }
             }
         }
