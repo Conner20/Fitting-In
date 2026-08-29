@@ -39,21 +39,18 @@ export async function GET(req: Request) {
             data: { emailVerified: new Date() },
             select: {
                 id: true,
-                username: true,
                 role: true,
                 email: true,
-                name: true,
                 image: true,
             },
         });
 
         await db.verificationToken.deleteMany({ where: { identifier: vt.identifier } });
 
-        const displayName = user.username ?? user.name ?? "there";
         const gymInvite = req.headers.get("cookie")?.match(/(?:^|; )gym_invite=([^;]+)/)?.[1];
         const callbackUrl = gymInvite
             ? `/gym-invite/${encodeURIComponent(decodeURIComponent(gymInvite))}?claim=1`
-            : `/user-onboarding?username=${encodeURIComponent(displayName)}`;
+            : `/user-onboarding?email=${encodeURIComponent(user.email ?? "")}`;
 
         const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
         const tokenPayload = {

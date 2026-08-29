@@ -15,7 +15,7 @@ function UserOnboardingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { update } = useSession();
-    const userName = searchParams?.get('username') ?? 'there';
+    const userEmail = searchParams?.get('email') ?? 'your account';
 
     const [role, setRole] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -72,7 +72,7 @@ function UserOnboardingContent() {
                         <div className="mb-8 space-y-2 text-center sm:mb-8 sm:space-y-2">
                             <p className="text-xs uppercase tracking-[0.18em] text-zinc-400 sm:text-sm sm:tracking-[0.2em]">Onboarding</p>
                             <h2 className="text-2xl font-semibold sm:text-3xl">
-                                Hi {userName}, choose your role
+                                {userEmail}
                             </h2>
                         </div>
                         <div className="grid w-full gap-4">

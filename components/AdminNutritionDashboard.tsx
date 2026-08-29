@@ -80,12 +80,11 @@ type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 type BWPoint = { date: string; weight: number };
 type RangeKey = '1W' | '1M' | '3M' | '1Y' | 'ALL';
 type HMMetric = 'kcal' | 'f' | 'c' | 'p';
-type ShareUserInfo = { id: string; username: string | null; name: string | null; image?: string | null };
+type ShareUserInfo = { id: string; email: string | null; image?: string | null };
 type ShareOutgoingEntry = { viewer: ShareUserInfo; workouts: boolean; wellness: boolean; nutrition: boolean };
 type ShareIncomingEntry = { owner: ShareUserInfo; workouts: boolean; wellness: boolean; nutrition: boolean };
 
-const shareDisplayName = (user: ShareUserInfo) =>
-    (user.name && user.name.trim()) || (user.username && user.username.trim()) || 'User';
+const shareDisplayName = (user: ShareUserInfo) => user.email?.trim() || 'Email unavailable';
 
 /** Demo foods (static baseline options) */
 const FOOD_DB: Food[] = [

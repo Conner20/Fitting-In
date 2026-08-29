@@ -1,6 +1,6 @@
 import { db } from "@/prisma/client";
 
-const GYM_TYPES = new Set(["Open gym", "Personal training gym", "Group training gym", "Specialty gym/studio"]);
+const GYM_TYPES = new Set(["Open", "Personal training gym", "Group training gym", "Specialty gym/studio"]);
 
 export function gymSlug(name: string) {
     const base = name
@@ -39,12 +39,13 @@ export function cleanGymInput(body: Record<string, unknown>) {
     const stringList = (key: string) => Array.isArray(body[key])
         ? (body[key] as unknown[]).filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean)
         : [];
+    const gymType = optionalText("gymType");
     return {
         name: text("name"),
         address: text("address"),
         phone: text("phone"),
         website: text("website").replace(/^https?:\/\//i, "").replace(/\/$/, ""),
-        gymType: optionalText("gymType"),
+        gymType: gymType === "Open gym" ? "Open" : gymType,
         city: optionalText("city"),
         state: optionalText("state"),
         country: optionalText("country"),
@@ -75,10 +76,11 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
     [
         ["name", "gym name"], ["address", "street address"], ["city", "city"], ["state", "state"],
         ["country", "country"], ["phone", "phone"], ["contactEmail", "contact email"], ["website", "website"],
-        ["gymType", "gym type"], ["dayPassDetails", "day pass details"],
+        ["gymType", "gym type"], ["dayPassDetails", "day pass duration"],
         ["hours", "hours"], ["coverPhotoUrl", "cover photo"],
     ].forEach(([key, label]) => requireText(key as keyof typeof data, label));
     if (!data.gymType || !GYM_TYPES.has(data.gymType)) missing.push("gym type");
+    if (!data.dayPassDetails || !/^\d+$/.test(data.dayPassDetails) || Number(data.dayPassDetails) < 1) missing.push("day pass duration in whole days");
     requireList("amenities", "amenities");
     requireList("equipment", "equipment");
     requireList("photoUrls", "amenity photos");

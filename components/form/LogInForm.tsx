@@ -24,6 +24,10 @@ const inputClass =
 const LogInForm = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const requestedCallback = searchParams?.get("callbackUrl") || "";
+    const callbackUrl = requestedCallback.startsWith("/") && !requestedCallback.startsWith("//") ? requestedCallback : "/";
+    const dayPassGymId = callbackUrl.match(/^\/day-pass\/([^/?#]+)/)?.[1] || "";
+    const signUpHref = dayPassGymId ? `/sign-up?gymId=${encodeURIComponent(dayPassGymId)}` : "/sign-up";
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showResendPrompt, setShowResendPrompt] = useState(false);
     const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -34,6 +38,8 @@ const LogInForm = () => {
     const onSubmit = async (values: z.infer<typeof FormSchema>) => {
         setShowResendPrompt(false);
         setResendStatus("idle");
+        const externalTab = dayPassGymId ? window.open("about:blank", "_blank") : null;
+        if (externalTab) externalTab.opener = null;
 
         const logInData = await signIn('credentials', {
             email: values.email,
@@ -41,6 +47,7 @@ const LogInForm = () => {
             redirect: false,
         });
         if (logInData?.error) {
+            externalTab?.close();
             if (logInData.error === "EMAIL_NOT_VERIFIED") {
                 setErrorMessage("Please verify your email before logging in.");
                 setShowResendPrompt(true);
@@ -50,9 +57,24 @@ const LogInForm = () => {
         } else {
             setErrorMessage(null);
             setShowResendPrompt(false);
+            if (dayPassGymId) {
+                localStorage.setItem("fittingin_pending_day_pass_confirmation", JSON.stringify({ gymId: decodeURIComponent(dayPassGymId), openedAt: Date.now() }));
+                const destinationPath = `/day-pass/${dayPassGymId}`;
+                if (externalTab) {
+                    externalTab.location.href = `${window.location.origin}${destinationPath}`;
+                    externalTab.focus();
+                } else {
+                    window.open(destinationPath, "_blank", "noopener,noreferrer");
+                }
+                window.location.assign("/");
+                return;
+            }
+            if (callbackUrl !== "/") {
+                window.location.assign(callbackUrl);
+                return;
+            }
+            router.push("/");
             router.refresh();
-            const callbackUrl = searchParams?.get("callbackUrl");
-            router.push(callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : "/")
         }
     }
 
@@ -141,7 +163,7 @@ const LogInForm = () => {
 
             <p className="mt-3 text-center text-sm text-white/45">
                 If you don&apos;t have an account, please&nbsp;
-                <Link className='font-semibold text-[#22c55e] hover:underline' href='/sign-up'>Sign Up</Link>
+                <Link className='font-semibold text-[#22c55e] hover:underline' href={signUpHref}>Sign Up</Link>
             </p>
         </Form>
     );

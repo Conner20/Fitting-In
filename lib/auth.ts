@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Username", type: "text", placeholder: "jsmith" },
+                email: { label: "Email", type: "email", placeholder: "you@example.com" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
@@ -53,7 +53,6 @@ export const authOptions: NextAuthOptions = {
 
                 return {
                     id: `${existingUser.id}`,
-                    username: existingUser.username,
                     email: existingUser.email,
                     role: existingUser.role,
                 }
@@ -73,14 +72,13 @@ export const authOptions: NextAuthOptions = {
             }
 
             if(user) {
-                const sessionUser = user as { id?: string; email?: string | null; name?: string | null; role?: string | null; username?: string | null };
+                const sessionUser = user as { id?: string; email?: string | null; role?: string | null };
                 const email = sessionUser.email ?? (typeof token.email === "string" ? token.email : null);
                 return {
                     ...token,
                     sub: sessionUser.id ?? token.sub,
                     email: sessionUser.email ?? token.email,
-                    name: sessionUser.name ?? token.name,
-                    username: sessionUser.username,
+                    name: undefined,
                     role: sessionUser.role ?? token.role,
                     isAdmin: await hasAdminAccessByEmail(email),
                 }
@@ -95,8 +93,7 @@ export const authOptions: NextAuthOptions = {
                     ...session.user,
                     id: typeof token.sub === "string" ? token.sub : undefined,
                     email: typeof token.email === "string" ? token.email : session.user?.email,
-                    name: typeof token.name === "string" ? token.name : session.user?.name,
-                    username: token.username,
+                    name: null,
                     role: typeof token.role === "string" ? token.role : undefined,
                     isAdmin: Boolean(token.isAdmin),
                 }

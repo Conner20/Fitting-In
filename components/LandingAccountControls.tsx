@@ -22,7 +22,7 @@ export default function LandingAccountControls({ signedIn, email }: { signedIn: 
   }
 
   return <>
-    <div className="fixed right-3 top-3 z-[1500] flex items-center gap-1 rounded-full border border-black/10 bg-white/95 p-1 shadow-lg backdrop-blur dark:border-white/10 dark:bg-[#111411]/95">
+    <div className="fixed right-3 top-3 z-[1500] hidden items-center gap-1 rounded-full border border-black/10 bg-white/95 p-1 shadow-lg backdrop-blur dark:border-white/10 dark:bg-[#111411]/95 md:flex">
       <span className="hidden max-w-40 truncate px-2 text-xs text-zinc-500 md:block">{email}</span>
       <button onClick={()=>setOpen(true)} aria-label="Delete account" className="rounded-full p-2 text-red-500 hover:bg-red-500/10"><Trash2 className="h-4 w-4"/></button>
     </div>

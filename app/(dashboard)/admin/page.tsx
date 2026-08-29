@@ -9,27 +9,31 @@ import { authOptions } from "@/lib/auth";
 import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) redirect("/");
-  const since = new Date(Date.now() - 30 * 86_400_000);
-  const [users, newUsers, gyms, published, dayPassClicks, dayPassSignups] = await Promise.all([
-    db.user.count(),
-    db.user.count({ where: { createdAt: { gte: since } } }),
-    db.gym.count(),
-    db.gym.count({ where: { isPublished: true } }),
-    db.landingEvent.count({ where: { eventType: "DAY_PASS_CLICKED", createdAt: { gte: since } } }),
-    db.landingEvent.count({ where: { eventType: "DAY_PASS_SIGNUP", createdAt: { gte: since } } }),
+  const requestedRange = (await searchParams).range ?? "month";
+  const range = ["week", "month", "year", "all"].includes(requestedRange) ? requestedRange : "month";
+  const rangeDays = range === "week" ? 7 : range === "month" ? 30 : range === "year" ? 365 : 0;
+  const since = rangeDays ? new Date(Date.now() - rangeDays * 86_400_000) : null;
+  const createdAt = since ? { createdAt: { gte: since } } : {};
+  const [users, gyms, published, dayPassClicks, confirmedDayPasses] = await Promise.all([
+    db.user.count({ where: createdAt }),
+    db.gym.count({ where: createdAt }),
+    db.gym.count({ where: { isPublished: true, ...createdAt } }),
+    db.landingEvent.count({ where: { eventType: "DAY_PASS_CLICKED", ...createdAt } }),
+    db.landingEvent.count({ where: { eventType: "DAY_PASS_CLAIM_CONFIRMED", ...createdAt } }),
   ]);
-  const cards = [["Accounts", users], ["New · 30d", newUsers], ["Gyms", gyms], ["Published", published], ["Day-pass clicks · 30d", dayPassClicks], ["Signup conversions · 30d", dayPassSignups]] as const;
+  const cards = [["Accounts created", users], ["Gyms created", gyms], ["Published gyms", published], ["Day-pass clicks", dayPassClicks], ["Confirmed day passes", confirmedDayPasses]] as const;
   return <main className="min-h-screen bg-[#f8f8f8] text-black dark:bg-[#050505] dark:text-white">
     <MobileHeader title="fitting" href="/" />
     <header className="hidden border-b border-black/5 bg-white px-10 py-6 dark:border-white/10 dark:bg-[#050505] lg:block"><Link href="/" aria-label="Return to Fitting In" className="text-[22px] font-black text-[#22c55e]">fitt<span className="underline">in</span>g</Link><div className="mt-4"><AdminNav active="overview" /></div></header>
     <section className="mx-auto max-w-7xl space-y-8 px-4 py-8">
       <div className="lg:hidden"><AdminNav active="overview" mobile /></div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">{cards.map(([label,value])=><div key={label} className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5"><p className="text-xs font-semibold text-zinc-500">{label}</p><p className="mt-1 text-2xl font-black">{value.toLocaleString()}</p></div>)}</div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold">Overview period</p><div className="flex flex-wrap gap-2">{[["week","Past week"],["month","Past month"],["year","Past year"],["all","All time"]].map(([value,label])=><Link key={value} href={`/admin?range=${value}`} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${range===value?"border-[#22c55e] bg-[#22c55e] text-black":"border-black/10 hover:border-[#22c55e] dark:border-white/15"}`}>{label}</Link>)}</div></div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">{cards.map(([label,value])=><div key={label} className="rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5"><p className="text-xs font-semibold text-zinc-500">{label}</p><p className="mt-1 text-2xl font-black">{value.toLocaleString()}</p></div>)}</div>
       <section id="users" className="space-y-4"><div><h2 className="text-xl font-black">Users</h2><p className="text-sm text-zinc-500">Search accounts, review gym access, manage administrators, or delete accounts.</p></div><AdminUserManager /></section>
-      <section id="behavior" className="border-t border-black/10 pt-8 dark:border-white/10"><AdminBehaviorDashboard compact /></section>
+      <section id="behavior" className="admin-overview-behavior border-t border-black/10 pt-8 dark:border-white/10"><AdminBehaviorDashboard compact periodDays={rangeDays} /></section>
     </section>
   </main>;
 }

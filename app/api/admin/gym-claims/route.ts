@@ -13,7 +13,7 @@ export async function GET() {
         where: { status: "PENDING" },
         include: {
             gym: true,
-            claimant: { select: { id: true, name: true, username: true, email: true } },
+            claimant: { select: { id: true, email: true } },
         },
         orderBy: { createdAt: "asc" },
     });

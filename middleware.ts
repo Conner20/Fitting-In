@@ -15,7 +15,7 @@ const PUBLIC_PATHS = [
     "/legal/support",
 ];
 
-const RETAINED_PAGE_PREFIXES = ["/admin", "/gym-invite", "/gym-listing"];
+const RETAINED_PAGE_PREFIXES = ["/admin", "/gym-invite", "/gym-listing", "/day-pass"];
 
 const startsWithAny = (pathname: string, prefixes: string[]) =>
     prefixes.some((prefix) => pathname.startsWith(prefix));

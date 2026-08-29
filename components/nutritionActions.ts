@@ -147,7 +147,7 @@ export async function fetchAllNutritionData(
     bodyweights: BodyweightDTO[];
     customFoods: CustomFoodDTO[];
     settings: NutritionSettingsDTO;
-    viewingUser: { id: string; name: string | null; username: string | null } | null;
+    viewingUser: { id: string; email: string | null } | null;
 }> {
     let viewerId: string | null = null;
     try {
@@ -168,7 +168,7 @@ export async function fetchAllNutritionData(
     }
 
     const targetUserId = viewerId!;
-    const viewingUser: { id: string; name: string | null; username: string | null } | null = null;
+    const viewingUser: { id: string; email: string | null } | null = null;
     void viewUserId;
 
     const [entries, bodyweights, customFoods, settings] = await Promise.all([

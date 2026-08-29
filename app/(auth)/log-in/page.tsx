@@ -4,10 +4,12 @@ import { getServerSession } from "next-auth";
 import LogInForm from "@/components/form/LogInForm";
 import { authOptions } from "@/lib/auth";
 
-const page = async () => {
+const page = async ({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) => {
     const session = await getServerSession(authOptions);
+    const requestedCallback = (await searchParams).callbackUrl ?? "";
+    const callbackUrl = requestedCallback.startsWith("/") && !requestedCallback.startsWith("//") ? requestedCallback : "/";
     if (session?.user) {
-        redirect("/");
+        redirect(callbackUrl);
     }
 
     return (

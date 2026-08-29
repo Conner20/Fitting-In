@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, cloneElement, isValidElement, useEffect, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, cloneElement, isValidElement, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ImagePlus, X } from "lucide-react";
 import GymHoursEditor from "@/components/GymHoursEditor";
@@ -17,12 +17,20 @@ type AddressSuggestion = { id: string; label: string; lat: number; lng: number; 
 const lines = (value: string) => value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
 const AMENITY_OPTIONS = ["Sauna", "Steam room", "Pool", "Showers", "Locker rooms", "Basketball court", "Turf area", "Group classes", "Personal training", "Childcare", "Parking", "24/7 access", "Women's-only area"];
 const EQUIPMENT_OPTIONS = ["Squat rack", "Power rack", "Smith machine", "Bench press", "Deadlift platform", "Olympic lifting platform", "Hack squat", "Pendulum squat", "Belt squat", "Leg press", "Cable station", "Pec deck", "Hip thrust machine", "Dumbbells 100+ lb", "Dumbbells 120+ lb", "Dumbbells 150+ lb"];
-const GYM_TYPE_OPTIONS = ["Open gym", "Personal training gym", "Group training gym", "Specialty gym/studio"];
+const GYM_TYPE_OPTIONS = ["Open", "Personal training gym", "Group training gym", "Specialty gym/studio"];
 const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 10);
     if (digits.length < 4) return digits;
     if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+const normalizeDayPassDays = (value: unknown) => {
+    const raw = typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+    if (!raw) return "";
+    const numeric = Number(raw);
+    if (Number.isInteger(numeric) && numeric > 0) return String(numeric);
+    const words: Record<string, string> = { single: "1", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7" };
+    return Object.entries(words).find(([word]) => raw.toLowerCase().includes(word))?.[1] ?? "1";
 };
 
 export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, autoClaim = false, ownerMode = false }: { gymId?: string; inviteToken?: string; initialGym?: Record<string, any>; autoClaim?: boolean; ownerMode?: boolean }) {
@@ -31,6 +39,7 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     const [loading, setLoading] = useState(Boolean(gymId && !initialGym));
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [draggingOver, setDraggingOver] = useState<"cover" | "amenities" | null>(null);
     const [message, setMessage] = useState("");
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -55,7 +64,7 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
 
     function populate(gym: Record<string, any>) {
         setForm({
-            name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType ?? "", dayPassPrice: gym.dayPassPrice == null ? "" : String(gym.dayPassPrice), dayPassDetails: gym.dayPassDetails ?? "", dayPassUrl: gym.dayPassUrl ?? "", hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
+            name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType === "Open gym" ? "Open" : gym.gymType ?? "", dayPassPrice: gym.dayPassPrice == null ? "" : String(gym.dayPassPrice), dayPassDetails: normalizeDayPassDays(gym.dayPassDetails), dayPassUrl: gym.dayPassUrl ?? "", hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
         });
     }
 
@@ -83,36 +92,40 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
         setAddressSuggestions([]); setAddressOpen(false);
     }
 
-    async function uploadImages(event: ChangeEvent<HTMLInputElement>) {
-        const files = Array.from(event.target.files ?? []);
+    async function uploadFiles(files: File[], target: "cover" | "amenities") {
+        files = files.filter((file) => file.type.startsWith("image/"));
         if (!files.length) return;
         setUploading(true); setMessage("");
-        const data = new FormData(); files.forEach((file) => data.append("images", file));
+        const data = new FormData(); (target === "cover" ? files.slice(0, 1) : files).forEach((file) => data.append("images", file));
         const response = await fetch(inviteToken ? `/api/uploads/images?invite=${encodeURIComponent(inviteToken)}` : "/api/uploads/images", { method: "POST", body: data });
         const result = await response.json().catch(() => ({}));
-        if (response.ok) update("photoUrls", [...form.photoUrls, ...result.urls]); else setMessage(result.message ?? "Image upload failed.");
-        setUploading(false); event.target.value = "";
+        if (response.ok && result.urls?.length) {
+            if (target === "cover") update("coverPhotoUrl", result.urls[0]);
+            else setForm((current) => ({ ...current, photoUrls: [...current.photoUrls, ...result.urls] }));
+        } else setMessage(result.message ?? "Image upload failed.");
+        setUploading(false);
     }
 
-    async function uploadSingle(event: ChangeEvent<HTMLInputElement>, target: "coverPhotoUrl") {
-        const file = event.target.files?.[0];
-        if (!file) return;
-        setUploading(true); setMessage("");
-        const data = new FormData(); data.append("images", file);
-        const response = await fetch(inviteToken ? `/api/uploads/images?invite=${encodeURIComponent(inviteToken)}` : "/api/uploads/images", { method: "POST", body: data });
-        const result = await response.json().catch(() => ({}));
-        if (response.ok && result.urls?.[0]) update(target, result.urls[0]); else setMessage(result.message ?? "Image upload failed.");
-        setUploading(false); event.target.value = "";
+    async function uploadImages(event: ChangeEvent<HTMLInputElement>, target: "cover" | "amenities") {
+        await uploadFiles(Array.from(event.target.files ?? []), target);
+        event.target.value = "";
+    }
+
+    function dropImages(event: DragEvent<HTMLElement>, target: "cover" | "amenities") {
+        event.preventDefault();
+        setDraggingOver(null);
+        if (!uploading) void uploadFiles(Array.from(event.dataTransfer.files), target);
     }
 
     async function submit(event: FormEvent) {
         event.preventDefault(); setSaving(true); setMessage(""); setValidationErrors([]);
         const errors:string[]=[];
-        const required:[string,string][]=[["Gym name",form.name],["Street address",form.address],["City",form.city],["State",form.state],["Country",form.country],["Phone",form.phone],["Contact email",form.contactEmail],["Website",form.website],["Day pass price",form.dayPassPrice],["Day pass details",form.dayPassDetails],["Hours",form.hours],["Amenities",form.amenities],["Equipment",form.equipment]];
+        const required:[string,string][]=[["Gym name",form.name],["Street address",form.address],["City",form.city],["State",form.state],["Country",form.country],["Phone",form.phone],["Email",form.contactEmail],["Website",form.website],["Day pass price",form.dayPassPrice],["Day pass duration",form.dayPassDetails],["Hours",form.hours],["Amenities",form.amenities],["Equipment",form.equipment]];
         required.forEach(([field,value])=>{if(!value.trim())errors.push(`${field} is required.`)});
         if(!GYM_TYPE_OPTIONS.includes(form.gymType))errors.push("Gym type must be selected.");
         if(form.phone&&form.phone.replace(/\D/g,"").length!==10)errors.push("Phone must include 10 digits.");
         if(form.contactEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail))errors.push("Contact email must be a valid email address.");
+        if(form.dayPassDetails&&(!/^\d+$/.test(form.dayPassDetails)||Number(form.dayPassDetails)<1))errors.push("Day pass duration must be a whole number of days.");
         if(form.website&&!/^[a-z][a-z\d+.-]*:\/\//i.test(form.website)&&!form.website.includes("."))errors.push("Website must be a valid domain, such as example.com.");
         if(form.lat==null||form.lng==null)errors.push("Street address must be selected from the address suggestions.");
         if(!form.coverPhotoUrl)errors.push("Cover photo is required.");
@@ -158,20 +171,20 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
                 <Field label="Gym name"><input required className={input} value={form.name} onChange={(e) => update("name", e.target.value)} /></Field>
                 <div className="relative"><Field label="Street address"><input required autoComplete="off" className={input} value={form.address} onFocus={() => setAddressOpen(true)} onChange={(e) => { update("address", e.target.value); update("lat", null); update("lng", null); setAddressOpen(true); }} placeholder="Start typing an address…" /></Field>{addressOpen && addressSuggestions.length > 0 && <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-neutral-900">{addressSuggestions.map((suggestion) => <button key={suggestion.id} type="button" onClick={() => selectAddress(suggestion)} className="block w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-white/10">{suggestion.label}</button>)}</div>}</div>
                 <div className="grid gap-3 sm:grid-cols-3"><Field label="City"><input required className={input} value={form.city} onChange={(e) => update("city", e.target.value)} /></Field><Field label="State"><input required className={input} value={form.state} onChange={(e) => update("state", e.target.value)} /></Field><Field label="Country"><input required className={input} value={form.country} onChange={(e) => update("country", e.target.value)} /></Field></div>
-                <div className="grid gap-3 sm:grid-cols-2"><Field label="Phone"><input required type="tel" inputMode="numeric" maxLength={14} className={input} value={form.phone} onChange={(e) => update("phone", formatPhone(e.target.value))} placeholder="(202) 555-0123" /></Field><Field label="Contact email"><input required type="email" className={input} value={form.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} /></Field></div>
+                <div className="grid gap-3 sm:grid-cols-2"><Field label="Phone"><input required type="tel" inputMode="numeric" maxLength={14} className={input} value={form.phone} onChange={(e) => update("phone", formatPhone(e.target.value))} placeholder="(202) 555-0123" /></Field><Field label="Email"><input required type="email" className={input} value={form.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} /></Field></div>
                 <Field label="Website"><input required type="text" inputMode="url" className={input} value={form.website} onChange={(e) => update("website", e.target.value)} placeholder="example.com" /></Field>
             </EditorSection>
             <EditorSection title="Gym type and day pass" description="Day-pass information is the only pricing shown to visitors and is used for comparison filters.">
                 <div className="grid gap-3 sm:grid-cols-2 [&_input]:py-2 [&_select]:py-2 [&_textarea]:py-2">
-                    <Field label="Gym type"><select required className={input} value={GYM_TYPE_OPTIONS.includes(form.gymType) ? form.gymType : ""} onChange={(e) => update("gymType", e.target.value)}><option value="" disabled>Select a gym type</option><option value="Open gym">Open gym</option><option value="Personal training gym">Personal training gym</option><option value="Group training gym">Group training gym</option><option value="Specialty gym/studio">Specialty gym/studio</option></select></Field>
+                    <Field label="Gym type"><select required className={input} value={GYM_TYPE_OPTIONS.includes(form.gymType) ? form.gymType : ""} onChange={(e) => update("gymType", e.target.value)}><option value="" disabled>Select a gym type</option><option value="Open">Open</option><option value="Personal training gym">Personal training gym</option><option value="Group training gym">Group training gym</option><option value="Specialty gym/studio">Specialty gym/studio</option></select></Field>
                     <Field label="Day pass price"><input required type="number" min="0" step="0.01" className={input} value={form.dayPassPrice} onChange={(e) => update("dayPassPrice", e.target.value)} /></Field>
                     <Field label="Day pass URL"><input type="text" inputMode="url" className={input} value={form.dayPassUrl} onChange={(e) => update("dayPassUrl", e.target.value)} placeholder="gym.com/day-pass" /></Field>
-                    <Field label="Day pass details"><textarea required rows={2} className={input} value={form.dayPassDetails} onChange={(e) => update("dayPassDetails", e.target.value)} placeholder="Availability, restrictions, and included access" /></Field>
+                    <Field label="Day pass duration (days)"><input required type="number" inputMode="numeric" min="1" step="1" className={input} value={form.dayPassDetails} onChange={(e) => update("dayPassDetails", e.target.value.replace(/\D/g, ""))} placeholder="1" /></Field>
                 </div>
             </EditorSection>
-            <EditorSection title="Facility details"><Field label="Hours"><GymHoursEditor value={form.hours} onChange={(value) => update("hours", value)} /></Field><div><h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Amenities</h3><p className="mt-1 text-xs text-zinc-500">Select every amenity available at this gym. These choices power search and membership access.</p><StructuredChecklist options={AMENITY_OPTIONS} selected={lines(form.amenities)} onChange={(items)=>update("amenities",items.join("\n"))} otherLabel="Other amenities" /></div><div><h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Equipment</h3><p className="mt-1 text-xs text-zinc-500">Select all equipment available at this location.</p><StructuredChecklist options={EQUIPMENT_OPTIONS} selected={lines(form.equipment)} onChange={(items)=>update("equipment",items.join("\n"))} otherLabel="Other equipment" /></div></EditorSection>
-            <EditorSection title="Photos" description="Add a wide cover photo and photos that showcase the gym's amenities."><label className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${validationErrors.length&&!form.coverPhotoUrl?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{form.coverPhotoUrl ? "Replace cover photo" : "Upload cover photo"}<input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(event) => uploadSingle(event, "coverPhotoUrl")} /></label>{form.coverPhotoUrl&&<PhotoRemovalPreview label="Cover photo" url={form.coverPhotoUrl} remove={()=>update("coverPhotoUrl","")}/>}<details><summary className="cursor-pointer text-xs text-zinc-500">Or enter a cover photo URL</summary><div className="mt-3"><Field label="Cover photo URL"><input className={input} value={form.coverPhotoUrl} onChange={(e) => update("coverPhotoUrl", e.target.value)} /></Field></div></details><label className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${validationErrors.length&&!form.photoUrls.length?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{uploading ? "Uploading…" : "Upload amenity photos"}<input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={uploadImages} /></label><div className="grid grid-cols-3 gap-2">{form.photoUrls.map((url) => <div key={url} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100"><img src={url} alt="" className="h-full w-full object-cover" /><button type="button" aria-label="Remove amenity photo" onClick={() => update("photoUrls", form.photoUrls.filter((item) => item !== url))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"><X size={13} /></button></div>)}</div></EditorSection>
-            {inviteToken ? <div className="flex justify-center py-2 pb-[max(.5rem,env(safe-area-inset-bottom))]"><button disabled={saving} className="verify-information-button min-w-52 rounded-xl border border-transparent bg-[#22c55e] px-7 py-3 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-black hover:text-[#22c55e] disabled:opacity-50">{saving ? "Saving…" : "Verify information"}</button></div> : <div className="flex flex-wrap items-center justify-center gap-3 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">{ownerMode&&<button type="button" onClick={()=>router.push("/")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId && !ownerMode && <button type="button" onClick={deleteGym} disabled={saving||updatedFeedback} className="rounded-xl border border-transparent bg-[#e66b6b] px-5 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#e66b6b] hover:bg-zinc-50 hover:text-[#e66b6b] dark:hover:bg-neutral-950">Delete listing</button>}<button disabled={saving} className="rounded-xl border border-transparent bg-[#22c55e] px-6 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-zinc-50 hover:text-[#22c55e] disabled:cursor-default dark:hover:bg-neutral-950">{updatedFeedback?<span className="flex animate-[copy-confirm_.35s_ease-out] items-center gap-2"><Check size={16} strokeWidth={3}/>Updated!</span>:saving?"Saving…":gymId?"Submit changes":"Create listing"}</button></div>}
+            <EditorSection title="Facility details"><Field label="Hours"><GymHoursEditor value={form.hours} onChange={(value) => update("hours", value)} /></Field><div><h3 className={`text-sm font-medium ${validationErrors.includes("Amenities is required.")&&!form.amenities.trim()?"text-red-500 dark:text-red-400":"text-zinc-700 dark:text-zinc-200"}`}>Amenities</h3><p className="mt-1 text-xs text-zinc-500">Select every amenity available at this gym. These choices power search and membership access.</p><StructuredChecklist options={AMENITY_OPTIONS} selected={lines(form.amenities)} onChange={(items)=>update("amenities",items.join("\n"))} otherLabel="Other amenities" /></div><div><h3 className={`text-sm font-medium ${validationErrors.includes("Equipment is required.")&&!form.equipment.trim()?"text-red-500 dark:text-red-400":"text-zinc-700 dark:text-zinc-200"}`}>Equipment</h3><p className="mt-1 text-xs text-zinc-500">Select all equipment available at this location.</p><StructuredChecklist options={EQUIPMENT_OPTIONS} selected={lines(form.equipment)} onChange={(items)=>update("equipment",items.join("\n"))} otherLabel="Other equipment" /></div></EditorSection>
+            <EditorSection title="Photos" description="Add a wide cover photo and photos that showcase the gym's amenities."><label onDragEnter={(event)=>{event.preventDefault();setDraggingOver("cover")}} onDragOver={(event)=>event.preventDefault()} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingOver(null)}} onDrop={(event)=>dropImages(event,"cover")} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-center text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${draggingOver==="cover"?"border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]":validationErrors.length&&!form.coverPhotoUrl?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{uploading ? "Uploading…" : form.coverPhotoUrl ? "Replace cover photo" : "Upload cover photo"}<input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(event) => uploadImages(event, "cover")} /></label>{form.coverPhotoUrl&&<PhotoRemovalPreview label="Cover photo" url={form.coverPhotoUrl} remove={()=>update("coverPhotoUrl","")}/>}<details><summary className="cursor-pointer text-xs text-zinc-500">Or enter a cover photo URL</summary><div className="mt-3"><Field label="Cover photo URL"><input className={input} value={form.coverPhotoUrl} onChange={(e) => update("coverPhotoUrl", e.target.value)} /></Field></div></details><label onDragEnter={(event)=>{event.preventDefault();setDraggingOver("amenities")}} onDragOver={(event)=>event.preventDefault()} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingOver(null)}} onDrop={(event)=>dropImages(event,"amenities")} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-center text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${draggingOver==="amenities"?"border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]":validationErrors.length&&!form.photoUrls.length?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{uploading ? "Uploading…" : "Upload amenity photos"}<input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={(event)=>uploadImages(event,"amenities")} /></label><div className="grid grid-cols-3 gap-2">{form.photoUrls.map((url) => <div key={url} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100"><img src={url} alt="" className="h-full w-full object-cover" /><button type="button" aria-label="Remove amenity photo" onClick={() => update("photoUrls", form.photoUrls.filter((item) => item !== url))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"><X size={13} /></button></div>)}</div></EditorSection>
+            {inviteToken ? <div className="flex justify-center py-2 pb-[max(.5rem,env(safe-area-inset-bottom))]"><button disabled={saving} className="verify-information-button min-w-52 rounded-xl border border-transparent bg-[#22c55e] px-7 py-3 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-black hover:text-[#22c55e] disabled:opacity-50">{saving ? "Saving…" : "Verify information"}</button></div> : <div className="flex flex-wrap items-center justify-center gap-3 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">{!gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{ownerMode&&<button type="button" onClick={()=>router.push("/")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId && !ownerMode && <button type="button" onClick={deleteGym} disabled={saving||updatedFeedback} className="rounded-xl border border-transparent bg-[#e66b6b] px-5 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#e66b6b] hover:bg-zinc-50 hover:text-[#e66b6b] dark:hover:bg-neutral-950">Delete listing</button>}<button disabled={saving} className="rounded-xl border border-transparent bg-[#22c55e] px-6 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-zinc-50 hover:text-[#22c55e] disabled:cursor-default dark:hover:bg-neutral-950">{updatedFeedback?<span className="flex animate-[copy-confirm_.35s_ease-out] items-center gap-2"><Check size={16} strokeWidth={3}/>Updated!</span>:saving?"Saving…":gymId?"Submit changes":"Create listing"}</button></div>}
         </div>
     </form>;
 }

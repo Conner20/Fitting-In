@@ -44,7 +44,7 @@ export async function PATCH(req: Request, { params }: Context) {
         return tx.gymClaim.update({
             where: { id },
             data: { status, reviewNote, reviewedById: reviewer.id, reviewedAt: new Date(), ...(status === "APPROVED" ? { proposedData: undefined } : {}) },
-            include: { gym: true, claimant: { select: { id: true, name: true, username: true, email: true } } },
+            include: { gym: true, claimant: { select: { id: true, email: true } } },
         });
     });
     return NextResponse.json({ claim: result });
