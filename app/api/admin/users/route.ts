@@ -12,13 +12,13 @@ export async function GET(request:Request){
   const query=new URL(request.url).searchParams.get("q")?.trim()||"";
   const where=query?{email:{contains:query,mode:Prisma.QueryMode.insensitive}}:{};
   const [users,events]=await Promise.all([
-    db.user.findMany({where,take:500,orderBy:{createdAt:"desc"},select:{id:true,email:true,role:true,isAdmin:true,lastLoginAt:true,gymAccesses:{select:{id:true}}}}),
+    db.user.findMany({where,take:500,orderBy:{createdAt:"desc"},select:{id:true,email:true,role:true,isAdmin:true,lastLoginAt:true,landingEvents:{select:{createdAt:true},orderBy:{createdAt:"desc"},take:1},gymAccesses:{select:{id:true,gym:{select:{id:true,name:true}}}}}}),
     db.landingEvent.findMany({where:{eventType:{in:["DAY_PASS_CLICKED","DAY_PASS_CLAIM_CONFIRMED","DAY_PASS_SIGNUP"]}},select:{eventType:true,userId:true,visitorId:true},take:100_000}),
   ]);
   const visitorUsers=new Map(events.filter(event=>event.userId).map(event=>[event.visitorId,event.userId!]));
   const activity=new Map<string,{dayPassClicks:number;confirmedDayPasses:number}>();
   for(const event of events){const userId=event.userId||visitorUsers.get(event.visitorId);if(!userId)continue;const totals=activity.get(userId)||{dayPassClicks:0,confirmedDayPasses:0};if(event.eventType==="DAY_PASS_CLICKED")totals.dayPassClicks++;if(event.eventType==="DAY_PASS_CLAIM_CONFIRMED")totals.confirmedDayPasses++;activity.set(userId,totals)}
-  return NextResponse.json({canManageUsers:await hasSuperAdminAccessByEmail(session.user.email),users:users.filter(user=>user.email?.toLowerCase()!==session.user.email?.toLowerCase()).map(user=>({id:user.id,email:user.email,role:user.role,hasAdminAccess:getUserAdminStatus(user),isConfiguredAdmin:isConfiguredAdminEmail(user.email),gymAccessCount:user.gymAccesses.length,lastActiveAt:user.lastLoginAt?.toISOString()||null,...(activity.get(user.id)||{dayPassClicks:0,confirmedDayPasses:0})}))});
+  return NextResponse.json({canManageUsers:await hasSuperAdminAccessByEmail(session.user.email),users:users.filter(user=>user.email?.toLowerCase()!==session.user.email?.toLowerCase()).map(user=>{const latestEvent=user.landingEvents[0]?.createdAt;const lastActiveAt=latestEvent&&(!user.lastLoginAt||latestEvent>user.lastLoginAt)?latestEvent:user.lastLoginAt;return {id:user.id,email:user.email,role:user.role,hasAdminAccess:getUserAdminStatus(user),isConfiguredAdmin:isConfiguredAdminEmail(user.email),gymAccessCount:user.gymAccesses.length,gyms:user.gymAccesses.map(access=>access.gym),lastActiveAt:lastActiveAt?.toISOString()||null,...(activity.get(user.id)||{dayPassClicks:0,confirmedDayPasses:0})}})});
 }
 
 export async function PATCH(request: Request) {

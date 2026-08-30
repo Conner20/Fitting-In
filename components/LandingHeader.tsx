@@ -22,7 +22,7 @@ export default function LandingHeader() {
                 <nav className="flex items-center gap-1.5 sm:gap-2">
                     <Link
                         href="/log-in"
-                        className="rounded-full border px-3 py-2 text-sm transition hover:bg-black hover:text-white sm:px-4 dark:border-white/25 dark:text-white dark:hover:bg-white/10"
+                        className="rounded-full border px-3 py-2 text-sm transition hover:bg-transparent hover:text-white sm:px-4 dark:border-white/25 dark:text-white dark:hover:bg-transparent"
                     >
                         log in
                     </Link>

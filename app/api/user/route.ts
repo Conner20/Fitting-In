@@ -43,7 +43,16 @@ export async function POST(request: Request) {
       }).catch(()=>undefined);
       throw error;
     }
-    if (user.created && input.gymId && input.visitorId && input.visitId) await db.landingEvent.create({ data: { eventType: "DAY_PASS_SIGNUP", visitorId: input.visitorId.slice(0,128), visitId: input.visitId.slice(0,128), gymId: input.gymId, userId: user.id, metadata: { email, clickedAt: input.clickedAt || new Date().toISOString() } } }).catch(()=>undefined);
+    if (input.gymId && input.visitorId && input.visitId) {
+      const visitorId = input.visitorId.slice(0, 128);
+      await db.$transaction(async tx => {
+        await tx.landingEvent.updateMany({
+          where: { eventType: "DAY_PASS_CLICKED", visitorId, gymId: input.gymId, userId: null },
+          data: { userId: user.id },
+        });
+        if (user.created) await tx.landingEvent.create({ data: { eventType: "DAY_PASS_SIGNUP", visitorId, visitId: input.visitId!.slice(0,128), gymId: input.gymId!, userId: user.id, metadata: { email, clickedAt: input.clickedAt || new Date().toISOString() } } });
+      }).catch(()=>undefined);
+    }
     return NextResponse.json({ ok: true, resumed: !user.created }, { status: user.created ? 201 : 200 });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ message: error.issues[0]?.message || "Invalid signup information." }, { status: 400 });
