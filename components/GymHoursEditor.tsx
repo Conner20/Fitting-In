@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Clock3 } from "lucide-react";
 
 type DayHours = { day: string; open: boolean; allDay: boolean; opens: string; closes: string };
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -70,8 +71,10 @@ export default function GymHoursEditor({ value, onChange }: { value: string; onC
             <span className="text-sm font-semibold">{day.day.slice(0, 3)}</span>
             <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={day.open} onChange={(event) => change(index, { open: event.target.checked })} className="h-4 w-4 accent-emerald-700"/>Open</label>
             <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={day.allDay} disabled={!day.open} onChange={(event) => change(index, { allDay: event.target.checked })} className="h-4 w-4 accent-emerald-700"/>24 hrs</label>
-            {day.open && !day.allDay ? <div className="col-span-3 flex items-center gap-2 sm:col-span-1"><input aria-label={`${day.day} opening time`} type="time" value={day.opens} onChange={(event) => change(index, { opens: event.target.value })} className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm dark:border-white/10 dark:bg-zinc-900 sm:py-1.5"/><span className="text-zinc-400">–</span><input aria-label={`${day.day} closing time`} type="time" value={day.closes} onChange={(event) => change(index, { closes: event.target.value })} className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm dark:border-white/10 dark:bg-zinc-900 sm:py-1.5"/></div> : <span className="col-span-3 text-xs text-zinc-500 sm:col-span-1">{day.open ? "Open all day" : "Closed"}</span>}
+            {day.open && !day.allDay ? <div className="col-span-3 flex items-center gap-2 sm:col-span-1"><TimeInput label={`${day.day} opening time`} value={day.opens} onChange={opens=>change(index,{opens})}/><span className="text-zinc-400">–</span><TimeInput label={`${day.day} closing time`} value={day.closes} onChange={closes=>change(index,{closes})}/></div> : <span className="col-span-3 text-xs text-zinc-500 sm:col-span-1">{day.open ? "Open all day" : "Closed"}</span>}
         </div>)}
         <div className="bg-zinc-50 px-3 py-2 text-xs text-zinc-500 dark:bg-white/5"><b>Listing display:</b> <span className="whitespace-pre-line">{formatGymHours(schedule)}</span></div>
     </div>;
 }
+
+function TimeInput({label,value,onChange}:{label:string;value:string;onChange:(value:string)=>void}){return <span className="relative min-w-0 flex-1"><input aria-label={label} type="time" value={value} onChange={event=>onChange(event.target.value)} className="gym-time-input w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2 py-2 pr-8 text-sm dark:border-white/10 dark:bg-zinc-900 dark:text-white sm:py-1.5"/><Clock3 aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-200"/></span>}

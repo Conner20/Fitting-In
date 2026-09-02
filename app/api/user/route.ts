@@ -9,7 +9,7 @@ import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
 
 const schema = z.object({
-  email: z.string().email(), password: z.string().min(8), gymId: z.string().optional().nullable(),
+  email: z.string().email(), password: z.string().min(8), gymId: z.string().optional().nullable(), intent: z.enum(["day-pass", "membership"]).optional().default("day-pass"),
   visitorId: z.string().optional().nullable(), visitId: z.string().optional().nullable(), clickedAt: z.string().optional().nullable(),
 });
 
@@ -46,11 +46,13 @@ export async function POST(request: Request) {
     if (input.gymId && input.visitorId && input.visitId) {
       const visitorId = input.visitorId.slice(0, 128);
       await db.$transaction(async tx => {
+        const clickType = input.intent === "membership" ? "MEMBERSHIP_CLICKED" : "DAY_PASS_CLICKED";
+        const signupType = input.intent === "membership" ? "MEMBERSHIP_SIGNUP" : "DAY_PASS_SIGNUP";
         await tx.landingEvent.updateMany({
-          where: { eventType: "DAY_PASS_CLICKED", visitorId, gymId: input.gymId, userId: null },
+          where: { eventType: clickType, visitorId, gymId: input.gymId, userId: null },
           data: { userId: user.id },
         });
-        if (user.created) await tx.landingEvent.create({ data: { eventType: "DAY_PASS_SIGNUP", visitorId, visitId: input.visitId!.slice(0,128), gymId: input.gymId!, userId: user.id, metadata: { email, clickedAt: input.clickedAt || new Date().toISOString() } } });
+        if (user.created) await tx.landingEvent.create({ data: { eventType: signupType, visitorId, visitId: input.visitId!.slice(0,128), gymId: input.gymId!, userId: user.id, metadata: { email, clickedAt: input.clickedAt || new Date().toISOString() } } });
       }).catch(()=>undefined);
     }
     return NextResponse.json({ ok: true, resumed: !user.created }, { status: user.created ? 201 : 200 });

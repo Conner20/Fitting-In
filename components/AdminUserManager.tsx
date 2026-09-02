@@ -5,8 +5,8 @@ import { RefreshCw, ShieldPlus, ShieldX, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 
-type User={id:string;email:string|null;role:string|null;hasAdminAccess:boolean;isConfiguredAdmin:boolean;lastActiveAt:string|null;gymAccessCount:number;gyms:{id:string;name:string}[];dayPassClicks:number;confirmedDayPasses:number};
-type SortKey="role"|"dayPassClicks"|"confirmedDayPasses"|"lastActiveAt";
+type User={id:string;email:string|null;role:string|null;hasAdminAccess:boolean;isConfiguredAdmin:boolean;lastActiveAt:string|null;gymAccessCount:number;gyms:{id:string;name:string}[];dayPassClicks:number;confirmedDayPasses:number;membershipClicks:number;confirmedMemberships:number};
+type SortKey="role"|"dayPassClicks"|"confirmedDayPasses"|"membershipClicks"|"confirmedMemberships"|"lastActiveAt";
 export default function AdminUserManager(){
  const[users,setUsers]=useState<User[]>([]),[query,setQuery]=useState(""),[loading,setLoading]=useState(true),[canManage,setCanManage]=useState(false),[selected,setSelected]=useState<string[]>([]),[password,setPassword]=useState(""),[message,setMessage]=useState(""),[page,setPage]=useState(1),[sort,setSort]=useState<{key:SortKey;direction:"asc"|"desc"}>({key:"role",direction:"asc"});
  const load=async()=>{setLoading(true);const response=await fetch(`/api/admin/users?q=${encodeURIComponent(query)}`,{cache:"no-store"});const data=await response.json().catch(()=>({}));if(response.ok){setUsers(data.users??[]);setCanManage(Boolean(data.canManageUsers));setPage(1)}else setMessage(data.error??"Unable to load users.");setLoading(false)};
@@ -23,16 +23,15 @@ export default function AdminUserManager(){
 <button onClick={()=>void load()} className="rounded-xl border px-4 py-2 transition hover:border-[#22c55e] hover:text-[#22c55e]">
 <RefreshCw className={`h-4 w-4 ${loading?"animate-spin":""}`}/>
 </button>
-</div>{message&&<p className="rounded-xl border border-black/10 bg-white p-3 text-sm dark:border-white/10 dark:bg-white/5">{message}</p>}<div className="overflow-x-auto rounded-2xl border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
+</div>{message&&<p className="rounded-xl border border-black/10 bg-white p-3 text-sm dark:border-white/10 dark:bg-white/5">{message}</p>}<div className="overflow-x-auto rounded-2xl border border-black/10 bg-white dark:border-white/10 dark:bg-white/5 lg:overflow-visible">
 <table className="w-full min-w-[1080px] text-sm">
 <thead>
 <tr className="text-left text-xs uppercase tracking-wide text-zinc-500">
 <th className="p-4">Select</th>
 <th>Account email</th>
 <th>{sortHeader("role","Role")}</th>
-<th>Gym listing</th>
-<th>{sortHeader("dayPassClicks","Claim clicks")}</th>
-<th>{sortHeader("confirmedDayPasses","Confirmed passes")}</th>
+<th>{sortHeader("dayPassClicks","Clicks / confirms")}</th>
+<th>{sortHeader("membershipClicks","Membership clicks / confirms")}</th>
 <th>{sortHeader("lastActiveAt","Last active")}</th>
 </tr>
 </thead>
@@ -44,16 +43,15 @@ export default function AdminUserManager(){
 <td>
 <b>{user.email||"Email unavailable"}</b>
 </td>
-<td>{user.role||"—"}</td>
-<td>{user.role==="GYM"?(user.gyms.length?<div className="flex flex-col items-start gap-1">{user.gyms.map(gym=><Link key={gym.id} href={`/admin/gyms/${gym.id}`} className="font-semibold text-[#16803d] underline decoration-[#22c55e]/50 underline-offset-4 transition hover:text-[#22c55e] dark:text-[#86efac]">{gym.name}</Link>)}</div>:<span className="text-zinc-500">No listing assigned</span>):<span className="text-zinc-400">—</span>}</td>
-<td>{user.dayPassClicks}</td>
-<td>{user.confirmedDayPasses}</td>
+<td>{user.role==="GYM"?<span className="group/gym-role relative inline-flex">{user.gyms[0]?<Link href={`/admin/gyms/${user.gyms[0].id}`} className="border-b border-dotted border-zinc-400 font-semibold transition hover:text-[#22c55e] focus:text-[#22c55e]">GYM</Link>:<span className="cursor-help border-b border-dotted border-zinc-400 font-semibold" tabIndex={0}>GYM</span>}<span className="pointer-events-none invisible absolute left-1/2 top-full z-30 mt-2 whitespace-nowrap rounded-xl border border-white/10 bg-[#111411] px-3 py-2 text-xs font-semibold normal-case text-white opacity-0 shadow-2xl transition group-hover/gym-role:visible group-hover/gym-role:opacity-100 group-focus-within/gym-role:visible group-focus-within/gym-role:opacity-100">{user.gyms.length?user.gyms.map(gym=>gym.name).join(", "):"No listing assigned"}</span></span>:user.role||"—"}</td>
+<td><span className="font-semibold">{user.dayPassClicks}</span><span className="mx-1.5 text-zinc-400">/</span><span>{user.confirmedDayPasses}</span></td>
+<td><span className="font-semibold">{user.membershipClicks}</span><span className="mx-1.5 text-zinc-400">/</span><span>{user.confirmedMemberships}</span></td>
 <td>{user.lastActiveAt?new Date(user.lastActiveAt).toLocaleString():"No activity"}</td>
 </tr>)}</tbody>
 </table>{!loading&&!users.length&&<p className="p-8 text-center text-zinc-500">No accounts found.</p>}</div>{users.length>pageSize&&<div className="flex items-center justify-center gap-3">
-<button type="button" disabled={page===1} onClick={()=>setPage(current=>Math.max(1,current-1))} className="rounded-full border border-black/15 px-4 py-2 text-sm font-bold transition hover:border-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15">Previous</button>
+<button type="button" disabled={page===1} onClick={()=>setPage(current=>Math.max(1,current-1))} className="rounded-full border border-black/15 px-4 py-2 text-sm font-bold transition hover:border-[#22c55e] hover:font-black hover:ring-1 hover:ring-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15">Previous</button>
 <span className="text-sm text-zinc-500">Page {page} of {totalPages}</span>
-<button type="button" disabled={page===totalPages} onClick={()=>setPage(current=>Math.min(totalPages,current+1))} className="rounded-full border border-black/15 px-4 py-2 text-sm font-bold transition hover:border-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15">Next</button>
+<button type="button" disabled={page===totalPages} onClick={()=>setPage(current=>Math.min(totalPages,current+1))} className="rounded-full border border-black/15 px-4 py-2 text-sm font-bold transition hover:border-[#22c55e] hover:font-black hover:ring-1 hover:ring-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15">Next</button>
 </div>}{canManage&&<div className="flex flex-wrap items-end gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/20">
 <label className="min-w-[260px] flex-1 text-sm font-medium">Admin password<PasswordInput value={password} onChange={event=>setPassword(event.target.value)} className="mt-1"/>
 </label>

@@ -12,7 +12,7 @@ export async function GET(_req: Request, { params }: Context) {
     const { id } = await params;
     const gym = await db.gym.findFirst({
         where: { id, isPublished: true },
-        select: { id: true, slug: true, name: true, address: true, phone: true, website: true, isVerified: true, isPublished: true, gymType: true, dayPassPrice: true, dayPassDetails: true, dayPassUrl: true, city: true, state: true, country: true, lat: true, lng: true, amenities: true, equipment: true, hours: true, contactEmail: true, coverPhotoUrl: true, photoUrls: true, _count: { select: { access: true } } },
+        select: { id: true, slug: true, name: true, address: true, phone: true, website: true, isVerified: true, isPublished: true, gymType: true, dayPassPrice: true, dayPassDetails: true, dayPassUrl: true, membershipPrice: true, membershipDetails: true, membershipOptions: true, city: true, state: true, country: true, lat: true, lng: true, amenities: true, equipment: true, hours: true, contactEmail: true, coverPhotoUrl: true, photoUrls: true, _count: { select: { access: true } } },
     });
     if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
     const { _count, ...profile } = gym;

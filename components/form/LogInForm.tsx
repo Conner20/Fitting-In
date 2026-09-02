@@ -27,7 +27,10 @@ const LogInForm = () => {
     const requestedCallback = searchParams?.get("callbackUrl") || "";
     const callbackUrl = requestedCallback.startsWith("/") && !requestedCallback.startsWith("//") ? requestedCallback : "/";
     const dayPassGymId = callbackUrl.match(/^\/day-pass\/([^/?#]+)/)?.[1] || "";
-    const signUpHref = dayPassGymId ? `/sign-up?gymId=${encodeURIComponent(dayPassGymId)}` : "/sign-up";
+    const membershipGymId = callbackUrl.match(/^\/membership\/([^/?#]+)/)?.[1] || "";
+    const purchaseGymId = dayPassGymId || membershipGymId;
+    const purchaseIntent = membershipGymId ? "membership" : "day-pass";
+    const signUpHref = purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? "&intent=membership" : ""}` : "/sign-up";
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showResendPrompt, setShowResendPrompt] = useState(false);
     const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -38,7 +41,7 @@ const LogInForm = () => {
     const onSubmit = async (values: z.infer<typeof FormSchema>) => {
         setShowResendPrompt(false);
         setResendStatus("idle");
-        const externalTab = dayPassGymId ? window.open("about:blank", "_blank") : null;
+        const externalTab = purchaseGymId ? window.open("about:blank", "_blank") : null;
         if (externalTab) externalTab.opener = null;
 
         const logInData = await signIn('credentials', {
@@ -57,9 +60,9 @@ const LogInForm = () => {
         } else {
             setErrorMessage(null);
             setShowResendPrompt(false);
-            if (dayPassGymId) {
-                localStorage.setItem("fittingin_pending_day_pass_confirmation", JSON.stringify({ gymId: decodeURIComponent(dayPassGymId), openedAt: Date.now() }));
-                const destinationPath = `/day-pass/${dayPassGymId}`;
+            if (purchaseGymId) {
+                localStorage.setItem(`fittingin_pending_${purchaseIntent === "membership" ? "membership" : "day_pass"}_confirmation`, JSON.stringify({ gymId: decodeURIComponent(purchaseGymId), openedAt: Date.now() }));
+                const destinationPath = `/${purchaseIntent}/${purchaseGymId}`;
                 if (externalTab) {
                     externalTab.location.href = `${window.location.origin}${destinationPath}`;
                     externalTab.focus();

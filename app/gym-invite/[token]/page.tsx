@@ -19,7 +19,8 @@ export default async function GymInvitePage({ params, searchParams }: Props) {
         id: gym.id, name: gym.name, address: gym.address, city: gym.city, state: gym.state, country: gym.country,
         lat: gym.lat, lng: gym.lng, phone: gym.phone, contactEmail: gym.contactEmail, website: gym.website,
         gymType: gym.gymType, dayPassPrice: gym.dayPassPrice, dayPassDetails: gym.dayPassDetails,
-        dayPassUrl: gym.dayPassUrl, hours: gym.hours, amenities: gym.amenities, equipment: gym.equipment,
+        dayPassUrl: gym.dayPassUrl, membershipPrice: gym.membershipPrice, membershipDetails: gym.membershipDetails,
+        membershipOptions: gym.membershipOptions, hours: gym.hours, amenities: gym.amenities, equipment: gym.equipment,
         coverPhotoUrl: gym.coverPhotoUrl,
         photoUrls: gym.photoUrls, isPublished: gym.isPublished,
     };

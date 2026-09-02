@@ -1,4 +1,5 @@
 import { db } from "@/prisma/client";
+import { cleanMembershipOptions, effectiveMonthlyPrice, lowestMembershipOption } from "@/lib/memberships";
 
 const GYM_TYPES = new Set(["Open", "Personal training gym", "Group training gym", "Specialty gym/studio"]);
 
@@ -40,6 +41,9 @@ export function cleanGymInput(body: Record<string, unknown>) {
         ? (body[key] as unknown[]).filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean)
         : [];
     const gymType = optionalText("gymType");
+    const amenities = stringList("amenities");
+    const membershipOptions = cleanMembershipOptions(body.membershipOptions).map(option => ({ ...option, access: option.access.filter(item => amenities.includes(item)) }));
+    const lowestMembership = lowestMembershipOption(membershipOptions);
     return {
         name: text("name"),
         address: text("address"),
@@ -51,11 +55,14 @@ export function cleanGymInput(body: Record<string, unknown>) {
         country: optionalText("country"),
         lat: body.lat == null ? undefined : number("lat"),
         lng: body.lng == null ? undefined : number("lng"),
-        amenities: stringList("amenities"),
+        amenities,
         equipment: stringList("equipment"),
         dayPassPrice: optionalNumber("dayPassPrice"),
         dayPassDetails: optionalText("dayPassDetails"),
         dayPassUrl: optionalText("dayPassUrl"),
+        membershipPrice: lowestMembership ? effectiveMonthlyPrice(lowestMembership) : optionalNumber("membershipPrice"),
+        membershipDetails: optionalText("membershipDetails"),
+        membershipOptions,
         hours: optionalText("hours"),
         contactEmail: optionalText("contactEmail"),
         coverPhotoUrl: optionalText("coverPhotoUrl"),
@@ -81,6 +88,18 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
     ].forEach(([key, label]) => requireText(key as keyof typeof data, label));
     if (!data.gymType || !GYM_TYPES.has(data.gymType)) missing.push("gym type");
     if (!data.dayPassDetails || !/^\d+$/.test(data.dayPassDetails) || Number(data.dayPassDetails) < 1) missing.push("day pass duration in whole days");
+    if (!data.membershipOptions.length) missing.push("at least one membership option");
+    data.membershipOptions.forEach((option, index) => {
+        const prefix = `membership option ${index + 1}`;
+        if (!option.name) missing.push(`${prefix} name`);
+        if (!Number.isFinite(option.price) || option.price <= 0) missing.push(`${prefix} price`);
+        if (!option.billingFrequency) missing.push(`${prefix} billing frequency`);
+        if (option.billingFrequency === "custom" && (!Number.isFinite(option.billingInterval) || option.billingInterval < 1)) missing.push(`${prefix} billing interval`);
+        if (!Number.isFinite(option.contractLength) || option.contractLength < 1) missing.push(`${prefix} contract length`);
+        if ([option.enrollmentFee, option.annualFee, option.additionalFees].some(value => !Number.isFinite(value) || value < 0)) missing.push(`${prefix} fees`);
+        if (!option.access.length) missing.push(`${prefix} access`);
+        if (!option.purchaseUrl || (!/^[a-z][a-z\d+.-]*:\/\//i.test(option.purchaseUrl) && !option.purchaseUrl.includes("."))) missing.push(`${prefix} purchase URL`);
+    });
     requireList("amenities", "amenities");
     requireList("equipment", "equipment");
     requireList("photoUrls", "amenity photos");

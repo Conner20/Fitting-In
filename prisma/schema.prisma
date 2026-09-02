@@ -93,6 +93,9 @@ model Gym {
   dayPassPrice   Float?
   dayPassDetails String?
   dayPassUrl     String?
+  membershipPrice   Float?
+  membershipDetails String?
+  membershipOptions Json           @default("[]")
   hours          String?
   contactEmail   String?
   coverPhotoUrl  String?

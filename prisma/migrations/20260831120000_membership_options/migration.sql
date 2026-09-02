@@ -1,0 +1,2 @@
+ALTER TABLE "Gym"
+ADD COLUMN "membershipOptions" JSONB NOT NULL DEFAULT '[]';
