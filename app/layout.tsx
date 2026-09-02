@@ -2,7 +2,14 @@ import Provider from "@/components/Provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Anonymous_Pro } from "next/font/google";
 import "./globals.css";
+
+const anonymousPro = Anonymous_Pro({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-anonymous-pro",
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fittingin.co";
 const siteName = "Fitting In";
@@ -81,7 +88,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
       </head>
-      <body className="antialiased font-sans">
+      <body className={`${anonymousPro.variable} antialiased font-sans`}>
         <Provider>
           {children}
           <Toaster />

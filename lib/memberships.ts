@@ -92,17 +92,42 @@ function rawRecurringMonthlyPrice(option: MembershipOption) {
   return recurring;
 }
 
+export function membershipMonthlyBreakdown(option: MembershipOption) {
+  const intervalMonths = option.billingIntervalUnit === "days" ? option.billingInterval * 12 / 365.25
+    : option.billingIntervalUnit === "weeks" ? option.billingInterval * 12 / 52
+      : option.billingInterval;
+  const contractMonths = Math.max(1 / 31, option.contractLengthUnit === "days" ? option.contractLength * 12 / 365.25
+    : option.contractLengthUnit === "weeks" ? option.contractLength * 12 / 52
+      : option.contractLengthUnit === "years" ? option.contractLength * 12
+        : option.contractLength);
+  const recurringMonthly = rawRecurringMonthlyPrice(option);
+  const annualFeeMonthly = option.annualFee / 12;
+  const upfrontFees = option.enrollmentFee + option.additionalFees;
+  const upfrontFeesMonthly = upfrontFees / contractMonths;
+  const recurringFormula = option.billingFrequency === "weekly" ? `$${option.price.toFixed(2)} × 52 ÷ 12`
+    : option.billingFrequency === "biweekly" ? `$${option.price.toFixed(2)} × 26 ÷ 12`
+      : option.billingFrequency === "quarterly" ? `$${option.price.toFixed(2)} ÷ 3`
+        : option.billingFrequency === "semiannual" ? `$${option.price.toFixed(2)} ÷ 6`
+          : option.billingFrequency === "annual" ? `$${option.price.toFixed(2)} ÷ 12`
+            : option.billingFrequency === "custom" ? `$${option.price.toFixed(2)} ÷ ${intervalMonths.toFixed(2)} months`
+              : `$${option.price.toFixed(2)}`;
+  return {
+    recurringMonthly,
+    recurringFormula,
+    annualFeeMonthly,
+    upfrontFees,
+    upfrontFeesMonthly,
+    contractMonths,
+    averageMonthly: Math.round((recurringMonthly + annualFeeMonthly + upfrontFeesMonthly) * 100) / 100,
+  };
+}
+
 export function recurringMonthlyPrice(option: MembershipOption) {
   return Math.round(rawRecurringMonthlyPrice(option) * 100) / 100;
 }
 
 export function effectiveMonthlyPrice(option: MembershipOption) {
-  const recurring = rawRecurringMonthlyPrice(option);
-  const contractMonths = Math.max(1 / 31, option.contractLengthUnit === "days" ? option.contractLength * 12 / 365.25
-    : option.contractLengthUnit === "weeks" ? option.contractLength * 12 / 52
-      : option.contractLengthUnit === "years" ? option.contractLength * 12
-        : option.contractLength);
-  return Math.round((recurring + option.annualFee / 12 + (option.enrollmentFee + option.additionalFees) / contractMonths) * 100) / 100;
+  return membershipMonthlyBreakdown(option).averageMonthly;
 }
 
 export function lowestMembershipOption(options: MembershipOption[]) {

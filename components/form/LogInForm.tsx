@@ -28,9 +28,10 @@ const LogInForm = () => {
     const callbackUrl = requestedCallback.startsWith("/") && !requestedCallback.startsWith("//") ? requestedCallback : "/";
     const dayPassGymId = callbackUrl.match(/^\/day-pass\/([^/?#]+)/)?.[1] || "";
     const membershipGymId = callbackUrl.match(/^\/membership\/([^/?#]+)/)?.[1] || "";
+    const membershipOptionId = membershipGymId ? new URL(callbackUrl, "http://local").searchParams.get("optionId") || "" : "";
     const purchaseGymId = dayPassGymId || membershipGymId;
     const purchaseIntent = membershipGymId ? "membership" : "day-pass";
-    const signUpHref = purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? "&intent=membership" : ""}` : "/sign-up";
+    const signUpHref = purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? `&intent=membership${membershipOptionId ? `&optionId=${encodeURIComponent(membershipOptionId)}` : ""}` : ""}` : "/sign-up";
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showResendPrompt, setShowResendPrompt] = useState(false);
     const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -62,7 +63,7 @@ const LogInForm = () => {
             setShowResendPrompt(false);
             if (purchaseGymId) {
                 localStorage.setItem(`fittingin_pending_${purchaseIntent === "membership" ? "membership" : "day_pass"}_confirmation`, JSON.stringify({ gymId: decodeURIComponent(purchaseGymId), openedAt: Date.now() }));
-                const destinationPath = `/${purchaseIntent}/${purchaseGymId}`;
+                const destinationPath = callbackUrl;
                 if (externalTab) {
                     externalTab.location.href = `${window.location.origin}${destinationPath}`;
                     externalTab.focus();

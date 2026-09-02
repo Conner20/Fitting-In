@@ -98,7 +98,8 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
         if (!Number.isFinite(option.contractLength) || option.contractLength < 1) missing.push(`${prefix} contract length`);
         if ([option.enrollmentFee, option.annualFee, option.additionalFees].some(value => !Number.isFinite(value) || value < 0)) missing.push(`${prefix} fees`);
         if (!option.access.length) missing.push(`${prefix} access`);
-        if (!option.purchaseUrl || (!/^[a-z][a-z\d+.-]*:\/\//i.test(option.purchaseUrl) && !option.purchaseUrl.includes("."))) missing.push(`${prefix} purchase URL`);
+        const destination = option.purchaseUrl || data.membershipOptions[0]?.purchaseUrl;
+        if (!destination || (!/^[a-z][a-z\d+.-]*:\/\//i.test(destination) && !destination.includes("."))) missing.push(index === 0 ? `${prefix} purchase URL` : `${prefix} purchase URL or a valid first-option purchase URL`);
     });
     requireList("amenities", "amenities");
     requireList("equipment", "equipment");
