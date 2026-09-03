@@ -72,6 +72,42 @@ export async function GET(request: Request) {
     if (!userGrowth.length || userGrowth[0].date !== startDate) userGrowth.unshift({ date: startDate, users: userDates.filter(user => user.createdAt < new Date(`${startDate}T23:59:59.999Z`)).length });
     if (userGrowth.at(-1)?.date !== today) userGrowth.push({ date: today, users: userDates.filter(user => user.createdAt <= new Date(`${today}T23:59:59.999Z`)).length });
   }
+  type TrendMetric = "users" | "uniqueVisitors" | "gymProfilesOpened" | "uniqueDayPassClickers" | "confirmedDayPasses" | "uniqueMembershipClickers" | "confirmedMemberships";
+  type TrendPoint = { date: string; users: number; uniqueVisitors: number; gymProfilesOpened: number; uniqueDayPassClickers: number; confirmedDayPasses: number; uniqueMembershipClickers: number; confirmedMemberships: number; changed: TrendMetric[] };
+  const firstEventDate = events.length ? events[events.length - 1].createdAt.toISOString().slice(0, 10) : today;
+  const firstRecordedDate = [userDates[0]?.createdAt.toISOString().slice(0, 10), firstEventDate].filter((date): date is string => Boolean(date)).sort()[0] || today;
+  const requestedTrendStart = days === 0 ? firstRecordedDate : since.toISOString().slice(0, 10);
+  const trendStart = requestedTrendStart > firstRecordedDate ? requestedTrendStart : firstRecordedDate;
+  const eventsByDay = new Map<string, typeof events>();
+  for (const event of [...events].reverse()) {
+    const date = event.createdAt.toISOString().slice(0, 10);
+    if (date < trendStart || date > today) continue;
+    eventsByDay.set(date, [...(eventsByDay.get(date) || []), event]);
+  }
+  const trendVisitors = new Set<string>(), trendDayPassClickers = new Set<string>(), trendMembershipClickers = new Set<string>();
+  let trendProfileOpens = 0, trendConfirmedDayPasses = 0, trendConfirmedMemberships = 0;
+  const trendData: TrendPoint[] = [];
+  for (let cursor = new Date(`${trendStart}T00:00:00.000Z`), end = new Date(`${today}T00:00:00.000Z`); cursor <= end; cursor = new Date(cursor.getTime() + 86_400_000)) {
+    const date = cursor.toISOString().slice(0, 10);
+    const before = { uniqueVisitors: trendVisitors.size, gymProfilesOpened: trendProfileOpens, uniqueDayPassClickers: trendDayPassClickers.size, confirmedDayPasses: trendConfirmedDayPasses, uniqueMembershipClickers: trendMembershipClickers.size, confirmedMemberships: trendConfirmedMemberships };
+    for (const event of eventsByDay.get(date) || []) {
+      trendVisitors.add(event.visitorId);
+      if (event.eventType === "GYM_OPENED") trendProfileOpens++;
+      if (event.eventType === "DAY_PASS_CLICKED") trendDayPassClickers.add(actorFor(event));
+      if (event.eventType === "DAY_PASS_CLAIM_CONFIRMED") trendConfirmedDayPasses++;
+      if (event.eventType === "MEMBERSHIP_CLICKED") trendMembershipClickers.add(actorFor(event));
+      if (event.eventType === "MEMBERSHIP_CLAIM_CONFIRMED") trendConfirmedMemberships++;
+    }
+    const changed: TrendMetric[] = [];
+    if (usersByDay.has(date)) changed.push("users");
+    if (trendVisitors.size !== before.uniqueVisitors) changed.push("uniqueVisitors");
+    if (trendProfileOpens !== before.gymProfilesOpened) changed.push("gymProfilesOpened");
+    if (trendDayPassClickers.size !== before.uniqueDayPassClickers) changed.push("uniqueDayPassClickers");
+    if (trendConfirmedDayPasses !== before.confirmedDayPasses) changed.push("confirmedDayPasses");
+    if (trendMembershipClickers.size !== before.uniqueMembershipClickers) changed.push("uniqueMembershipClickers");
+    if (trendConfirmedMemberships !== before.confirmedMemberships) changed.push("confirmedMemberships");
+    if (changed.length || date === trendStart || date === today) trendData.push({ date, users: userDates.filter(user => user.createdAt <= new Date(`${date}T23:59:59.999Z`)).length, uniqueVisitors: trendVisitors.size, gymProfilesOpened: trendProfileOpens, uniqueDayPassClickers: trendDayPassClickers.size, confirmedDayPasses: trendConfirmedDayPasses, uniqueMembershipClickers: trendMembershipClickers.size, confirmedMemberships: trendConfirmedMemberships, changed });
+  }
   const conversions=events.filter(event=>event.eventType==="DAY_PASS_SIGNUP").map(event=>({email:event.user?.email||((event.metadata as Record<string,unknown>|null)?.email as string)||"Unknown",gym:event.gym?.name||"Deleted gym",clickedAt:((event.metadata as Record<string,unknown>|null)?.clickedAt as string)||event.createdAt.toISOString(),signedUpAt:event.createdAt.toISOString()}));
   const claimClickLogs = events.filter(event => event.eventType === "DAY_PASS_CLICKED" && event.gymId && event.gym).map(click => {
     const clickActor = actorFor(click);
@@ -87,7 +123,7 @@ export async function GET(request: Request) {
   const uniqueDayPassClickers = new Set(events.filter(event => event.eventType === "DAY_PASS_CLICKED").map(actorFor));
   const uniqueMembershipClickers = new Set(events.filter(event => event.eventType === "MEMBERSHIP_CLICKED").map(actorFor));
   const confirmedMembershipUsers = new Set(events.filter(event => event.eventType === "MEMBERSHIP_CLAIM_CONFIRMED").map(actorFor));
-  return NextResponse.json({ days, summary: { visitors: visitors.size, visits: visits.size, returningVisits: Math.max(0, visits.size - visitors.size), gymOpens: count("GYM_OPENED"), favoritesAdded: count("FAVORITE_ADDED"), favoritesRemoved: count("FAVORITE_REMOVED"), comparisons: count("COMPARE_ADDED"), compareViews: count("COMPARE_OPENED"), dayPassClicks: count("DAY_PASS_CLICKED"), uniqueDayPassClickers: uniqueDayPassClickers.size, dayPassClaims: count("DAY_PASS_CLAIM_CONFIRMED"), uniqueDayPassClaimers: confirmedClaimUsers.size, dayPassSignups: count("DAY_PASS_SIGNUP"), membershipClicks: count("MEMBERSHIP_CLICKED"), uniqueMembershipClickers: uniqueMembershipClickers.size, membershipClaims: count("MEMBERSHIP_CLAIM_CONFIRMED"), uniqueMembershipClaimers: confirmedMembershipUsers.size, membershipSignups: count("MEMBERSHIP_SIGNUP"), filterUses: count("FILTER_CHANGED"), locationSearches: count("LOCATION_SEARCHED") + count("LOCATION_USED") }, gyms: gymFunnel.sort((a, b) => b.confirmedClaims + b.dayPassClicks + b.signups + b.confirmedMemberships + b.membershipClicks + b.membershipSignups + b.favorites + b.compares + b.opens - (a.confirmedClaims + a.dayPassClicks + a.signups + a.confirmedMemberships + a.membershipClicks + a.membershipSignups + a.favorites + a.compares + a.opens)), conversions, claimClickLogs, membershipClickLogs, filters: filterCategories.map(name => ({ name, uses: filterUsers.get(name)!.size })), userGrowth, recent: events.slice(0, 100).map(event => ({ ...event, metadata: event.metadata || null })) });
+  return NextResponse.json({ days, summary: { visitors: visitors.size, visits: visits.size, returningVisits: Math.max(0, visits.size - visitors.size), gymOpens: count("GYM_OPENED"), favoritesAdded: count("FAVORITE_ADDED"), favoritesRemoved: count("FAVORITE_REMOVED"), comparisons: count("COMPARE_ADDED"), compareViews: count("COMPARE_OPENED"), dayPassClicks: count("DAY_PASS_CLICKED"), uniqueDayPassClickers: uniqueDayPassClickers.size, dayPassClaims: count("DAY_PASS_CLAIM_CONFIRMED"), uniqueDayPassClaimers: confirmedClaimUsers.size, dayPassSignups: count("DAY_PASS_SIGNUP"), membershipClicks: count("MEMBERSHIP_CLICKED"), uniqueMembershipClickers: uniqueMembershipClickers.size, membershipClaims: count("MEMBERSHIP_CLAIM_CONFIRMED"), uniqueMembershipClaimers: confirmedMembershipUsers.size, membershipSignups: count("MEMBERSHIP_SIGNUP"), filterUses: count("FILTER_CHANGED"), locationSearches: count("LOCATION_SEARCHED") + count("LOCATION_USED") }, gyms: gymFunnel.sort((a, b) => b.confirmedClaims + b.dayPassClicks + b.signups + b.confirmedMemberships + b.membershipClicks + b.membershipSignups + b.favorites + b.compares + b.opens - (a.confirmedClaims + a.dayPassClicks + a.signups + a.confirmedMemberships + a.membershipClicks + a.membershipSignups + a.favorites + a.compares + a.opens)), conversions, claimClickLogs, membershipClickLogs, filters: filterCategories.map(name => ({ name, uses: filterUsers.get(name)!.size })), userGrowth, trendData, recent: events.slice(0, 100).map(event => ({ ...event, metadata: event.metadata || null })) });
  } catch (error) {
   console.error("Failed to load admin behavior analytics", error);
   return NextResponse.json({ error: "Behavior analytics are temporarily unavailable. Confirm that the latest database migration has been applied, then try again." }, { status: 500 });

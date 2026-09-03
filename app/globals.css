@@ -309,6 +309,12 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
 @media(max-width:767px){.gym-profile-presence{width:calc(100vw - 3rem)!important}.gym-profile-resize-handle{display:none}}
 
 @media (max-width: 767px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   html, body { max-width: 100%; overflow-x: clip; }
   input, select, textarea { font-size: 16px !important; }
   button, a, input, select, textarea { touch-action: manipulation; }
@@ -410,6 +416,18 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     justify-content: space-between;
   }
 
+  .gym-discovery-page {
+    display: flex;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
+  .gym-discovery-page > header {
+    flex: none;
+  }
+
   .gym-discovery-page > header > div:first-child > .landing-locate-button {
     order: 4;
   }
@@ -448,12 +466,33 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     -webkit-overflow-scrolling: touch;
   }
 
+  .gym-discovery-page > header > div:nth-child(2) {
+    height: auto;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .gym-discovery-page > header > div:nth-child(2) :is(button, a) {
+    min-height: 40px;
+    padding-right: .65rem;
+    padding-left: .65rem;
+    font-size: .7rem;
+    white-space: nowrap;
+  }
+
+  .gym-discovery-page > header > div:nth-child(2) svg {
+    width: .9rem;
+    height: .9rem;
+  }
+
   main:has(> header form) > header > div:nth-child(2) > span {
     display: none;
   }
 
   main:has(> header form) > section {
+    height: auto !important;
     min-height: 0;
+    flex: 1 1 0%;
   }
 
   main:has(> header form) > section > aside:first-child > div:first-child {
@@ -560,18 +599,78 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   }
 
   main:has(nav[aria-label="Admin sections"]) > section {
+    width: 100%;
+    min-width: 0;
     padding-top: 1.25rem;
     padding-bottom: max(2rem, env(safe-area-inset-bottom));
   }
 
   nav[aria-label="Admin sections"] {
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .375rem;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   nav[aria-label="Admin sections"] > a {
+    display: inline-flex;
+    width: 100%;
     min-height: 44px;
-    scroll-snap-align: start;
+    align-items: center;
+    justify-content: center;
+    padding: .5rem .25rem;
+    font-size: .75rem;
+    text-align: center;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) :is(section, article, div) {
+    min-width: 0;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) table {
+    max-width: none;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) [class*="overflow-x-auto"] {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) [class*="group/rate-card"] [role="tooltip"] {
+    position: fixed;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    left: 1rem;
+    top: auto;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) [class*="border-red-200"] {
+    align-items: stretch;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) [class*="border-red-200"] > label,
+  main:has(nav[aria-label="Admin sections"]) [class*="border-red-200"] > button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .gym-verification-page form,
+  .gym-verification-page form > *,
+  .gym-verification-page form section {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .gym-verification-page form button,
+  .gym-verification-page form a {
+    max-width: 100%;
+    white-space: normal;
   }
 
   /* Modal controls should remain above the iPhone home indicator. */
@@ -601,10 +700,30 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     background-color: #22c55e !important;
     color: #111411 !important;
   }
+  :is(button, a)[class*="bg-red-600"]:hover {
+    border-color: transparent !important;
+    background-color: rgb(220 38 38) !important;
+    color: white !important;
+  }
+  :is(button, a)[class*="bg-amber-400"]:hover {
+    border-color: rgb(251 191 36) !important;
+    background-color: rgb(251 191 36) !important;
+    color: #111411 !important;
+  }
+  main:has(nav[aria-label="Admin sections"]) :is(button, a):hover {
+    translate: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
   .gym-discovery-page .filter-pill:hover {
     border-color: #ccd3c9 !important;
     background: white !important;
     color: #344038 !important;
+  }
+  .gym-discovery-page .filter-pill[class*="!bg-[#22c55e]"]:hover {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
   }
   .dark .gym-discovery-page .filter-pill:hover {
     border-color: rgba(255,255,255,.14) !important;
