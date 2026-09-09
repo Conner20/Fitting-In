@@ -4,33 +4,24 @@ import Link from 'next/link';
 
 export default function LandingHeader() {
     return (
-        <header
-            className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur dark:border-white/10 dark:bg-black/40"
-            style={{
-                paddingTop: 'env(safe-area-inset-top, 0px)',
-            }}
-        >
-            <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-6 sm:py-4">
-                <Link href="/" className="shrink-0 text-xl font-semibold tracking-tight text-[#22c55e] sm:text-2xl">
-                    <span>fitt</span>
-                    <span className="underline decoration-2 decoration-green-700 underline-offset-[2px] dark:decoration-green-400">
-                        in
-                    </span>
-                    <span>g</span>
+        <header className="relative z-[1200] border-b bg-white text-[#1c241c] dark:border-white/10 dark:bg-[#0b0d0b] dark:text-white">
+            <div className="landing-primary-header-row flex min-h-16 flex-wrap items-center gap-2 px-3 py-2 sm:h-16 sm:flex-nowrap sm:gap-4 sm:px-4 sm:py-0">
+                <Link href="/" className="shrink-0 text-[22px] font-black text-[#22c55e]">
+                    fitt<span className="underline">in</span>g
                 </Link>
 
-                <nav className="flex items-center gap-1.5 sm:gap-2">
+                <nav className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
                     <Link
                         href="/log-in"
-                        className="rounded-full border px-3 py-2 text-sm transition hover:bg-transparent hover:text-white sm:px-4 dark:border-white/25 dark:text-white dark:hover:bg-transparent"
+                        className="px-2 py-2 text-xs font-semibold transition hover:text-[#22c55e] sm:px-3 sm:text-sm"
                     >
-                        log in
+                        Log in
                     </Link>
                     <Link
                         href="/sign-up"
-                        className="rounded-full bg-[#22c55e] px-3 py-2 text-sm font-semibold text-black transition hover:bg-[#19a94e] sm:px-4"
+                        className="rounded-full bg-[#22c55e] px-3 py-2 text-xs font-bold text-black sm:px-4 sm:text-sm"
                     >
-                        sign up
+                        Sign up
                     </Link>
                 </nav>
             </div>

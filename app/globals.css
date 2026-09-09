@@ -44,6 +44,40 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+@media (max-width: 767px) {
+  .searched-location-pin {
+    position: relative;
+    width: 30px;
+    height: 38px;
+    filter: drop-shadow(0 3px 5px rgb(0 0 0 / .38));
+    pointer-events: none;
+  }
+
+  .searched-location-pin::before {
+    position: absolute;
+    top: 1px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    content: "";
+    transform: rotate(45deg);
+    border: 2px solid white;
+    border-radius: 50% 50% 50% 0;
+    background: #22c55e;
+  }
+
+  .searched-location-pin span {
+    position: absolute;
+    top: 9px;
+    left: 11px;
+    z-index: 1;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #111411;
+  }
+}
+
 /* The overview period controls every metric on the consolidated admin page. */
 .admin-overview-behavior > div > div:first-child > select {
   display: none;
@@ -283,6 +317,61 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .filter-pill{display:inline-flex;flex:none;align-items:center;gap:.4rem;white-space:nowrap;border:1px solid #ccd3c9;border-radius:999px;background:white;padding:.55rem .85rem;color:#344038;font-size:.78rem;font-weight:700}.filter-pill:hover{background:#f0f4ed}.filter-pill svg{width:14px;height:14px}.filter-pill b{display:grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:#22c55e;color:#080a08;font-size:10px}.gym-map{overflow:hidden;background-color:#e8ece5;background-image:linear-gradient(32deg,transparent 47%,rgba(255,255,255,.9) 48% 50%,transparent 51%),linear-gradient(102deg,transparent 47%,rgba(255,255,255,.78) 48% 50%,transparent 51%),linear-gradient(162deg,transparent 48%,rgba(255,255,255,.7) 49% 51%,transparent 52%),repeating-linear-gradient(90deg,transparent 0 69px,rgba(151,163,148,.18) 70px 71px),repeating-linear-gradient(0deg,transparent 0 62px,rgba(151,163,148,.18) 63px 64px)}.gym-map:before{content:"";position:absolute;inset:-20%;transform:rotate(-18deg);border:38px solid rgba(137,176,190,.45);border-radius:45%;pointer-events:none}
 .landing-toolbar-button{height:36px;min-height:36px;align-items:center;gap:.4rem;padding:.55rem .85rem;font-size:.78rem;line-height:1}.landing-toolbar-button svg{width:14px!important;height:14px!important;flex:none}
 .landing-toolbar-button { font-weight: 700 !important; }
+.landing-mobile-compare-button { display: none !important; }
+.gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button[class*="bg-[#22c55e]"]:hover {
+  background-color: #22c55e !important;
+  color: #111411 !important;
+  transform: none !important;
+  translate: none !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 768px) {
+  .gym-discovery-page > header :is(.landing-admin-button, .landing-toolbar-button, .landing-gym-listing-button, .landing-logout-button) {
+    height: 36px;
+    min-height: 36px;
+    align-items: center;
+    gap: .375rem;
+    padding: 0 1rem;
+    font-size: .75rem;
+    font-weight: 900 !important;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .gym-discovery-page > header :is(.landing-admin-button, .landing-toolbar-button, .landing-gym-listing-button, .landing-logout-button) svg {
+    width: 1rem !important;
+    height: 1rem !important;
+    flex: none;
+  }
+
+  .gym-discovery-page > header .landing-toolbar-button {
+    box-sizing: border-box;
+    border-width: 1px !important;
+  }
+
+  .gym-discovery-page > header .landing-toolbar-button:hover {
+    border-color: #fff !important;
+  }
+
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button {
+    box-sizing: border-box;
+    flex: none;
+    font-weight: 700;
+    transform: none !important;
+    translate: none !important;
+  }
+
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button:not([class*="bg-[#22c55e]"]):hover {
+    color: rgb(113 113 122) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .dark .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button:not([class*="bg-[#22c55e]"]):hover {
+    color: rgb(255 255 255 / .55) !important;
+  }
+}
 
 /* Reserve scrollbar space so discovery cards and profiles never reflow. */
 .gym-discovery-page > section > aside:first-child .scrollbar-slim,
@@ -297,6 +386,7 @@ main>header a[href="/admin"].filter-pill{height:36px;border-color:#22c55e;backgr
 .dark main>header,.dark main>section>aside{background:#090b09;border-color:rgba(255,255,255,.1)}.dark main>header form{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}.dark .filter-pill{background:#111411;border-color:rgba(255,255,255,.14);color:#e9eee9}.dark .filter-pill:hover{background:#192019}.dark .gym-map{background-color:#0b100c;background-image:linear-gradient(32deg,transparent 47%,rgba(72,91,77,.28) 48% 50%,transparent 51%),linear-gradient(102deg,transparent 47%,rgba(72,91,77,.22) 48% 50%,transparent 51%),linear-gradient(162deg,transparent 48%,rgba(72,91,77,.2) 49% 51%,transparent 52%),repeating-linear-gradient(90deg,transparent 0 69px,rgba(110,139,116,.1) 70px 71px),repeating-linear-gradient(0deg,transparent 0 62px,rgba(110,139,116,.1) 63px 64px)}.dark .gym-map:before{border-color:rgba(44,91,69,.42)}
 .map-price-pin{position:relative;display:inline-flex;min-width:64px;height:34px;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(17,20,17,.94);padding:0 11px;color:#fff;font-size:12px;font-weight:900;letter-spacing:-.035em;box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(8px);transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}.map-price-pin:hover{transform:translateY(-2px);border-color:#22c55e;box-shadow:0 10px 28px rgba(0,0,0,.38),0 0 0 3px rgba(34,197,94,.14)}.map-price-pin.active{border-color:#22c55e;background:#22c55e;color:#071008;box-shadow:0 9px 28px rgba(0,0,0,.34),0 0 0 3px rgba(34,197,94,.25)}.leaflet-control-zoom a{background:#111411!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important}.leaflet-control-attribution{background:rgba(9,11,9,.78)!important;color:#aaa!important}.leaflet-control-attribution a{color:#22c55e!important}
 .map-price-pin strong{display:block;white-space:nowrap;font-family:inherit;font-size:12.5px;font-weight:950;line-height:1;-webkit-text-stroke:.3px currentColor}.map-price-pin.favorite{border-color:rgba(34,197,94,.75);padding-left:9px}.map-price-pin.favorite .map-favorite-star{display:inline-flex;height:15px;width:15px;flex:none;align-items:center;justify-content:center;color:#22c55e}.map-price-pin.favorite .map-favorite-star svg{display:block;height:14px;width:14px}.map-price-pin.favorite.active .map-favorite-star{color:#071008}
+.gym-discovery-page form[role="search"] > div:empty{display:none}.gym-discovery-page form[role="search"].landing-location-loading:before{content:"";position:absolute;z-index:1390;top:calc(100% + 4px);right:0;left:0;height:52px;border:1px solid rgba(255,255,255,.1);border-radius:1rem;background:#111411;box-shadow:0 18px 45px rgba(0,0,0,.35)}.gym-discovery-page form[role="search"].landing-location-loading:after{content:"";position:absolute;z-index:1400;top:calc(100% + 20px);left:calc(50% - 10px);width:20px;height:20px;border:2px solid rgba(255,255,255,.22);border-top-color:#22c55e;border-radius:999px;animation:landing-location-loading-spin .7s linear infinite}@keyframes landing-location-loading-spin{to{transform:rotate(360deg)}}
 .leaflet-tile-pane{filter:brightness(.52) saturate(.9) contrast(1.08)}.dark main>header a[href="/"]{color:#22c55e}.dark main>header a[href="/sign-up"]{background:#22c55e;color:#080a08}.dark main>header form button[title="Use current location"]{color:#22c55e}
 .sort-under-location{display:inline-flex;align-items:center;gap:.25rem;border:1px solid rgba(255,255,255,.15);border-radius:999px;background:#111411;padding:.2rem .35rem .2rem .75rem;color:rgba(255,255,255,.58);font-size:.72rem;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.18)}.sort-under-location:focus-within{border-color:rgba(255,255,255,.3);box-shadow:0 0 0 3px rgba(255,255,255,.06)}.sort-under-location select{border:0!important;background:transparent!important;padding:.35rem .55rem!important;color:#fff;font-size:.75rem}.dark main>section>aside>div:first-child p{display:none}
 main>section>aside>div:first-child>button,
@@ -390,6 +480,20 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes mobile-sheet-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mobile-overlay-in {
+  from { background-color: rgb(0 0 0 / 0); }
+  to { background-color: rgb(0 0 0 / .7); }
+}
+
+@keyframes mobile-location-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Phone layouts only. Desktop styling intentionally remains above these rules. */
 @media (max-width: 767px) {
   /* Landing discovery header and workspace */
@@ -418,9 +522,9 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
 
   .gym-discovery-page {
     display: flex;
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
+    height: calc(100dvh + 2rem);
+    min-height: calc(100dvh + 2rem);
+    overflow: visible;
     flex-direction: column;
   }
 
@@ -453,8 +557,10 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     padding: 0;
   }
 
-  main:has(> header form) > header > div:first-child {
+  main:has(> header form) > header > div:first-child,
+  .landing-primary-header-row {
     padding-top: max(.5rem, env(safe-area-inset-top));
+    padding-bottom: .5rem;
   }
 
   main:has(> header form) > header > div:nth-child(2) {
@@ -483,6 +589,300 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   .gym-discovery-page > header > div:nth-child(2) svg {
     width: .9rem;
     height: .9rem;
+  }
+
+  .gym-discovery-page .landing-mobile-compare-button,
+  .gym-discovery-page .landing-mobile-compare-button:hover,
+  .gym-discovery-page .landing-mobile-compare-button:active,
+  .gym-discovery-page .landing-mobile-compare-button:focus,
+  .gym-discovery-page .landing-mobile-view-toggle,
+  .gym-discovery-page .landing-mobile-view-toggle:hover,
+  .gym-discovery-page .landing-mobile-view-toggle:active,
+  .gym-discovery-page .landing-mobile-view-toggle:focus {
+    border-color: #22c55e !important;
+    background-color: #22c55e !important;
+    color: #111411 !important;
+    transform: translateX(-50%);
+    box-shadow: none !important;
+  }
+
+  .gym-discovery-page .landing-mobile-compare-button {
+    display: inline-flex !important;
+  }
+
+  .gym-discovery-page .landing-mobile-compare-button,
+  .gym-discovery-page .landing-mobile-compare-button:hover,
+  .gym-discovery-page .landing-mobile-compare-button:active,
+  .gym-discovery-page .landing-mobile-compare-button:focus {
+    transform: none;
+  }
+
+  .gym-discovery-page .landing-mobile-sort-row {
+    gap: .35rem;
+    font-size: .65rem;
+  }
+
+  .gym-discovery-page .landing-desktop-compare-button {
+    display: none !important;
+  }
+
+  .gym-discovery-page > section > .landing-mobile-list-pane > div:first-child h1 {
+    font-size: .875rem;
+    line-height: 1.25rem;
+    white-space: nowrap;
+  }
+
+  .gym-discovery-page > section > .landing-mobile-list-pane > div:first-child > button {
+    display: none !important;
+  }
+
+  .gym-discovery-page > section[data-mobile-view="list"] > .landing-mobile-list-pane {
+    display: flex !important;
+  }
+
+  .gym-discovery-page > section[data-mobile-view="list"] > .landing-mobile-map-pane {
+    display: none !important;
+  }
+
+  .gym-discovery-page > section[data-mobile-view="map"] > .landing-mobile-list-pane {
+    display: none !important;
+  }
+
+  .gym-discovery-page > section[data-mobile-view="map"] > .landing-mobile-map-pane {
+    display: block !important;
+  }
+
+  .gym-discovery-page .landing-mobile-view-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    position: absolute;
+    left: 50% !important;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    touch-action: manipulation;
+    outline: none;
+    text-shadow: none;
+    translate: none !important;
+    transform: translate3d(-50%, 0, 0) !important;
+    will-change: auto;
+  }
+
+  .gym-discovery-page .landing-mobile-view-toggle::before,
+  .gym-discovery-page .landing-mobile-view-toggle::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  .gym-discovery-page .landing-locate-button,
+  .gym-discovery-page .landing-locate-button:hover,
+  .gym-discovery-page .landing-locate-button:active,
+  .gym-discovery-page .landing-locate-button:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    color: #111411 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    background-image: none !important;
+  }
+
+  .gym-discovery-page .landing-locate-button .location-icon-spinning {
+    animation: mobile-location-spin 650ms cubic-bezier(.4, 0, .2, 1) both;
+    transform-origin: center;
+  }
+
+  .gym-discovery-page > header a[href="/sign-up"],
+  .gym-discovery-page > header a[href="/sign-up"]:hover,
+  .gym-discovery-page > header a[href="/sign-up"]:active,
+  .gym-discovery-page > header a[href="/sign-up"]:focus {
+    background-color: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  .gym-discovery-page .landing-toolbar-button {
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .gym-discovery-page .landing-admin-button,
+  .gym-discovery-page .landing-admin-button:hover,
+  .gym-discovery-page .landing-admin-button:active,
+  .gym-discovery-page .landing-admin-button:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    translate: none !important;
+    box-shadow: none !important;
+  }
+
+  .gym-discovery-page .mobile-profile-favorite,
+  .gym-discovery-page .mobile-profile-favorite:hover,
+  .gym-discovery-page .mobile-profile-favorite:active,
+  .gym-discovery-page .mobile-profile-favorite:focus {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+    border-color: transparent !important;
+    border-radius: 9999px;
+    background: rgb(0 0 0 / .75) !important;
+    color: white !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    translate: none !important;
+    box-shadow: none !important;
+  }
+
+  .gym-discovery-page [data-mobile-controls-visible="false"] > button {
+    pointer-events: none;
+    opacity: 0 !important;
+  }
+
+  .gym-discovery-page .mobile-profile-image {
+    cursor: pointer;
+  }
+
+  .gym-discovery-page .map-price-pin.active {
+    border-color: rgba(255,255,255,.24);
+    background: rgba(17,20,17,.94);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  .gym-discovery-page .map-price-pin.favorite.active .map-favorite-star {
+    color: #22c55e;
+  }
+
+  .gym-discovery-page .map-price-pin:hover,
+  .gym-discovery-page .map-price-pin:active,
+  .gym-discovery-page .map-price-pin:focus {
+    transform: none !important;
+  }
+
+  .gym-discovery-page article.group[class*="!border-[#22c55e]"] {
+    border-color: rgba(255,255,255,.1) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / .05) !important;
+  }
+
+  .gym-discovery-page .gym-profile-carousel {
+    will-change: auto;
+    backface-visibility: hidden;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .gym-discovery-page .gym-profile-carousel.opacity-100 {
+    z-index: 1600 !important;
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .gym-discovery-page .gym-profile-presence {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) {
+    flex: none;
+    padding: .2rem;
+  }
+
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button {
+    min-height: 0;
+    padding: .3rem .55rem;
+    font-size: .65rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button[class*="bg-[#22c55e]"],
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button[class*="bg-[#22c55e]"]:hover,
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button[class*="bg-[#22c55e]"]:active,
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button[class*="bg-[#22c55e]"]:focus {
+    background-color: #22c55e !important;
+    color: #111411 !important;
+  }
+
+  .gym-discovery-page button[data-photo-arrow="true"],
+  .gym-discovery-page button[data-photo-arrow="true"]:hover,
+  .gym-discovery-page button[data-photo-arrow="true"]:active,
+  .gym-discovery-page button[data-photo-arrow="true"]:focus {
+    transform: translateY(-50%) !important;
+  }
+
+  .gym-discovery-page .mobile-profile-close {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+    border-radius: 9999px;
+  }
+
+  .gym-discovery-page .mobile-claim-button,
+  .gym-discovery-page .mobile-claim-button:hover,
+  .gym-discovery-page .mobile-claim-button:active,
+  .gym-discovery-page .mobile-claim-button:focus {
+    background-color: #22c55e !important;
+    color: #111411 !important;
+  }
+
+  .gym-discovery-page .mobile-profile-actions a,
+  .gym-discovery-page .mobile-profile-actions a:hover,
+  .gym-discovery-page .mobile-profile-actions a:active,
+  .gym-discovery-page .mobile-profile-actions a:focus {
+    border-color: #22c55e !important;
+    background: transparent !important;
+    color: #22c55e !important;
+    opacity: 1 !important;
+  }
+
+  .gym-discovery-page .mobile-profile-actions .mobile-claim-button,
+  .gym-discovery-page .mobile-profile-actions .mobile-claim-button:hover,
+  .gym-discovery-page .mobile-profile-actions .mobile-claim-button:active,
+  .gym-discovery-page .mobile-profile-actions .mobile-claim-button:focus,
+  .gym-discovery-page .mobile-signup-sheet a[href^="/sign-up"],
+  .gym-discovery-page .mobile-signup-sheet a[href^="/sign-up"]:hover,
+  .gym-discovery-page .mobile-signup-sheet a[href^="/sign-up"]:active,
+  .gym-discovery-page .mobile-signup-sheet a[href^="/sign-up"]:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+  }
+
+  .filter-show-results:where(:not(:only-child)) {
+    display: none !important;
+  }
+
+  div:has(> .filter-show-results) {
+    justify-content: center !important;
+  }
+
+  .filter-show-results {
+    display: none !important;
+  }
+
+  .mobile-signup-overlay {
+    animation: mobile-overlay-in 220ms ease-out both;
+  }
+
+  .mobile-signup-sheet {
+    animation: mobile-sheet-up 320ms cubic-bezier(.22, 1, .36, 1) both;
   }
 
   main:has(> header form) > header > div:nth-child(2) > span {
@@ -694,6 +1094,20 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     transform: none !important;
     translate: none !important;
   }
+  .auth-primary-action,
+  .auth-primary-action:hover,
+  .auth-primary-action:active,
+  .auth-primary-action:focus,
+  .landing-policy-signup,
+  .landing-policy-signup:hover,
+  .landing-policy-signup:active,
+  .landing-policy-signup:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
   :is(button, a)[class*="bg-[#22c55e]"]:hover,
   :is(button, a)[class*="bg-emerald-700"]:hover {
     border-color: transparent !important;
@@ -723,6 +1137,8 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   .gym-discovery-page .filter-pill[class*="!bg-[#22c55e]"]:hover {
     border-color: #22c55e !important;
     background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
     color: #111411 !important;
   }
   .dark .gym-discovery-page .filter-pill:hover {
@@ -744,4 +1160,186 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   }
   .gym-discovery-page article.group:hover { box-shadow: 0 1px 2px 0 rgb(0 0 0 / .05) !important; }
   .gym-discovery-page article.group:hover img { transform: none !important; }
+
+  .gym-discovery-page .landing-mobile-view-toggle,
+  .gym-discovery-page .landing-mobile-view-toggle:hover,
+  .gym-discovery-page .landing-mobile-view-toggle:active,
+  .gym-discovery-page .landing-mobile-view-toggle:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    translate: none !important;
+    transform: translate3d(-50%, 0, 0) !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .gym-discovery-page button[data-photo-arrow="true"],
+  .gym-discovery-page button[data-photo-arrow="true"]:hover,
+  .gym-discovery-page button[data-photo-arrow="true"]:active,
+  .gym-discovery-page button[data-photo-arrow="true"]:focus {
+    top: 50% !important;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+    border-radius: 9999px;
+    translate: none !important;
+    transform: translate3d(0, -50%, 0) !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .gym-discovery-page button[data-photo-arrow="true"] svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .gym-discovery-page .gym-profile-carousel {
+    cursor: grab;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    touch-action: pan-x pan-y;
+  }
+
+  .gym-discovery-page .gym-profile-carousel:active {
+    cursor: grabbing;
+  }
+
+  .gym-discovery-page .gym-profile-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gym-discovery-page .mobile-profile-image {
+    cursor: zoom-in;
+  }
+
+  .gym-discovery-page .landing-admin-button,
+  .gym-discovery-page .landing-admin-button:hover,
+  .gym-discovery-page .landing-admin-button:active,
+  .gym-discovery-page .landing-admin-button:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
+    translate: none !important;
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .dark .gym-discovery-page .landing-admin-button,
+  .dark .gym-discovery-page .landing-admin-button:hover,
+  .dark .gym-discovery-page .landing-admin-button:active,
+  .dark .gym-discovery-page .landing-admin-button:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #111411 !important;
+  }
+}
+
+/* Keep the mobile Admin action legible regardless of older link and dark-mode rules. */
+@media (max-width: 767px) {
+  html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-admin-button,
+  html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-admin-button:hover,
+  html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-admin-button:active,
+  html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-admin-button:focus {
+    border-color: #22c55e !important;
+    background-color: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    translate: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Final mobile tap-state locks. Keep these last so component variants cannot override them. */
+@media (max-width: 767px) {
+  html body .gym-discovery-page button.landing-locate-button,
+  html body .gym-discovery-page button.landing-locate-button:hover,
+  html body .gym-discovery-page button.landing-locate-button:active,
+  html body .gym-discovery-page button.landing-locate-button:focus,
+  html body button.auth-primary-action,
+  html body button.auth-primary-action:hover,
+  html body button.auth-primary-action:active,
+  html body button.auth-primary-action:focus {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  html body .gym-discovery-page .map-price-pin,
+  html body .gym-discovery-page .map-price-pin:hover,
+  html body .gym-discovery-page .map-price-pin:active,
+  html body .gym-discovery-page .map-price-pin:focus {
+    transform: none !important;
+    translate: none !important;
+  }
+
+  html body .gym-discovery-page .gym-profile-carousel,
+  html body .gym-discovery-page .gym-profile-carousel.opacity-100,
+  html body .gym-discovery-page .gym-profile-carousel.opacity-0 {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  html body .gym-discovery-page button.landing-filter-option,
+  html body .gym-discovery-page button.landing-filter-option:hover,
+  html body .gym-discovery-page button.landing-filter-option:active,
+  html body .gym-discovery-page button.landing-filter-option:focus {
+    box-sizing: border-box !important;
+    min-height: 36px !important;
+    border-width: 1px !important;
+    padding: .5rem .75rem !important;
+    font-size: .875rem !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    transform: none !important;
+    translate: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+  }
+
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="true"],
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="true"]:hover,
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="true"]:active,
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="true"]:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+  }
+
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="false"],
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="false"]:hover,
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="false"]:active,
+  html body .gym-discovery-page button.landing-filter-option[aria-pressed="false"]:focus {
+    border-color: rgb(255 255 255 / .15) !important;
+    background: transparent !important;
+    color: white !important;
+    opacity: 1 !important;
+  }
+
+  /* The generic touch rule disables transitions on elements with role="button".
+     Leaflet gives that role to markers, so restore Leaflet's native desktop zoom
+     transition for marker, overlay, and location panes on phones. */
+  html body .gym-discovery-page .leaflet-zoom-anim .leaflet-zoom-animated {
+    transition: transform 250ms cubic-bezier(0, 0, .25, 1) !important;
+  }
 }

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const requestedDays = Number(url.searchParams.get("days") || 30);
   const days = [0, 7, 30, 365].includes(requestedDays) ? requestedDays : 30;
   const since = days === 0 ? new Date(0) : new Date(Date.now() - days * 86_400_000);
-  const events = await db.landingEvent.findMany({ where: { createdAt: { gte: since } }, select: { eventType: true, visitorId: true, visitId: true, gymId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "desc" }, take: 50_000 });
+  const events = await db.landingEvent.findMany({ where: { createdAt: { gte: since } }, select: { id: true, eventType: true, visitorId: true, visitId: true, gymId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "desc" }, take: 50_000 });
   const [userDates, gymDirectory] = await Promise.all([db.user.findMany({ select: { createdAt: true }, orderBy: { createdAt: "asc" } }), db.gym.findMany({ select: { id: true, name: true, contactEmail: true, access: { select: { user: { select: { email: true } } }, orderBy: { createdAt: "asc" }, take: 1 } }, orderBy: { name: "asc" } })]);
   const count = (type: string) => events.filter(event => event.eventType === type).length;
   const visitors = new Set(events.map(event => event.visitorId));
@@ -32,18 +32,18 @@ export async function GET(request: Request) {
     if (event.eventType === "COMPARE_ADDED") row.compares.add(actor);
     if (event.eventType === "DAY_PASS_CLICKED") row.dayPassClicks.add(actor);
     if (event.eventType === "WEBSITE_CLICKED") row.websiteVisits.add(actor);
-    if (event.eventType === "DAY_PASS_CLAIM_CONFIRMED") row.confirmedClaims.add(actor);
+    if (["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)) row.confirmedClaims.add(actor);
     if (event.eventType === "DAY_PASS_SIGNUP") row.signups.add(actor);
     if (event.eventType === "MEMBERSHIP_CLICKED") row.membershipClicks.add(actor);
-    if (event.eventType === "MEMBERSHIP_CLAIM_CONFIRMED") row.confirmedMemberships.add(actor);
+    if (["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)) row.confirmedMemberships.add(actor);
     if (event.eventType === "MEMBERSHIP_SIGNUP") row.membershipSignups.add(actor);
     byGym.set(event.gymId, row);
     const email = event.user?.email?.toLowerCase() || visitorAccounts.get(event.visitorId);
-    if (email && ["DAY_PASS_CLICKED", "DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_CLAIM_DECLINED"].includes(event.eventType)) {
+    if (email && ["DAY_PASS_CLICKED", "DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED", "DAY_PASS_CLAIM_DECLINED"].includes(event.eventType)) {
       const gymUsers = claimUsersByGym.get(event.gymId) || new Map<string, ClaimUser>();
       const claimUser = gymUsers.get(email) || { email, clicks: 0, clickTimestamps: [], confirmed: 0, declined: 0 };
       if (event.eventType === "DAY_PASS_CLICKED") { claimUser.clicks++; claimUser.clickTimestamps.push(event.createdAt.toISOString()); }
-      if (event.eventType === "DAY_PASS_CLAIM_CONFIRMED") claimUser.confirmed++;
+      if (["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)) claimUser.confirmed++;
       if (event.eventType === "DAY_PASS_CLAIM_DECLINED") claimUser.declined++;
       gymUsers.set(email, claimUser); claimUsersByGym.set(event.gymId, gymUsers);
     }
@@ -84,46 +84,53 @@ export async function GET(request: Request) {
     if (date < trendStart || date > today) continue;
     eventsByDay.set(date, [...(eventsByDay.get(date) || []), event]);
   }
-  const trendVisitors = new Set<string>(), trendDayPassClickers = new Set<string>(), trendMembershipClickers = new Set<string>();
-  let trendProfileOpens = 0, trendConfirmedDayPasses = 0, trendConfirmedMemberships = 0;
+  const trendVisitors = new Set<string>(), trendDayPassClickers = new Set<string>(), trendMembershipClickers = new Set<string>(), trendConfirmedDayPasses = new Set<string>(), trendConfirmedMemberships = new Set<string>();
+  let trendProfileOpens = 0;
   const trendData: TrendPoint[] = [];
   for (let cursor = new Date(`${trendStart}T00:00:00.000Z`), end = new Date(`${today}T00:00:00.000Z`); cursor <= end; cursor = new Date(cursor.getTime() + 86_400_000)) {
     const date = cursor.toISOString().slice(0, 10);
-    const before = { uniqueVisitors: trendVisitors.size, gymProfilesOpened: trendProfileOpens, uniqueDayPassClickers: trendDayPassClickers.size, confirmedDayPasses: trendConfirmedDayPasses, uniqueMembershipClickers: trendMembershipClickers.size, confirmedMemberships: trendConfirmedMemberships };
+    const before = { uniqueVisitors: trendVisitors.size, gymProfilesOpened: trendProfileOpens, uniqueDayPassClickers: trendDayPassClickers.size, confirmedDayPasses: trendConfirmedDayPasses.size, uniqueMembershipClickers: trendMembershipClickers.size, confirmedMemberships: trendConfirmedMemberships.size };
     for (const event of eventsByDay.get(date) || []) {
       trendVisitors.add(event.visitorId);
       if (event.eventType === "GYM_OPENED") trendProfileOpens++;
       if (event.eventType === "DAY_PASS_CLICKED") trendDayPassClickers.add(actorFor(event));
-      if (event.eventType === "DAY_PASS_CLAIM_CONFIRMED") trendConfirmedDayPasses++;
+      if (["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)) { const metadata=event.metadata as Record<string,unknown>|null,claimId=event.eventType==="DAY_PASS_GYM_CONFIRMED"&&typeof metadata?.claimClickId==="string"?metadata.claimClickId:events.find(click=>click.eventType==="DAY_PASS_CLICKED"&&click.gymId===event.gymId&&actorFor(click)===actorFor(event)&&click.createdAt<=event.createdAt)?.id||event.id;trendConfirmedDayPasses.add(claimId); }
       if (event.eventType === "MEMBERSHIP_CLICKED") trendMembershipClickers.add(actorFor(event));
-      if (event.eventType === "MEMBERSHIP_CLAIM_CONFIRMED") trendConfirmedMemberships++;
+      if (["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)) { const metadata=event.metadata as Record<string,unknown>|null,claimId=event.eventType==="MEMBERSHIP_GYM_CONFIRMED"&&typeof metadata?.claimClickId==="string"?metadata.claimClickId:events.find(click=>click.eventType==="MEMBERSHIP_CLICKED"&&click.gymId===event.gymId&&actorFor(click)===actorFor(event)&&click.createdAt<=event.createdAt)?.id||event.id;trendConfirmedMemberships.add(claimId); }
     }
     const changed: TrendMetric[] = [];
     if (usersByDay.has(date)) changed.push("users");
     if (trendVisitors.size !== before.uniqueVisitors) changed.push("uniqueVisitors");
     if (trendProfileOpens !== before.gymProfilesOpened) changed.push("gymProfilesOpened");
     if (trendDayPassClickers.size !== before.uniqueDayPassClickers) changed.push("uniqueDayPassClickers");
-    if (trendConfirmedDayPasses !== before.confirmedDayPasses) changed.push("confirmedDayPasses");
+    if (trendConfirmedDayPasses.size !== before.confirmedDayPasses) changed.push("confirmedDayPasses");
     if (trendMembershipClickers.size !== before.uniqueMembershipClickers) changed.push("uniqueMembershipClickers");
-    if (trendConfirmedMemberships !== before.confirmedMemberships) changed.push("confirmedMemberships");
-    if (changed.length || date === trendStart || date === today) trendData.push({ date, users: userDates.filter(user => user.createdAt <= new Date(`${date}T23:59:59.999Z`)).length, uniqueVisitors: trendVisitors.size, gymProfilesOpened: trendProfileOpens, uniqueDayPassClickers: trendDayPassClickers.size, confirmedDayPasses: trendConfirmedDayPasses, uniqueMembershipClickers: trendMembershipClickers.size, confirmedMemberships: trendConfirmedMemberships, changed });
+    if (trendConfirmedMemberships.size !== before.confirmedMemberships) changed.push("confirmedMemberships");
+    if (changed.length || date === trendStart || date === today) trendData.push({ date, users: userDates.filter(user => user.createdAt <= new Date(`${date}T23:59:59.999Z`)).length, uniqueVisitors: trendVisitors.size, gymProfilesOpened: trendProfileOpens, uniqueDayPassClickers: trendDayPassClickers.size, confirmedDayPasses: trendConfirmedDayPasses.size, uniqueMembershipClickers: trendMembershipClickers.size, confirmedMemberships: trendConfirmedMemberships.size, changed });
   }
   const conversions=events.filter(event=>event.eventType==="DAY_PASS_SIGNUP").map(event=>({email:event.user?.email||((event.metadata as Record<string,unknown>|null)?.email as string)||"Unknown",gym:event.gym?.name||"Deleted gym",clickedAt:((event.metadata as Record<string,unknown>|null)?.clickedAt as string)||event.createdAt.toISOString(),signedUpAt:event.createdAt.toISOString()}));
   const claimClickLogs = events.filter(event => event.eventType === "DAY_PASS_CLICKED" && event.gymId && event.gym).map(click => {
     const clickActor = actorFor(click);
-    const outcome = events.find(event => event.gymId === click.gymId && event.createdAt >= click.createdAt && actorFor(event) === clickActor && ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_CLAIM_DECLINED"].includes(event.eventType));
-    return { id: `${click.visitId}-${click.createdAt.toISOString()}-${click.gymId}`, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, clickedAt: click.createdAt.toISOString(), status: outcome?.eventType === "DAY_PASS_CLAIM_CONFIRMED" ? "confirmed" : outcome?.eventType === "DAY_PASS_CLAIM_DECLINED" ? "declined" : "unsure" };
+    const nextClick=events.filter(event=>event.eventType==="DAY_PASS_CLICKED"&&event.gymId===click.gymId&&actorFor(event)===clickActor&&event.createdAt>click.createdAt).sort((a,b)=>a.createdAt.getTime()-b.createdAt.getTime())[0];
+    const outcome = events.find(event => event.gymId === click.gymId && event.createdAt >= click.createdAt && (!nextClick||event.createdAt<nextClick.createdAt) && actorFor(event) === clickActor && ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_CLAIM_DECLINED"].includes(event.eventType));
+    const gymConfirmed=events.some(event=>event.eventType==="DAY_PASS_GYM_CONFIRMED"&&event.visitId===`gym-confirm:${click.id}`);
+    const userStatus=outcome?.eventType === "DAY_PASS_CLAIM_CONFIRMED" ? "confirmed" : outcome?.eventType === "DAY_PASS_CLAIM_DECLINED" ? "declined" : "unsure";
+    return { id: click.id, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, clickedAt: click.createdAt.toISOString(), gymConfirmed, userStatus, status: gymConfirmed ? "confirmed" : userStatus };
   });
   const membershipClickLogs = events.filter(event => event.eventType === "MEMBERSHIP_CLICKED" && event.gymId && event.gym).map(click => {
     const clickActor = actorFor(click);
-    const outcome = events.find(event => event.gymId === click.gymId && event.createdAt >= click.createdAt && actorFor(event) === clickActor && ["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_CLAIM_DECLINED"].includes(event.eventType));
-    return { id: `${click.visitId}-${click.createdAt.toISOString()}-${click.gymId}`, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, clickedAt: click.createdAt.toISOString(), status: outcome?.eventType === "MEMBERSHIP_CLAIM_CONFIRMED" ? "confirmed" : outcome?.eventType === "MEMBERSHIP_CLAIM_DECLINED" ? "declined" : "unsure" };
+    const nextClick=events.filter(event=>event.eventType==="MEMBERSHIP_CLICKED"&&event.gymId===click.gymId&&actorFor(event)===clickActor&&event.createdAt>click.createdAt).sort((a,b)=>a.createdAt.getTime()-b.createdAt.getTime())[0];
+    const outcome = events.find(event => event.gymId === click.gymId && event.createdAt >= click.createdAt && (!nextClick||event.createdAt<nextClick.createdAt) && actorFor(event) === clickActor && ["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_CLAIM_DECLINED"].includes(event.eventType));
+    const gymConfirmed=events.some(event=>event.eventType==="MEMBERSHIP_GYM_CONFIRMED"&&event.visitId===`gym-confirm:${click.id}`);
+    const userStatus=outcome?.eventType === "MEMBERSHIP_CLAIM_CONFIRMED" ? "confirmed" : outcome?.eventType === "MEMBERSHIP_CLAIM_DECLINED" ? "declined" : "unsure";
+    return { id: click.id, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, clickedAt: click.createdAt.toISOString(), gymConfirmed, userStatus, status: gymConfirmed ? "confirmed" : userStatus };
   });
-  const confirmedClaimUsers = new Set(events.filter(event => event.eventType === "DAY_PASS_CLAIM_CONFIRMED").map(event => event.user?.email || event.visitorId));
+  const confirmedClickId=(event:typeof events[number],clickType:"DAY_PASS_CLICKED"|"MEMBERSHIP_CLICKED")=>{const metadata=event.metadata as Record<string,unknown>|null;if(event.eventType.endsWith("_GYM_CONFIRMED")&&typeof metadata?.claimClickId==="string")return metadata.claimClickId;return events.find(click=>click.eventType===clickType&&click.gymId===event.gymId&&actorFor(click)===actorFor(event)&&click.createdAt<=event.createdAt)?.id||event.id};
+  const dayPassConfirmationEvents=events.filter(event => ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)),confirmedClaimUsers=new Set(dayPassConfirmationEvents.map(actorFor)),confirmedDayPassKeys=new Set(dayPassConfirmationEvents.map(event=>confirmedClickId(event,"DAY_PASS_CLICKED"))),gymConfirmedDayPassKeys=new Set(events.filter(event=>event.eventType==="DAY_PASS_GYM_CONFIRMED").map(event=>confirmedClickId(event,"DAY_PASS_CLICKED")));
   const uniqueDayPassClickers = new Set(events.filter(event => event.eventType === "DAY_PASS_CLICKED").map(actorFor));
   const uniqueMembershipClickers = new Set(events.filter(event => event.eventType === "MEMBERSHIP_CLICKED").map(actorFor));
-  const confirmedMembershipUsers = new Set(events.filter(event => event.eventType === "MEMBERSHIP_CLAIM_CONFIRMED").map(actorFor));
-  return NextResponse.json({ days, summary: { visitors: visitors.size, visits: visits.size, returningVisits: Math.max(0, visits.size - visitors.size), gymOpens: count("GYM_OPENED"), favoritesAdded: count("FAVORITE_ADDED"), favoritesRemoved: count("FAVORITE_REMOVED"), comparisons: count("COMPARE_ADDED"), compareViews: count("COMPARE_OPENED"), dayPassClicks: count("DAY_PASS_CLICKED"), uniqueDayPassClickers: uniqueDayPassClickers.size, dayPassClaims: count("DAY_PASS_CLAIM_CONFIRMED"), uniqueDayPassClaimers: confirmedClaimUsers.size, dayPassSignups: count("DAY_PASS_SIGNUP"), membershipClicks: count("MEMBERSHIP_CLICKED"), uniqueMembershipClickers: uniqueMembershipClickers.size, membershipClaims: count("MEMBERSHIP_CLAIM_CONFIRMED"), uniqueMembershipClaimers: confirmedMembershipUsers.size, membershipSignups: count("MEMBERSHIP_SIGNUP"), filterUses: count("FILTER_CHANGED"), locationSearches: count("LOCATION_SEARCHED") + count("LOCATION_USED") }, gyms: gymFunnel.sort((a, b) => b.confirmedClaims + b.dayPassClicks + b.signups + b.confirmedMemberships + b.membershipClicks + b.membershipSignups + b.favorites + b.compares + b.opens - (a.confirmedClaims + a.dayPassClicks + a.signups + a.confirmedMemberships + a.membershipClicks + a.membershipSignups + a.favorites + a.compares + a.opens)), conversions, claimClickLogs, membershipClickLogs, filters: filterCategories.map(name => ({ name, uses: filterUsers.get(name)!.size })), userGrowth, trendData, recent: events.slice(0, 100).map(event => ({ ...event, metadata: event.metadata || null })) });
+  const membershipConfirmationEvents=events.filter(event => ["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)),confirmedMembershipUsers=new Set(membershipConfirmationEvents.map(actorFor)),confirmedMembershipKeys=new Set(membershipConfirmationEvents.map(event=>confirmedClickId(event,"MEMBERSHIP_CLICKED"))),gymConfirmedMembershipKeys=new Set(events.filter(event=>event.eventType==="MEMBERSHIP_GYM_CONFIRMED").map(event=>confirmedClickId(event,"MEMBERSHIP_CLICKED")));
+  return NextResponse.json({ days, summary: { visitors: visitors.size, visits: visits.size, returningVisits: Math.max(0, visits.size - visitors.size), gymOpens: count("GYM_OPENED"), directionsClicks: count("DIRECTIONS_CLICKED"), favoritesAdded: count("FAVORITE_ADDED"), favoritesRemoved: count("FAVORITE_REMOVED"), comparisons: count("COMPARE_ADDED"), compareViews: count("COMPARE_OPENED"), dayPassClicks: count("DAY_PASS_CLICKED"), uniqueDayPassClickers: uniqueDayPassClickers.size, dayPassClaims: confirmedDayPassKeys.size, gymConfirmedDayPasses: gymConfirmedDayPassKeys.size, uniqueDayPassClaimers: confirmedClaimUsers.size, dayPassSignups: count("DAY_PASS_SIGNUP"), membershipClicks: count("MEMBERSHIP_CLICKED"), uniqueMembershipClickers: uniqueMembershipClickers.size, membershipClaims: confirmedMembershipKeys.size, gymConfirmedMemberships: gymConfirmedMembershipKeys.size, uniqueMembershipClaimers: confirmedMembershipUsers.size, membershipSignups: count("MEMBERSHIP_SIGNUP"), filterUses: count("FILTER_CHANGED"), locationSearches: count("LOCATION_SEARCHED") + count("LOCATION_USED") }, gyms: gymFunnel.sort((a, b) => b.confirmedClaims + b.dayPassClicks + b.signups + b.confirmedMemberships + b.membershipClicks + b.membershipSignups + b.favorites + b.compares + b.opens - (a.confirmedClaims + a.dayPassClicks + a.signups + a.confirmedMemberships + a.membershipClicks + a.membershipSignups + a.favorites + a.compares + a.opens)), conversions, claimClickLogs, membershipClickLogs, filters: filterCategories.map(name => ({ name, uses: filterUsers.get(name)!.size })), userGrowth, trendData, recent: events.slice(0, 100).map(event => ({ ...event, metadata: event.metadata || null })) });
  } catch (error) {
   console.error("Failed to load admin behavior analytics", error);
   return NextResponse.json({ error: "Behavior analytics are temporarily unavailable. Confirm that the latest database migration has been applied, then try again." }, { status: 500 });

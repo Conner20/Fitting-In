@@ -162,7 +162,17 @@ const LogInForm = () => {
                     />
                 </div>
 
-                <Button className='w-full mt-6 bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]' type="submit">Log In</Button>
+                <Button
+                    style={{ backgroundColor: "#22c55e", color: "#111411", WebkitTapHighlightColor: "transparent" }}
+                    onPointerDown={event => {
+                        event.currentTarget.style.setProperty("background", "#22c55e", "important");
+                        event.currentTarget.style.setProperty("background-color", "#22c55e", "important");
+                        event.currentTarget.style.setProperty("color", "#111411", "important");
+                        event.currentTarget.style.setProperty("opacity", "1", "important");
+                    }}
+                    className='auth-primary-action mt-6 w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]'
+                    type="submit"
+                >Log In</Button>
             </form>
 
             <p className="mt-3 text-center text-sm text-white/45">

@@ -24,7 +24,7 @@ const schema = z
     });
 
 const inputClass =
-    'bg-white text-black border border-zinc-200 placeholder:text-zinc-500 focus-visible:border-black focus-visible:ring-black/20';
+    'border border-white/10 bg-white/[.06] text-white placeholder:text-white/35 focus-visible:border-[#22c55e] focus-visible:ring-[#22c55e]/20';
 
 type FormValues = z.infer<typeof schema>;
 type PageState = 'checking' | 'invalid' | 'valid' | 'success';
@@ -116,11 +116,11 @@ export default function ResetPasswordClient() {
     };
 
     return (
-        <div className="min-h-screen w-full bg-neutral-50 px-4 py-10 flex items-center justify-center">
-            <div className="w-full max-w-sm space-y-6 rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-xl shadow-zinc-100">
+        <div className="flex min-h-screen w-full items-center justify-center bg-[#070907] px-4 py-10 text-white">
+            <div className="w-full max-w-sm space-y-6 rounded-3xl border border-white/10 bg-[#111411] p-6 shadow-2xl shadow-black/40">
                 <div className="space-y-1 text-center">
-                    <h1 className="text-3xl font-semibold text-black">Reset password</h1>
-                    <p className="text-sm text-zinc-500">Choose a new password to secure your account.</p>
+                    <h1 className="text-3xl font-semibold text-white">Reset password</h1>
+                    <p className="text-sm text-white/50">Choose a new password to secure your account.</p>
                 </div>
 
                 {pageState === 'checking' && (
@@ -136,7 +136,7 @@ export default function ResetPasswordClient() {
                             This reset link is invalid or has expired. Request a new link to continue.
                         </p>
                         <Link href="/forgot-password">
-                            <Button type="button" className="w-full bg-green-700 text-white hover:bg-black">
+                            <Button type="button" className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]">
                                 Request another reset link
                             </Button>
                         </Link>
@@ -149,7 +149,7 @@ export default function ResetPasswordClient() {
                             Your password has been updated. Use your new password the next time you log in.
                         </p>
                         <Link href="/log-in">
-                            <Button type="button" className="w-full bg-green-700 text-white hover:bg-black">
+                            <Button type="button" className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]">
                                 Go to log in
                             </Button>
                         </Link>
@@ -164,7 +164,7 @@ export default function ResetPasswordClient() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-zinc-700">New password</FormLabel>
+                                        <FormLabel className="text-white">New password</FormLabel>
                                         <FormControl>
                                             <PasswordInput
                                                 placeholder="********"
@@ -183,7 +183,7 @@ export default function ResetPasswordClient() {
                                 name="confirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-zinc-700">Confirm password</FormLabel>
+                                        <FormLabel className="text-white">Confirm password</FormLabel>
                                         <FormControl>
                                             <PasswordInput
                                                 placeholder="********"
@@ -202,12 +202,12 @@ export default function ResetPasswordClient() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-green-700 text-white hover:bg-black"
+                                className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]"
                             >
                                 {loading ? 'Updating…' : 'Update password'}
                             </Button>
                             <div className="text-center text-sm">
-                                <Link href="/log-in" className="text-zinc-500 transition hover:text-zinc-800">
+                                <Link href="/log-in" className="text-white/45 transition hover:text-[#22c55e]">
                                     Back to log in
                                 </Link>
                             </div>

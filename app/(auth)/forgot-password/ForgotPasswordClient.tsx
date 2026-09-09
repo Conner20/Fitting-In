@@ -47,11 +47,11 @@ export default function ForgotPasswordClient() {
     };
 
     return (
-        <div className="min-h-screen w-full bg-neutral-50 px-4 py-10 flex items-center justify-center">
-            <div className="w-full max-w-sm space-y-6 rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-xl shadow-zinc-100">
+        <div className="flex min-h-screen w-full items-center justify-center bg-[#070907] px-4 py-10 text-white">
+            <div className="w-full max-w-sm space-y-6 rounded-3xl border border-white/10 bg-[#111411] p-6 shadow-2xl shadow-black/40">
                 <div className="space-y-1 text-center">
-                    <h1 className="text-3xl font-semibold text-black">Forgot password</h1>
-                    <p className="text-sm text-zinc-500">
+                    <h1 className="text-3xl font-semibold text-white">Forgot password</h1>
+                    <p className="text-sm text-white/50">
                         Enter the email linked to your account and we&apos;ll send a reset link.
                     </p>
                 </div>
@@ -63,12 +63,12 @@ export default function ForgotPasswordClient() {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-zinc-700">Email</FormLabel>
+                                    <FormLabel className="text-white">Email</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="email"
                                             placeholder="you@example.com"
-                                            className="bg-white text-black border border-zinc-200 placeholder:text-zinc-500 focus-visible:border-black focus-visible:ring-black/20"
+                                            className="border border-white/10 bg-white/[.06] text-white placeholder:text-white/35 focus-visible:border-[#22c55e] focus-visible:ring-[#22c55e]/20"
                                             {...field}
                                         />
                                     </FormControl>
@@ -98,7 +98,7 @@ export default function ForgotPasswordClient() {
                         <Button
                             type="submit"
                             disabled={status === 'loading'}
-                            className="w-full bg-green-700 text-white hover:bg-black"
+                            className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]"
                         >
                             {status === 'loading' ? 'Sending…' : 'Send reset link'}
                         </Button>
@@ -108,7 +108,7 @@ export default function ForgotPasswordClient() {
                 <div className="text-center">
                     <Link
                         href="/log-in"
-                        className="text-sm text-zinc-500 transition hover:text-zinc-800"
+                        className="text-sm text-white/45 transition hover:text-[#22c55e]"
                     >
                         ← Back to log in
                     </Link>
