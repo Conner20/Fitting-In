@@ -19,9 +19,9 @@ export default function AdminUserManager(){
 <button type="button" onClick={()=>sortBy(key)} className="inline-flex items-center gap-1 font-bold hover:text-[#22c55e]">{label}<span aria-hidden="true">{sort.key===key?(sort.direction==="asc"?"↑":"↓"):"↕"}</span>
 </button>;
  return <div className="space-y-5">
-<div className="flex flex-wrap gap-3">
-<Input value={query} onChange={event=>{setQuery(event.target.value);setPage(1)}} placeholder="Search by email" className="max-w-md"/>
-<button onClick={()=>void load()} className="rounded-xl border px-4 py-2 transition hover:border-[#22c55e] hover:text-[#22c55e]">
+<div className="admin-user-search-row flex flex-wrap gap-3">
+<Input value={query} onChange={event=>{setQuery(event.target.value);setPage(1)}} placeholder="Search by email" className="admin-user-search-input max-w-md"/>
+<button onClick={()=>void load()} aria-label="Refresh users" className="admin-user-refresh rounded-xl border px-4 py-2 transition hover:border-[#22c55e] hover:text-[#22c55e]">
 <RefreshCw className={`h-4 w-4 ${loading?"animate-spin":""}`}/>
 </button>
 </div>{message&&<p className="rounded-xl border border-black/10 bg-white p-3 text-sm dark:border-white/10 dark:bg-white/5">{message}</p>}<div className="overflow-x-auto rounded-2xl border border-black/10 bg-white dark:border-white/10 dark:bg-white/5 lg:overflow-visible">

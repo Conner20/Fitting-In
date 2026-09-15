@@ -10,7 +10,10 @@ export async function GET(request:Request){
   const session=await getServerSession(authOptions);
   if(!session?.user?.email||!(await hasAdminAccessByEmail(session.user.email)))return NextResponse.json({error:"Unauthorized"},{status:401});
   const query=new URL(request.url).searchParams.get("q")?.trim()||"";
-  const where=query?{email:{contains:query,mode:Prisma.QueryMode.insensitive}}:{};
+  const where: Prisma.UserWhereInput = {
+    emailVerified: { not: null },
+    ...(query ? { email: { contains: query, mode: Prisma.QueryMode.insensitive } } : {}),
+  };
   const [users,events]=await Promise.all([
     db.user.findMany({where,take:500,orderBy:{createdAt:"desc"},select:{id:true,email:true,role:true,isAdmin:true,lastLoginAt:true,landingEvents:{select:{createdAt:true},orderBy:{createdAt:"desc"},take:1},gymAccesses:{select:{id:true,gym:{select:{id:true,name:true}}}}}}),
     db.landingEvent.findMany({where:{eventType:{in:["DAY_PASS_CLICKED","DAY_PASS_CLAIM_CONFIRMED","DAY_PASS_GYM_CONFIRMED","DAY_PASS_SIGNUP","MEMBERSHIP_CLICKED","MEMBERSHIP_CLAIM_CONFIRMED","MEMBERSHIP_GYM_CONFIRMED","MEMBERSHIP_SIGNUP"]}},select:{id:true,eventType:true,userId:true,visitorId:true,visitId:true,gymId:true,metadata:true,createdAt:true,gym:{select:{name:true}}},take:100_000}),

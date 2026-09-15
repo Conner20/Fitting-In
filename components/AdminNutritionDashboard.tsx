@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import MobileHeader from '@/components/MobileHeader';
-import AdminNav from '@/components/AdminNav';
+import AdminHeader from '@/components/AdminHeader';
 import { useMemo, useRef, useState, useEffect, useCallback, Suspense } from 'react';
 import type { Dispatch, SetStateAction, CSSProperties } from 'react';
 import { Plus, X, Trash2, ArrowUpRight, ArrowDownRight, Sliders, Calendar, Share2, ChevronDown } from 'lucide-react';
@@ -505,17 +504,10 @@ function NutritionContent() {
     return (
         <>
         <div className="flex min-h-screen flex-col bg-[#f8f8f8] text-black dark:bg-[#050505] dark:text-white xl:h-screen xl:overflow-hidden">
-            <MobileHeader title="fitting" href="/" />
-
-            {/* Header */}
-            <header className="hidden border-b border-black/5 bg-white px-10 py-6 dark:border-white/10 dark:bg-[#050505] lg:block">
-                <Link href="/" aria-label="Return to Fitting In" className="text-[22px] font-black text-[#22c55e]">fitt<span className="underline">in</span>g</Link>
-                <div className="mt-4"><AdminNav active="nutrition" /></div>
-            </header>
+            <AdminHeader active="nutrition" />
             {shareError && (
                 <p className="hidden px-[40px] pb-2 text-xs text-red-500 lg:block">{shareError}</p>
             )}
-            <div className="px-4 pt-4 lg:hidden"><AdminNav active="nutrition" mobile /></div>
 
             {/* Content */}
             <div className="w-full flex-1 overflow-y-auto overflow-x-hidden px-2 pb-6 pt-4 sm:px-4 xl:px-6 xl:pb-4 xl:pt-4 xl:overflow-y-auto scrollbar-slim">

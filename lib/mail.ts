@@ -45,7 +45,7 @@ export const sendPasswordResetEmail: Mailer = async (to, resetUrl) => {
                             style="padding:32px;font-family:Arial,Helvetica,sans-serif;color:#0f172a;text-align:center;">
                             <p
                                 style="margin:0 0 12px 0;font-size:13px;line-height:1.4;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#16a34a;">
-                                Find your fit
+                                Fitting In
                             </p>
 
                             <h1
@@ -54,8 +54,7 @@ export const sendPasswordResetEmail: Mailer = async (to, resetUrl) => {
                             </h1>
 
                             <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#475569;">
-                                Need to reset your Fitting In password? Click the button below to get back into your account.
-                                If you did not request this, you can safely ignore this email.
+                                Use the button below to reset your password.
                             </p>
 
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"
@@ -71,12 +70,8 @@ export const sendPasswordResetEmail: Mailer = async (to, resetUrl) => {
                                 </tr>
                             </table>
 
-                            <p style="margin:0 0 24px 0;font-size:14px;line-height:1.5;color:#0f172a;">
-                                Have a question? Visit
-                                <a href="https://fittingin.co/legal/support"
-                                    style="color:#16a34a;text-decoration:none;">
-                                    Support
-                                </a>.
+                            <p style="margin:0;font-size:13px;line-height:1.5;color:#64748b;">
+                                This link expires in 1 hour. If you didn&apos;t request it, ignore this email.
                             </p>
                         </td>
                     </tr>

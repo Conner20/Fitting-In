@@ -25,37 +25,42 @@ export async function POST(request: Request) {
     const email = input.email.trim().toLowerCase();
     const existing = await db.user.findUnique({ where: { email }, select: { id: true, emailVerified: true } });
     if (existing?.emailVerified) return NextResponse.json({ message: "An account with this email already exists." }, { status: 409 });
+    const existingPending = await db.pendingSignup.findUnique({ where: { email }, select: { email: true } });
     const code = String(randomInt(100000, 1000000));
-    const password = await hash(input.password, 10);
-    const user = await db.$transaction(async tx => {
-      const account = existing
-        ? await tx.user.update({ where: { id: existing.id }, data: { password }, select: { id: true } })
-        : await tx.user.create({ data: { email, password, role: "TRAINEE" }, select: { id: true } });
+    const passwordHash = await hash(input.password, 10);
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+    await db.$transaction(async tx => {
+      await tx.pendingSignup.deleteMany({ where: { expires: { lt: new Date() } } });
+      // Remove only legacy, incomplete accounts created by the previous signup
+      // flow. Verified accounts are rejected above and are never touched.
+      if (existing) await tx.user.delete({ where: { id: existing.id } });
+      await tx.pendingSignup.upsert({
+        where: { email },
+        create: {
+          email, passwordHash, gymId: input.gymId || null, intent: input.intent,
+          visitorId: input.visitorId?.slice(0, 128) || null,
+          visitId: input.visitId?.slice(0, 128) || null,
+          clickedAt: input.clickedAt || null, expires,
+        },
+        update: {
+          passwordHash, gymId: input.gymId || null, intent: input.intent,
+          visitorId: input.visitorId?.slice(0, 128) || null,
+          visitId: input.visitId?.slice(0, 128) || null,
+          clickedAt: input.clickedAt || null, expires,
+        },
+      });
       await tx.verificationToken.deleteMany({ where: { identifier: email } });
-      await tx.verificationToken.create({ data: { identifier: email, token: code, expires: new Date(Date.now() + 10 * 60 * 1000) } });
-      return { ...account, created: !existing };
+      await tx.verificationToken.create({ data: { identifier: email, token: code, expires } });
     });
     try { await sendEmailVerificationCode(email, code); }
     catch (error) {
       await db.$transaction(async tx => {
         await tx.verificationToken.deleteMany({ where: { identifier: email } });
-        if (user.created) await tx.user.delete({ where: { id: user.id } });
+        await tx.pendingSignup.deleteMany({ where: { email } });
       }).catch(()=>undefined);
       throw error;
     }
-    if (input.gymId && input.visitorId && input.visitId) {
-      const visitorId = input.visitorId.slice(0, 128);
-      await db.$transaction(async tx => {
-        const clickType = input.intent === "membership" ? "MEMBERSHIP_CLICKED" : "DAY_PASS_CLICKED";
-        const signupType = input.intent === "membership" ? "MEMBERSHIP_SIGNUP" : "DAY_PASS_SIGNUP";
-        await tx.landingEvent.updateMany({
-          where: { eventType: clickType, visitorId, gymId: input.gymId, userId: null },
-          data: { userId: user.id },
-        });
-        if (user.created) await tx.landingEvent.create({ data: { eventType: signupType, visitorId, visitId: input.visitId!.slice(0,128), gymId: input.gymId!, userId: user.id, metadata: { email, clickedAt: input.clickedAt || new Date().toISOString() } } });
-      }).catch(()=>undefined);
-    }
-    return NextResponse.json({ ok: true, resumed: !user.created }, { status: user.created ? 201 : 200 });
+    return NextResponse.json({ ok: true, resumed: Boolean(existingPending) }, { status: existingPending ? 200 : 202 });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ message: error.issues[0]?.message || "Invalid signup information." }, { status: 400 });
     console.error("[signup]", error);

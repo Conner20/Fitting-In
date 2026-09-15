@@ -94,9 +94,6 @@ export default function ResetPasswordClient() {
                 throw new Error('Failed');
             }
 
-            toast('Password updated', {
-                description: 'You can now log in with your new password.',
-            });
             setPageState('success');
             router.prefetch('/log-in');
         } catch (error) {
@@ -120,7 +117,6 @@ export default function ResetPasswordClient() {
             <div className="w-full max-w-sm space-y-6 rounded-3xl border border-white/10 bg-[#111411] p-6 shadow-2xl shadow-black/40">
                 <div className="space-y-1 text-center">
                     <h1 className="text-3xl font-semibold text-white">Reset password</h1>
-                    <p className="text-sm text-white/50">Choose a new password to secure your account.</p>
                 </div>
 
                 {pageState === 'checking' && (
@@ -136,7 +132,7 @@ export default function ResetPasswordClient() {
                             This reset link is invalid or has expired. Request a new link to continue.
                         </p>
                         <Link href="/forgot-password">
-                            <Button type="button" className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]">
+                            <Button type="button" className="auth-primary-action reset-password-request w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]">
                                 Request another reset link
                             </Button>
                         </Link>
@@ -145,11 +141,11 @@ export default function ResetPasswordClient() {
 
                 {pageState === 'success' && (
                     <div className="space-y-4 text-center">
-                        <p className="text-sm text-zinc-600">
+                        <p className="text-sm text-white/75">
                             Your password has been updated. Use your new password the next time you log in.
                         </p>
                         <Link href="/log-in">
-                            <Button type="button" className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]">
+                            <Button type="button" className="auth-primary-action reset-password-login w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]">
                                 Go to log in
                             </Button>
                         </Link>
@@ -202,7 +198,7 @@ export default function ResetPasswordClient() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]"
+                                className="auth-primary-action reset-password-submit w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]"
                             >
                                 {loading ? 'Updating…' : 'Update password'}
                             </Button>

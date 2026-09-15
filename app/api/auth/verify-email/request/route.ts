@@ -12,19 +12,22 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing email" }, { status: 400 });
         }
 
-        const user = await db.user.findUnique({ where: { email: normalized } });
-        if (!user || user.emailVerified) {
+        const [user, pendingSignup] = await Promise.all([
+            db.user.findUnique({ where: { email: normalized }, select: { emailVerified: true } }),
+            db.pendingSignup.findUnique({ where: { email: normalized }, select: { expires: true } }),
+        ]);
+        if (user?.emailVerified || !pendingSignup) {
             return NextResponse.json({ ok: true });
         }
 
-        await db.verificationToken.deleteMany({ where: { identifier: normalized } });
         const rawToken = String(randomInt(100000, 1000000));
-        await db.verificationToken.create({
-            data: {
-                identifier: normalized,
-                token: rawToken,
-                expires: new Date(Date.now() + 1000 * 60 * 10),
-            },
+        const expires = new Date(Date.now() + 1000 * 60 * 10);
+        await db.$transaction(async tx => {
+            await tx.verificationToken.deleteMany({ where: { identifier: normalized } });
+            await tx.verificationToken.create({
+                data: { identifier: normalized, token: rawToken, expires },
+            });
+            await tx.pendingSignup.update({ where: { email: normalized }, data: { expires } });
         });
 
         await sendEmailVerificationCode(normalized, rawToken);

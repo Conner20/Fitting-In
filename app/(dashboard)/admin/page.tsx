@@ -2,9 +2,8 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import AdminBehaviorDashboard from "@/components/AdminBehaviorDashboard";
+import AdminHeader from "@/components/AdminHeader";
 import AdminUserManager from "@/components/AdminUserManager";
-import AdminNav from "@/components/AdminNav";
-import MobileHeader from "@/components/MobileHeader";
 import { authOptions } from "@/lib/auth";
 import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
@@ -18,8 +17,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const since = rangeDays ? new Date(Date.now() - rangeDays * 86_400_000) : null;
   const createdAt = since ? { createdAt: { gte: since } } : {};
   const [users, gymUsers, dayPassClicks, dayPassConfirmationEvents, membershipClicks, membershipConfirmationEvents, demandEvents] = await Promise.all([
-    db.user.count({ where: createdAt }),
-    db.user.count({ where: { role: "GYM", ...createdAt } }),
+    db.user.count({ where: { emailVerified: { not: null }, ...createdAt } }),
+    db.user.count({ where: { emailVerified: { not: null }, role: "GYM", ...createdAt } }),
     db.landingEvent.count({ where: { eventType: "DAY_PASS_CLICKED", ...createdAt } }),
     db.landingEvent.findMany({ where: { eventType: { in: ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"] }, ...createdAt }, select: { id: true, eventType: true, userId: true, visitorId: true, gymId: true, metadata: true, createdAt: true } }),
     db.landingEvent.count({ where: { eventType: "MEMBERSHIP_CLICKED", ...createdAt } }),
@@ -44,11 +43,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     ["Membership click rate", membershipClickRate, `${membershipClickers.size.toLocaleString()} unique Claim Membership clickers ÷ ${listingViewers.size.toLocaleString()} unique gym-profile viewers × 100 = ${membershipClickRate}`],
   ];
   return <main className="min-h-screen bg-[#f8f8f8] text-black dark:bg-[#050505] dark:text-white">
-    <MobileHeader title="fitting" href="/" />
-    <header className="hidden border-b border-black/5 bg-white px-10 py-6 dark:border-white/10 dark:bg-[#050505] lg:block"><Link href="/" aria-label="Return to Fitting In" className="text-[22px] font-black text-[#22c55e]">fitt<span className="underline">in</span>g</Link><div className="mt-4"><AdminNav active="overview" /></div></header>
+    <AdminHeader active="overview" />
     <section className="mx-auto max-w-7xl space-y-8 px-4 py-8">
-      <div className="lg:hidden"><AdminNav active="overview" mobile /></div>
-      <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold">Overview period</p><div className="flex flex-wrap gap-2">{[["week","Past week"],["month","Past month"],["year","Past year"],["all","All time"]].map(([value,label])=><Link key={value} href={`/admin?range=${value}`} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${range===value?"border-[#22c55e] bg-[#22c55e] text-black":"border-black/10 hover:border-[#22c55e] dark:border-white/15"}`}>{label}</Link>)}</div></div>
+      <div className="admin-overview-period-row flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold">Overview period</p><div className="admin-overview-period-options flex flex-wrap gap-2">{[["week","Past week","1W"],["month","Past month","1M"],["year","Past year","1Y"],["all","All time","ALL"]].map(([value,label,shortLabel])=><Link key={value} href={`/admin?range=${value}`} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${range===value?"border-[#22c55e] bg-[#22c55e] text-black":"border-black/10 hover:border-[#22c55e] dark:border-white/15"}`}><span className="md:hidden">{shortLabel}</span><span className="hidden md:inline">{label}</span></Link>)}</div></div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">{cards.map(([label,value,breakdown])=><div key={label} tabIndex={breakdown?0:undefined} className={`group/rate-card relative rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5 ${breakdown?"cursor-help outline-none focus:border-[#22c55e]":""}`}><p className="text-xs font-semibold text-zinc-500">{label}</p><p className="mt-1 text-2xl font-black">{typeof value==="number"?value.toLocaleString():value}</p>{breakdown&&<div role="tooltip" className="pointer-events-none invisible absolute left-1/2 top-full z-[5000] mt-2 w-72 -translate-x-1/2 rounded-xl border border-white/10 bg-[#111411] px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-2xl transition group-hover/rate-card:visible group-hover/rate-card:opacity-100 group-focus/rate-card:visible group-focus/rate-card:opacity-100">{breakdown}</div>}</div>)}</div>
       <section id="users" className="space-y-4"><div><h2 className="text-xl font-black">Users</h2></div><AdminUserManager /></section>
       <section id="behavior" className="admin-overview-behavior border-t border-black/10 pt-8 dark:border-white/10"><AdminBehaviorDashboard compact periodDays={rangeDays} /></section>

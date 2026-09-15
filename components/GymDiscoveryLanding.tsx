@@ -147,7 +147,7 @@ function GymMap({ visible, pricingMode, gyms, selectedIds, favorites, userCoords
         if (!map.current || !ready) return;
         referenceMarker.current?.remove();
         referenceMarker.current = null;
-        if (window.innerWidth >= 768 || !referenceLocation) return;
+        if (!referenceLocation) return;
         let cancelled = false;
         import("leaflet").then(({ default: L }) => {
             if (cancelled || !map.current) return;

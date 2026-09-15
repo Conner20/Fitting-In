@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const days = [0, 7, 30, 365].includes(requestedDays) ? requestedDays : 30;
   const since = days === 0 ? new Date(0) : new Date(Date.now() - days * 86_400_000);
   const events = await db.landingEvent.findMany({ where: { createdAt: { gte: since } }, select: { id: true, eventType: true, visitorId: true, visitId: true, gymId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "desc" }, take: 50_000 });
-  const [userDates, gymDirectory] = await Promise.all([db.user.findMany({ select: { createdAt: true }, orderBy: { createdAt: "asc" } }), db.gym.findMany({ select: { id: true, name: true, contactEmail: true, access: { select: { user: { select: { email: true } } }, orderBy: { createdAt: "asc" }, take: 1 } }, orderBy: { name: "asc" } })]);
+  const [userDates, gymDirectory] = await Promise.all([db.user.findMany({ where: { emailVerified: { not: null } }, select: { createdAt: true }, orderBy: { createdAt: "asc" } }), db.gym.findMany({ select: { id: true, name: true, contactEmail: true, access: { select: { user: { select: { email: true } } }, orderBy: { createdAt: "asc" }, take: 1 } }, orderBy: { name: "asc" } })]);
   const count = (type: string) => events.filter(event => event.eventType === type).length;
   const visitors = new Set(events.map(event => event.visitorId));
   const visits = new Set(events.map(event => event.visitId));

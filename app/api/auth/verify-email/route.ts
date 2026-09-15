@@ -10,12 +10,74 @@ export async function POST(req: Request) {
         const email = body.email?.trim().toLowerCase();
         const code = body.code?.trim();
         if (!email || !/^\d{6}$/.test(code || "")) return NextResponse.json({ error: "Enter the 6-digit code." }, { status: 400 });
-        const token = await db.verificationToken.findFirst({ where: { identifier: email, token: code } });
-        if (!token || token.expires < new Date()) return NextResponse.json({ error: "That code is invalid or expired." }, { status: 400 });
-        await db.user.update({ where: { email }, data: { emailVerified: new Date() } });
-        await db.verificationToken.deleteMany({ where: { identifier: email } });
+        const [token, pendingSignup] = await Promise.all([
+            db.verificationToken.findFirst({ where: { identifier: email, token: code } }),
+            db.pendingSignup.findUnique({ where: { email } }),
+        ]);
+        const now = new Date();
+        if (!token || token.expires < now || !pendingSignup || pendingSignup.expires < now) {
+            if (pendingSignup?.expires && pendingSignup.expires < now) {
+                await db.$transaction([
+                    db.verificationToken.deleteMany({ where: { identifier: email } }),
+                    db.pendingSignup.deleteMany({ where: { email } }),
+                ]).catch(() => undefined);
+            }
+            return NextResponse.json({ error: "That code is invalid or expired." }, { status: 400 });
+        }
+
+        await db.$transaction(async tx => {
+            const existing = await tx.user.findUnique({ where: { email }, select: { id: true, emailVerified: true } });
+            if (existing?.emailVerified) throw new Error("ACCOUNT_ALREADY_EXISTS");
+            if (existing) await tx.user.delete({ where: { id: existing.id } });
+
+            const user = await tx.user.create({
+                data: {
+                    email,
+                    password: pendingSignup.passwordHash,
+                    emailVerified: now,
+                    role: "TRAINEE",
+                },
+                select: { id: true },
+            });
+
+            if (pendingSignup.gymId && pendingSignup.visitorId && pendingSignup.visitId) {
+                const gym = await tx.gym.findUnique({ where: { id: pendingSignup.gymId }, select: { id: true } });
+                if (gym) {
+                    const clickType = pendingSignup.intent === "membership" ? "MEMBERSHIP_CLICKED" : "DAY_PASS_CLICKED";
+                    const signupType = pendingSignup.intent === "membership" ? "MEMBERSHIP_SIGNUP" : "DAY_PASS_SIGNUP";
+                    await tx.landingEvent.updateMany({
+                        where: {
+                            eventType: clickType,
+                            visitorId: pendingSignup.visitorId,
+                            gymId: gym.id,
+                            userId: null,
+                        },
+                        data: { userId: user.id },
+                    });
+                    await tx.landingEvent.create({
+                        data: {
+                            eventType: signupType,
+                            visitorId: pendingSignup.visitorId,
+                            visitId: pendingSignup.visitId,
+                            gymId: gym.id,
+                            userId: user.id,
+                            metadata: {
+                                email,
+                                clickedAt: pendingSignup.clickedAt || now.toISOString(),
+                            },
+                        },
+                    });
+                }
+            }
+
+            await tx.verificationToken.deleteMany({ where: { identifier: email } });
+            await tx.pendingSignup.delete({ where: { email } });
+        });
         return NextResponse.json({ ok: true });
     } catch (error) {
+        if (error instanceof Error && error.message === "ACCOUNT_ALREADY_EXISTS") {
+            return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
+        }
         console.error("[verify-email-code]", error);
         return NextResponse.json({ error: "Unable to verify the code." }, { status: 500 });
     }

@@ -51,9 +51,6 @@ export default function ForgotPasswordClient() {
             <div className="w-full max-w-sm space-y-6 rounded-3xl border border-white/10 bg-[#111411] p-6 shadow-2xl shadow-black/40">
                 <div className="space-y-1 text-center">
                     <h1 className="text-3xl font-semibold text-white">Forgot password</h1>
-                    <p className="text-sm text-white/50">
-                        Enter the email linked to your account and we&apos;ll send a reset link.
-                    </p>
                 </div>
 
                 <Form {...form}>
@@ -87,9 +84,9 @@ export default function ForgotPasswordClient() {
                         )}
 
                         {status === 'sent' && (
-                            <Alert className="border-green-200 bg-green-50 text-green-800">
-                                <AlertTitle>Check your inbox</AlertTitle>
-                                <AlertDescription className="text-green-700">
+                            <Alert className="border-[#22c55e]/35 bg-[#22c55e]/10 text-white shadow-none">
+                                <AlertTitle className="font-bold text-[#86efac]">Check your inbox</AlertTitle>
+                                <AlertDescription className="text-white/65">
                                     If an account exists for that email, we just sent a reset link.
                                 </AlertDescription>
                             </Alert>
@@ -98,7 +95,12 @@ export default function ForgotPasswordClient() {
                         <Button
                             type="submit"
                             disabled={status === 'loading'}
-                            className="auth-primary-action w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]"
+                            onTouchEnd={(event) => {
+                                if (window.matchMedia('(max-width: 767px)').matches) {
+                                    event.currentTarget.blur();
+                                }
+                            }}
+                            className="auth-primary-action forgot-password-submit w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]"
                         >
                             {status === 'loading' ? 'Sending…' : 'Send reset link'}
                         </Button>
