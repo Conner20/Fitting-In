@@ -44,6 +44,94 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+@media (max-width: 767px) {
+  html body .gym-verification-page button.gym-listing-delete-action,
+  html body .gym-verification-page button.gym-listing-delete-action:hover,
+  html body .gym-verification-page button.gym-listing-delete-action:active,
+  html body .gym-verification-page button.gym-listing-delete-action:focus,
+  html body .gym-verification-page button.gym-listing-delete-action:focus-visible,
+  html body .gym-verification-page button.gym-listing-delete-action:disabled {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    border-color: #e66b6b !important;
+    background: #e66b6b !important;
+    background-color: #e66b6b !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Keep the inline user-deletion confirmation visibly destructive instead of
+   exposing the dark page background through the generic button hover state. */
+html body button.admin-delete-selected,
+html body button.admin-delete-selected:hover,
+html body button.admin-delete-selected:active,
+html body button.admin-delete-selected:focus,
+html body button.admin-delete-selected:focus-visible,
+html body button.admin-delete-selected[data-confirming="true"],
+html body button.admin-delete-selected[data-confirming="true"]:hover,
+html body button.admin-delete-selected[data-confirming="true"]:active,
+html body button.admin-delete-selected[data-confirming="true"]:focus {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  border-color: rgb(220 38 38) !important;
+  background: rgb(220 38 38) !important;
+  background-color: rgb(220 38 38) !important;
+  background-image: none !important;
+  color: white !important;
+  -webkit-text-fill-color: white !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* The global touch reset removes transforms from pressed buttons. Preserve the
+   address clear control's centering so tapping it cannot shift the X. */
+html body button.gym-address-clear-button,
+html body button.gym-address-clear-button:hover,
+html body button.gym-address-clear-button:active,
+html body button.gym-address-clear-button:focus,
+html body button.gym-address-clear-button:focus-visible {
+  top: 50% !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  min-height: 2rem !important;
+  transform: translateY(-50%) !important;
+  translate: none !important;
+}
+
+/* An installed iOS shortcut can report a viewport wider than the phone
+   breakpoint. Keep this action green based on touch capability as well. */
+@media (hover: none), (pointer: coarse) {
+  html body a.gym-invite-explore-action,
+  html body a.gym-invite-explore-action:link,
+  html body a.gym-invite-explore-action:visited,
+  html body a.gym-invite-explore-action:hover,
+  html body a.gym-invite-explore-action:active,
+  html body a.gym-invite-explore-action:focus,
+  html body a.gym-invite-explore-action:focus-visible {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
 /* Admin phone layout and touch states. Desktop declarations are intentionally
    untouched so the existing wide-screen dashboard remains identical. */
 @media (max-width: 767px) {
@@ -516,6 +604,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .landing-toolbar-button{height:36px;min-height:36px;align-items:center;gap:.4rem;padding:.55rem .85rem;font-size:.78rem;line-height:1}.landing-toolbar-button svg{width:14px!important;height:14px!important;flex:none}
 .landing-toolbar-button { font-weight: 700 !important; }
 .landing-gym-listing-button { gap: 0 !important; }
+.gym-discovery-page > header .landing-gym-listing-button,
+.gym-discovery-page > header .landing-gym-listing-button:link,
+.gym-discovery-page > header .landing-gym-listing-button:visited,
+.gym-discovery-page > header .landing-gym-listing-button:hover,
+.gym-discovery-page > header .landing-gym-listing-button:active,
+.gym-discovery-page > header .landing-gym-listing-button:focus,
+.gym-discovery-page > header .landing-gym-listing-button:focus-visible {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  border-color: #22c55e !important;
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  background-image: none !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  translate: none !important;
+  box-shadow: none !important;
+}
 .landing-mobile-compare-button { display: none !important; }
 .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button[class*="bg-[#22c55e]"]:hover {
   background-color: #22c55e !important;
@@ -560,16 +670,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-color: #22c55e;
     background: #22c55e;
     color: #111411;
-    font-size: 0;
-    text-align: center;
-  }
-
-  .gym-discovery-page > header .landing-gym-listing-button::after {
-    display: block;
-    content: "My listing";
-    font-size: .75rem;
-    font-weight: 900;
-    line-height: 1;
     text-align: center;
   }
 
@@ -682,16 +782,74 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
   background-color: transparent !important;
 }
 
-.verify-information-button:hover {
+.verify-information-button,
+.verify-information-button:hover,
+.verify-information-button:active,
+.verify-information-button:focus,
+.verify-information-button:focus-visible,
+.verify-information-button:disabled {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
   border-color: #22c55e !important;
-  background-color: transparent !important;
-  color: #22c55e !important;
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  background-image: none !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  html body .gym-verification-page .verify-information-button:hover {
+    border-color: #22c55e !important;
+    background: #050505 !important;
+    background-color: #050505 !important;
+    color: #22c55e !important;
+    -webkit-text-fill-color: #22c55e !important;
+  }
+}
+
+.gym-invite-create-account-action,
+.gym-invite-create-account-action:link,
+.gym-invite-create-account-action:visited,
+.gym-invite-create-account-action:hover,
+.gym-invite-create-account-action:active,
+.gym-invite-create-account-action:focus,
+.gym-invite-create-account-action:focus-visible {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  border-color: #22c55e !important;
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  background-image: none !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  html body .gym-invite-create-account-action:hover {
+    border-color: #22c55e !important;
+    background: #050505 !important;
+    background-color: #050505 !important;
+    color: #22c55e !important;
+    -webkit-text-fill-color: #22c55e !important;
+  }
 }
 
 .gym-owner-back-button:hover {
   border-color: #fff !important;
   color: #fff !important;
 }
+
+.gym-listing-submit-action { order: 1; }
+.gym-listing-delete-action { order: 2; }
+.gym-owner-back-button { order: 3; }
 
 :is(button, a)[class*="bg-red-600"]:hover,
 :is(button, a)[class*="bg-[#e66b6b]"]:hover {
@@ -894,13 +1052,16 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     appearance: none;
     -webkit-appearance: none;
     position: absolute;
-    left: 50% !important;
+    right: 0 !important;
+    left: 0 !important;
     bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    margin-right: auto !important;
+    margin-left: auto !important;
     touch-action: manipulation;
     outline: none;
     text-shadow: none;
     translate: none !important;
-    transform: translate3d(-50%, 0, 0) !important;
+    transform: none !important;
     will-change: auto;
   }
 
@@ -1287,6 +1448,22 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     transform: none;
   }
 
+  main:has(nav[aria-label="Admin sections"]) [class*="group/rate-card"] [role="tooltip"].admin-rate-tooltip-open {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  main:has(nav[aria-label="Admin sections"]) .admin-gym-funnel-tooltip {
+    position: fixed !important;
+    right: 1rem !important;
+    bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    left: 1rem !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+  }
+
   main:has(nav[aria-label="Admin sections"]) [class*="border-red-200"] {
     align-items: stretch;
   }
@@ -1501,19 +1678,8 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     border-color: #22c55e !important;
     background: #22c55e !important;
     color: #111411 !important;
-    font-size: 0 !important;
     gap: 0 !important;
     text-align: center !important;
-  }
-
-  html body .gym-discovery-page > header .landing-gym-listing-button::after {
-    display: block;
-    content: "My listing";
-    color: #111411;
-    font-size: .7rem;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
   }
 
   html body .gym-discovery-page .landing-mobile-view-toggle,
@@ -1521,11 +1687,12 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   html body .gym-discovery-page .landing-mobile-view-toggle:active,
   html body .gym-discovery-page .landing-mobile-view-toggle:focus {
     position: fixed !important;
-    right: auto !important;
-    left: 50vw !important;
-    margin: 0 !important;
+    right: max(0px, env(safe-area-inset-right)) !important;
+    left: max(0px, env(safe-area-inset-left)) !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
     translate: none !important;
-    transform: translate3d(-50%, 0, 0) !important;
+    transform: none !important;
   }
 
   html body .gym-discovery-page button[data-photo-arrow="true"],
@@ -1730,6 +1897,110 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     background: #22c55e !important;
     background-color: #22c55e !important;
     background-image: none !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Membership claims stay unavailable until the user chooses an option.
+     This intentionally follows the generic green-button tap-state lock. */
+  html body .gym-discovery-page button.mobile-claim-button:disabled,
+  html body .gym-discovery-page button.mobile-claim-button:disabled:hover,
+  html body .gym-discovery-page button.mobile-claim-button:disabled:active,
+  html body .gym-discovery-page button.mobile-claim-button:disabled:focus {
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    opacity: .5 !important;
+  }
+
+  /* Give iOS's 12-hour time value the full control width. The input itself
+     remains tappable and continues to open the native time picker. */
+  html body .gym-verification-page .gym-hours-row {
+    padding-right: .5rem;
+    padding-left: .5rem;
+  }
+
+  html body .gym-verification-page .gym-hours-row > div {
+    width: 100%;
+    gap: .375rem;
+  }
+
+  html body .gym-verification-page .gym-time-input {
+    min-width: 0 !important;
+    padding-right: .375rem !important;
+    padding-left: .375rem !important;
+  }
+
+  html body .gym-verification-page .gym-time-input-icon,
+  html body .gym-verification-page .gym-time-input::-webkit-calendar-picker-indicator {
+    display: none !important;
+  }
+
+  /* Listing workflow primary actions must not inherit sticky mobile hover or
+     pressed colors after a tap. */
+  html body .gym-verification-page :is(button, a).gym-listing-primary-action,
+  html body .gym-verification-page :is(button, a).gym-listing-primary-action:hover,
+  html body .gym-verification-page :is(button, a).gym-listing-primary-action:active,
+  html body .gym-verification-page :is(button, a).gym-listing-primary-action:focus,
+  html body .gym-invite-explore-action,
+  html body .gym-invite-explore-action:link,
+  html body .gym-invite-explore-action:visited,
+  html body .gym-invite-explore-action:hover,
+  html body .gym-invite-explore-action:active,
+  html body .gym-invite-explore-action:focus,
+  html body .gym-invite-explore-action:focus-visible {
+    -webkit-tap-highlight-color: transparent !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  html body .gym-verification-page .gym-listing-submit-action {
+    display: inline-flex !important;
+    min-width: 10rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  html body .gym-verification-page .gym-listing-updated-feedback {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Restore the verification-link action after the two-second copied state;
+     iOS otherwise keeps its former tap-hover background. */
+  html body .gym-verification-copy-button[data-copied="false"],
+  html body .gym-verification-copy-button[data-copied="false"]:hover,
+  html body .gym-verification-copy-button[data-copied="false"]:active,
+  html body .gym-verification-copy-button[data-copied="false"]:focus {
+    border-color: #22c55e !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    color: #22c55e !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  html body .gym-verification-copy-button[data-copied="true"],
+  html body .gym-verification-copy-button[data-copied="true"]:hover,
+  html body .gym-verification-copy-button[data-copied="true"]:active,
+  html body .gym-verification-copy-button[data-copied="true"]:focus {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
     color: #111411 !important;
     opacity: 1 !important;
     filter: none !important;

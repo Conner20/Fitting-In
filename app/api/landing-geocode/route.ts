@@ -28,8 +28,8 @@ export async function GET(request: Request) {
         label: item.display_name,
         lat: Number(item.lat),
         lng: Number(item.lon),
-        city: item.address?.city ?? item.address?.town ?? item.address?.village ?? item.address?.municipality ?? "",
-        state: item.address?.state ?? "",
+        city: item.address?.city ?? item.address?.town ?? item.address?.village ?? item.address?.municipality ?? item.address?.borough ?? item.address?.city_district ?? item.address?.county ?? "",
+        state: item.address?.state ?? item.address?.region ?? "",
         country: item.address?.country_code?.toUpperCase() ?? item.address?.country ?? "",
       })),
     });

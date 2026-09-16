@@ -65,3 +65,22 @@ export async function PATCH(req: Request, { params }: Context) {
     });
     return NextResponse.json({ gym, message: "Gym listing updated." });
 }
+
+export async function DELETE(_req: Request, { params }: Context) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const user = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true } });
+    if (!user) return NextResponse.json({ message: "User not found." }, { status: 404 });
+    const { id } = await params;
+    if (!(await userCanEditGym(user.id, id))) return NextResponse.json({ message: "You do not have access to delete this gym." }, { status: 403 });
+
+    await db.$transaction(async (tx) => {
+        const associatedUsers = await tx.gymAccess.findMany({ where: { gymId: id }, select: { userId: true } });
+        await tx.gym.delete({ where: { id } });
+        for (const { userId } of associatedUsers) {
+            const remainingGymAccess = await tx.gymAccess.count({ where: { userId } });
+            if (remainingGymAccess === 0) await tx.user.update({ where: { id: userId }, data: { role: "TRAINEE" } });
+        }
+    });
+    return NextResponse.json({ message: "Gym listing deleted." });
+}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import AdminBehaviorDashboard from "@/components/AdminBehaviorDashboard";
 import AdminHeader from "@/components/AdminHeader";
+import AdminMetricCard from "@/components/AdminMetricCard";
 import AdminUserManager from "@/components/AdminUserManager";
 import { authOptions } from "@/lib/auth";
 import { hasAdminAccessByEmail } from "@/lib/admin";
@@ -46,7 +47,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     <AdminHeader active="overview" />
     <section className="mx-auto max-w-7xl space-y-8 px-4 py-8">
       <div className="admin-overview-period-row flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold">Overview period</p><div className="admin-overview-period-options flex flex-wrap gap-2">{[["week","Past week","1W"],["month","Past month","1M"],["year","Past year","1Y"],["all","All time","ALL"]].map(([value,label,shortLabel])=><Link key={value} href={`/admin?range=${value}`} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${range===value?"border-[#22c55e] bg-[#22c55e] text-black":"border-black/10 hover:border-[#22c55e] dark:border-white/15"}`}><span className="md:hidden">{shortLabel}</span><span className="hidden md:inline">{label}</span></Link>)}</div></div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">{cards.map(([label,value,breakdown])=><div key={label} tabIndex={breakdown?0:undefined} className={`group/rate-card relative rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5 ${breakdown?"cursor-help outline-none focus:border-[#22c55e]":""}`}><p className="text-xs font-semibold text-zinc-500">{label}</p><p className="mt-1 text-2xl font-black">{typeof value==="number"?value.toLocaleString():value}</p>{breakdown&&<div role="tooltip" className="pointer-events-none invisible absolute left-1/2 top-full z-[5000] mt-2 w-72 -translate-x-1/2 rounded-xl border border-white/10 bg-[#111411] px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-2xl transition group-hover/rate-card:visible group-hover/rate-card:opacity-100 group-focus/rate-card:visible group-focus/rate-card:opacity-100">{breakdown}</div>}</div>)}</div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">{cards.map(([label,value,breakdown])=><AdminMetricCard key={label} label={label} value={value} breakdown={breakdown}/>)}</div>
       <section id="users" className="space-y-4"><div><h2 className="text-xl font-black">Users</h2></div><AdminUserManager /></section>
       <section id="behavior" className="admin-overview-behavior border-t border-black/10 pt-8 dark:border-white/10"><AdminBehaviorDashboard compact periodDays={rangeDays} /></section>
     </section>

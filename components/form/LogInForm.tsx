@@ -103,26 +103,26 @@ const LogInForm = () => {
             <h1 className="text-3xl text-center mb-6 text-white">Log In</h1>
             <form onSubmit={form.handleSubmit(onSubmit)} className='w-full'>
                 {errorMessage && (
-                    <Alert className="mb-4 border border-red-200 bg-red-50 text-red-900 shadow-none">
-                        <AlertTitle className="text-red-900">Unable to log in</AlertTitle>
-                        <AlertDescription className="text-red-800">
+                    <Alert className="mb-4 border border-red-400/35 bg-red-950/45 text-red-100 shadow-none">
+                        <AlertTitle className="text-red-200">Unable to log in</AlertTitle>
+                        <AlertDescription className="text-red-100/90">
                             {errorMessage}
                         </AlertDescription>
                         {showResendPrompt && (
                             <div className="mt-3 space-y-2 text-left">
-                                <p className="text-sm text-zinc-600">
+                                <p className="text-sm text-red-100/70">
                                     Didn&apos;t get the email?
                                 </p>
                                 <Button
                                     type="button"
-                                    className="w-full bg-red-600 text-white hover:bg-red-700"
+                                    className="w-full border border-red-400/40 bg-red-500/20 text-red-100 hover:bg-red-500/30"
                                     onClick={handleResendVerification}
                                     disabled={resendStatus === "sending"}
                                 >
                                     {resendStatus === "sending" ? "Sending…" : "Resend verification email"}
                                 </Button>
                                 {resendStatus === "sent" && (
-                                    <p className="text-xs text-green-600">Verification email sent.</p>
+                                    <p className="text-xs text-[#22c55e]">Verification email sent.</p>
                                 )}
                             </div>
                         )}
