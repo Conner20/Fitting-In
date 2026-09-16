@@ -44,6 +44,145 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Intermediate layouts use desktop-style hover feedback without inheriting
+   phone tap states. Keep profile image controls compact and centered. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .gym-discovery-page .landing-mobile-sort-row {
+    overflow-x: hidden;
+  }
+
+  .gym-discovery-page button[data-photo-arrow="true"],
+  .gym-discovery-page button[data-photo-arrow="true"]:hover,
+  .gym-discovery-page button[data-photo-arrow="true"]:active,
+  .gym-discovery-page button[data-photo-arrow="true"]:focus {
+    top: 50% !important;
+    bottom: auto !important;
+    display: grid !important;
+    box-sizing: border-box !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border-radius: 9999px !important;
+    translate: none !important;
+    transform: translate3d(0, -50%, 0) !important;
+  }
+
+  .gym-discovery-page button[data-photo-arrow="true"] svg {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+
+  .gym-discovery-page .mobile-profile-close {
+    display: grid;
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (hover: hover) and (pointer: fine) {
+  .gym-discovery-page > header .landing-toolbar-button:hover {
+    border-color: #fff !important;
+  }
+
+  .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button:not([class*="bg-[#22c55e]"]):hover {
+    background: transparent !important;
+    color: rgb(113 113 122) !important;
+  }
+
+  .dark .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button:not([class*="bg-[#22c55e]"]):hover {
+    color: rgb(255 255 255 / .55) !important;
+  }
+}
+
+@keyframes gym-swipe-compare-hint {
+  0% { opacity: 0; transform: translate3d(10px, 0, 0); }
+  28% { opacity: 1; }
+  72% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(-10px, 0, 0); }
+}
+
+.gym-swipe-hint {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .gym-discovery-page .gym-swipe-hint {
+    position: fixed;
+    z-index: 1900;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    border: 1px solid rgb(34 197 94 / .55);
+    border-radius: 9999px;
+    background: rgb(9 11 9 / .94);
+    padding: .65rem .9rem;
+    color: #22c55e;
+    font-size: .75rem;
+    font-weight: 900;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 12px 32px rgb(0 0 0 / .38);
+    transform: translate3d(-50%, -50%, 0);
+  }
+
+  .gym-discovery-page .gym-swipe-gesture {
+    position: relative;
+    display: inline-block;
+    width: 1.45rem;
+    height: 1rem;
+    flex: none;
+  }
+
+  .gym-discovery-page .gym-swipe-chevron {
+    position: absolute;
+    top: 0;
+    left: .2rem;
+    width: 1rem;
+    height: 1rem;
+    animation: gym-swipe-compare-hint 1.35s cubic-bezier(.35, 0, .2, 1) infinite;
+  }
+
+  .gym-discovery-page .gym-swipe-chevron-second {
+    animation-delay: .2s;
+  }
+
+  .gym-discovery-page .gym-profile-swipe-tutorial .gym-profile-presence {
+    filter: brightness(.48);
+  }
+
+  html body .gym-discovery-page button[data-photo-arrow="true"],
+  html body .gym-discovery-page button[data-photo-arrow="true"]:hover,
+  html body .gym-discovery-page button[data-photo-arrow="true"]:active,
+  html body .gym-discovery-page button[data-photo-arrow="true"]:focus {
+    top: 50% !important;
+    bottom: auto !important;
+    display: grid !important;
+    box-sizing: border-box !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border-radius: 9999px !important;
+    translate: none !important;
+    transform: translate3d(0, -50%, 0) !important;
+  }
+}
+
 @media (max-width: 767px) {
   html body .gym-verification-page button.gym-listing-delete-action,
   html body .gym-verification-page button.gym-listing-delete-action:hover,
@@ -636,6 +775,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @media (min-width: 768px) {
+  .gym-discovery-page .landing-mobile-sort-row {
+    overflow-x: hidden;
+  }
+
   .gym-discovery-page > header :is(.landing-admin-button, .landing-toolbar-button, .landing-gym-listing-button, .landing-logout-button) {
     height: 36px;
     min-height: 36px;
@@ -756,7 +899,7 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
 @supports (padding: max(0px)) {
   body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
 }
-@media(min-width:768px){main>section>aside:first-child{position:relative;width:min(var(--gym-list-width,510px),70vw)!important;flex:0 0 min(var(--gym-list-width,510px),70vw);container-name:gym-list;container-type:inline-size;transition:width .12s ease-out,flex-basis .12s ease-out}.gym-discovery-page>section>aside:first-child{min-width:420px}.gym-discovery-page>section>aside:first-child>div:first-child h1{white-space:nowrap}.gym-discovery-page .landing-mobile-sort-row>span{flex:none;white-space:nowrap}main>section>aside:first-child:after{content:"";position:absolute;right:-5px;top:0;bottom:0;z-index:50;width:10px;cursor:col-resize;background:transparent;transition:background .15s ease}main>section>aside:first-child:hover:after{background:rgba(34,197,94,.18)}body.resizing-gym-list,body.resizing-gym-list *{cursor:col-resize!important;user-select:none!important}body.resizing-gym-list main>section>aside:first-child{transition:none}body.resizing-gym-list main>section>aside:first-child:after{background:#22c55e}}@container gym-list (min-width:600px){article.group>div>div:first-child{width:30%}article.group h2{font-size:1.2rem}article.group>div>div:last-child{padding:1.15rem}}
+@media(min-width:768px){main>section>aside:first-child{position:relative;width:min(var(--gym-list-width,510px),70vw)!important;flex:0 0 min(var(--gym-list-width,510px),70vw);container-name:gym-list;container-type:inline-size;transition:width .12s ease-out,flex-basis .12s ease-out}.gym-discovery-page>section>aside:first-child{min-width:460px}.gym-discovery-page>section>aside:first-child>div:first-child h1{white-space:nowrap}.gym-discovery-page .landing-mobile-sort-row>span{flex:none;white-space:nowrap}main>section>aside:first-child:after{content:"";position:absolute;right:-5px;top:0;bottom:0;z-index:50;width:10px;cursor:col-resize;background:transparent;transition:background .15s ease}main>section>aside:first-child:hover:after{background:rgba(34,197,94,.18)}body.resizing-gym-list,body.resizing-gym-list *{cursor:col-resize!important;user-select:none!important}body.resizing-gym-list main>section>aside:first-child{transition:none}body.resizing-gym-list main>section>aside:first-child:after{background:#22c55e}}@container gym-list (min-width:600px){article.group>div>div:first-child{width:30%}article.group h2{font-size:1.2rem}article.group>div>div:last-child{padding:1.15rem}}
 
 /* Primary and destructive actions share typography, border weight, and motion. */
 :is(button, a)[class*="bg-[#22c55e]"],
@@ -1657,6 +1800,21 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   }
 }
 
+/* Touch-first tablets can be wider than the phone layout breakpoint. Keep
+   tap-triggered admin help visible in the viewport at those intermediate sizes. */
+@media (hover: none), (pointer: coarse) {
+  main:has(nav[aria-label="Admin sections"]) .admin-gym-funnel-tooltip {
+    position: fixed !important;
+    right: 1rem !important;
+    bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    left: 1rem !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+  }
+}
+
 /* Final phone-only control geometry and tap-state locks. */
 @media (max-width: 767px) {
   html body .gym-discovery-page > header :is(a[href="/admin"].filter-pill.landing-admin-button, .landing-gym-listing-button) {
@@ -1687,10 +1845,11 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   html body .gym-discovery-page .landing-mobile-view-toggle:active,
   html body .gym-discovery-page .landing-mobile-view-toggle:focus {
     position: fixed !important;
-    right: max(0px, env(safe-area-inset-right)) !important;
-    left: max(0px, env(safe-area-inset-left)) !important;
-    margin-right: auto !important;
-    margin-left: auto !important;
+    right: auto !important;
+    left: calc(50vw - 2.5rem) !important;
+    width: 5rem !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
     translate: none !important;
     transform: none !important;
   }
@@ -2006,5 +2165,179 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     filter: none !important;
     transform: none !important;
     box-shadow: none !important;
+  }
+}
+
+/* Final phone image-control geometry. This intentionally follows every older
+   phone override so the arrows cannot stretch between top and bottom. */
+@media (max-width: 767px) {
+  html body .gym-discovery-page button[data-photo-arrow="true"],
+  html body .gym-discovery-page button[data-photo-arrow="true"]:hover,
+  html body .gym-discovery-page button[data-photo-arrow="true"]:active,
+  html body .gym-discovery-page button[data-photo-arrow="true"]:focus {
+    top: 50% !important;
+    bottom: auto !important;
+    display: grid !important;
+    box-sizing: border-box !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border-radius: 9999px !important;
+    translate: none !important;
+    transform: translate3d(0, -50%, 0) !important;
+  }
+}
+
+/* Final discovery hover behavior. Keep this after shared responsive and touch
+   rules so every viewport receives the same feedback. */
+html body .gym-discovery-page > header button.landing-toolbar-button:hover {
+  border-color: #fff !important;
+}
+
+html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button:not([class*="bg-[#22c55e]"]):hover {
+  background-color: transparent !important;
+  color: rgb(113 113 122) !important;
+  -webkit-text-fill-color: rgb(113 113 122) !important;
+}
+
+.dark .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch) button:not([class*="bg-[#22c55e]"]):hover {
+  color: rgb(255 255 255 / .55) !important;
+  -webkit-text-fill-color: rgb(255 255 255 / .55) !important;
+}
+
+/* Center the Address clear action without a transform. iOS standalone mode can
+   drop transforms during its pressed-state reset, which otherwise moves the X
+   to the top of the input. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  html body .gym-verification-page button.gym-address-clear-button,
+  html body .gym-verification-page button.gym-address-clear-button:hover,
+  html body .gym-verification-page button.gym-address-clear-button:active,
+  html body .gym-verification-page button.gym-address-clear-button:focus,
+  html body .gym-verification-page button.gym-address-clear-button:focus-visible {
+    top: 0 !important;
+    bottom: 0 !important;
+    right: .25rem !important;
+    display: grid !important;
+    box-sizing: border-box !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    min-width: 2rem !important;
+    min-height: 2rem !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+    padding: 0 !important;
+    place-items: center !important;
+    line-height: 0 !important;
+    transform: none !important;
+    translate: none !important;
+  }
+}
+
+/* The mobile login action must remain green through iOS tap, focus, loading,
+   disabled, and restored-page states. */
+@media (max-width: 767px) {
+  html body button[data-slot="button"].login-submit-action,
+  html body button[data-slot="button"].login-submit-action:hover,
+  html body button[data-slot="button"].login-submit-action:active,
+  html body button[data-slot="button"].login-submit-action:focus,
+  html body button[data-slot="button"].login-submit-action:focus-visible,
+  html body button[data-slot="button"].login-submit-action:disabled,
+  html body button[data-slot="button"].login-submit-action[aria-disabled="true"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Final mobile lock for the authenticated post-verification return link. */
+@media (max-width: 767px) {
+  html body a.gym-invite-return-action,
+  html body a.gym-invite-return-action:link,
+  html body a.gym-invite-return-action:visited,
+  html body a.gym-invite-return-action:hover,
+  html body a.gym-invite-return-action:active,
+  html body a.gym-invite-return-action:focus,
+  html body a.gym-invite-return-action:focus-visible {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Final shared state contract: My Listing behaves exactly like Admin. */
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button),
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):link,
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):visited,
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):hover,
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):active,
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):focus,
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):focus-visible {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  display: inline-flex !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-color: #22c55e !important;
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  background-image: none !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  translate: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+@media (min-width: 768px) {
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button),
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):link,
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):visited {
+    border-color: #22c55e !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    color: #22c55e !important;
+    -webkit-text-fill-color: #22c55e !important;
+  }
+
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):hover,
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):active,
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):focus,
+  .dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):focus-visible {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
   }
 }

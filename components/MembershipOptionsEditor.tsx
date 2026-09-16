@@ -27,6 +27,6 @@ export default function MembershipOptionsEditor({ options, availableAmenities, o
         <label className={`${label} sm:col-span-2`}>Additional notes <span className="text-xs font-normal text-zinc-400">Optional</span><textarea rows={3} className={input} value={option.notes} onChange={event => update(index, { notes: event.target.value })} /></label>
       </div>
     </article>)}
-    <button type="button" onClick={() => onChange([...options, { ...emptyMembershipOption(), purchaseUrl: options[0]?.purchaseUrl ?? "" }])} className="inline-flex items-center gap-2 rounded-xl border border-[#22c55e] bg-[#22c55e] px-4 py-2.5 text-sm font-black text-black transition hover:bg-zinc-50 hover:text-[#22c55e] dark:hover:bg-neutral-950"><Plus size={17}/>Add membership option</button>
+    <button type="button" onClick={() => onChange([...options, { ...emptyMembershipOption(), purchaseUrl: options[0]?.purchaseUrl ?? "" }])} className="gym-listing-primary-action gym-membership-add-action inline-flex items-center gap-2 rounded-xl border border-transparent bg-[#22c55e] px-6 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-zinc-50 hover:text-[#22c55e] dark:hover:bg-neutral-950"><Plus size={17}/>Add membership option</button>
   </div>;
 }

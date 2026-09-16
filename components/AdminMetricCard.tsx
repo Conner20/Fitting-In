@@ -15,7 +15,7 @@ export default function AdminMetricCard({ label, value, breakdown }: { label: st
         return () => document.removeEventListener("pointerdown", closeOnOutsideTap);
     }, [mobileOpen]);
     const toggleMobileBreakdown = () => {
-        if (!breakdown || !window.matchMedia("(max-width: 767px)").matches) return;
+        if (!breakdown || !window.matchMedia("(max-width: 767px), (hover: none), (pointer: coarse)").matches) return;
         setMobileOpen((open) => !open);
     };
 

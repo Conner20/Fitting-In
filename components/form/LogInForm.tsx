@@ -170,7 +170,7 @@ const LogInForm = () => {
                         event.currentTarget.style.setProperty("color", "#111411", "important");
                         event.currentTarget.style.setProperty("opacity", "1", "important");
                     }}
-                    className='auth-primary-action mt-6 w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]'
+                    className='auth-primary-action login-submit-action mt-6 w-full bg-[#22c55e] font-bold text-black hover:bg-[#19a94e]'
                     type="submit"
                 >Log In</Button>
             </form>

@@ -20,16 +20,18 @@ function preserveGreenColors(event: SyntheticEvent<HTMLAnchorElement>) {
 }
 
 export default function StableExploreLink({ className, href = "/", children = "Explore Fitting In" }: { className: string; href?: string; children?: ReactNode }) {
+    const usesLandingHeaderStates = className.split(/\s+/).includes("landing-gym-listing-button");
+
     return (
         <Link
             href={href}
             className={className}
-            style={{ backgroundColor: MOBILE_GREEN, color: MOBILE_TEXT }}
-            onPointerDownCapture={preserveGreenColors}
-            onTouchStartCapture={preserveGreenColors}
-            onMouseDownCapture={preserveGreenColors}
-            onFocus={preserveGreenColors}
-            onClickCapture={preserveGreenColors}
+            style={usesLandingHeaderStates ? undefined : { backgroundColor: MOBILE_GREEN, color: MOBILE_TEXT }}
+            onPointerDownCapture={usesLandingHeaderStates ? undefined : preserveGreenColors}
+            onTouchStartCapture={usesLandingHeaderStates ? undefined : preserveGreenColors}
+            onMouseDownCapture={usesLandingHeaderStates ? undefined : preserveGreenColors}
+            onFocus={usesLandingHeaderStates ? undefined : preserveGreenColors}
+            onClickCapture={usesLandingHeaderStates ? undefined : preserveGreenColors}
         >
             {children}
         </Link>
