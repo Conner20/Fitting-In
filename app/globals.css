@@ -2351,23 +2351,23 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page .landing-mobile-view-toggle:focus,
   html body .gym-discovery-page .landing-mobile-view-toggle:focus-visible {
     position: fixed !important;
-    right: auto !important;
+    right: 0 !important;
     left: 0 !important;
     bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important;
     display: flex !important;
-    width: 100vw !important;
-    width: 100dvw !important;
-    max-width: none !important;
+    width: 5rem !important;
+    max-width: 5rem !important;
     height: 2.75rem !important;
-    margin: 0 !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
     padding: 0 !important;
     align-items: center !important;
     justify-content: center !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    pointer-events: none !important;
+    border: 1px solid #22c55e !important;
+    border-radius: 9999px !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    pointer-events: auto !important;
     translate: 0 0 !important;
     transform: none !important;
     box-shadow: none !important;
@@ -2406,18 +2406,22 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page button[data-photo-arrow="true"]:active,
   html body .gym-discovery-page button[data-photo-arrow="true"]:focus,
   html body .gym-discovery-page button[data-photo-arrow="true"]:focus-visible {
-    top: calc(50% - 18px) !important;
-    bottom: auto !important;
-    display: grid !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    display: flex !important;
     box-sizing: border-box !important;
     width: 36px !important;
-    height: 36px !important;
+    height: auto !important;
     min-width: 36px !important;
-    min-height: 36px !important;
+    min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    place-items: center !important;
-    border-radius: 9999px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
     translate: 0 0 !important;
     transform: none !important;
     filter: none !important;
@@ -2426,8 +2430,15 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
 
   html body .gym-discovery-page button[data-photo-arrow="true"] svg {
     display: block !important;
-    width: 1rem !important;
-    height: 1rem !important;
+    box-sizing: border-box !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
     margin: 0 !important;
+    padding: 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 9999px !important;
+    background: rgb(0 0 0 / .65) !important;
   }
 }
