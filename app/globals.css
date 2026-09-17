@@ -2477,7 +2477,7 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
 
   html body .gym-verification-page .gym-hours-row > div {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     box-sizing: border-box !important;
     width: auto !important;
     min-width: 0 !important;
@@ -2488,7 +2488,7 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   }
 
   html body .gym-verification-page .gym-hours-row > div > span {
-    display: block !important;
+    display: grid !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
@@ -2499,6 +2499,20 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     justify-self: stretch !important;
     min-width: 0 !important;
     max-width: 100% !important;
+  }
+
+  html body .gym-verification-page .gym-hours-row > div > span:not(.gym-time-field) {
+    display: none !important;
+  }
+
+  html body .gym-verification-page .gym-time-field {
+    grid-template-columns: 3.5rem minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: .5rem !important;
+  }
+
+  html body .gym-verification-page .gym-time-field-label {
+    display: block !important;
   }
 
   html body .gym-verification-page input.gym-time-input {
@@ -2526,4 +2540,16 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     margin: 0 !important;
     text-align: center !important;
   }
+}
+
+/* Keep listing-editor select chevrons comfortably inside their controls and
+   reserve enough room so option text never collides with the icon. */
+.gym-verification-page select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding-right: 2.5rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-position: right .75rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1rem 1rem !important;
 }
