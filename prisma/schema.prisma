@@ -10,7 +10,6 @@ datasource db {
 
 enum Role {
   TRAINEE
-  TRAINER
   GYM
 }
 
@@ -74,39 +73,39 @@ model User {
 }
 
 model Gym {
-  id             String         @id @default(cuid())
-  name           String
-  slug           String         @unique
-  address        String
-  phone          String         @default("")
-  website        String         @default("")
-  isVerified     Boolean        @default(false)
-  isPublished    Boolean        @default(true)
-  gymType        String?
-  city           String?
-  state          String?
-  country        String?
-  lat            Float?
-  lng            Float?
-  amenities      String[]       @default([])
-  equipment      String[]       @default([])
-  dayPassPrice   Float?
-  dayPassDetails String?
-  dayPassUrl     String?
+  id                String         @id @default(cuid())
+  name              String
+  slug              String         @unique
+  address           String
+  phone             String         @default("")
+  website           String         @default("")
+  isVerified        Boolean        @default(false)
+  isPublished       Boolean        @default(true)
+  gymType           String?
+  city              String?
+  state             String?
+  country           String?
+  lat               Float?
+  lng               Float?
+  amenities         String[]       @default([])
+  equipment         String[]       @default([])
+  dayPassPrice      Float?
+  dayPassDetails    String?
+  dayPassUrl        String?
   membershipPrice   Float?
   membershipDetails String?
   membershipOptions Json           @default("[]")
-  hours          String?
-  contactEmail   String?
-  coverPhotoUrl  String?
-  photoUrls      String[]       @default([])
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @default(now()) @updatedAt
-  access         GymAccess[]
-  claims         GymClaim[]
-  invites        GymInvite[]
-  favorites      GymFavorite[]
-  landingEvents  LandingEvent[]
+  hours             String?
+  contactEmail      String?
+  coverPhotoUrl     String?
+  photoUrls         String[]       @default([])
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now()) @updatedAt
+  access            GymAccess[]
+  claims            GymClaim[]
+  invites           GymInvite[]
+  favorites         GymFavorite[]
+  landingEvents     LandingEvent[]
 
   @@index([name])
   @@index([isPublished, isVerified])
@@ -148,16 +147,16 @@ model GymClaim {
 }
 
 model GymInvite {
-  id          String    @id @default(cuid())
-  gym         Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
-  gymId       String
-  tokenHash   String    @unique
-  createdBy   User      @relation("GymInviteCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById String
-  expiresAt   DateTime
-  usedAt      DateTime?
+  id           String    @id @default(cuid())
+  gym          Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  gymId        String
+  tokenHash    String    @unique
+  createdBy    User      @relation("GymInviteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String
+  expiresAt    DateTime
+  usedAt       DateTime?
   proposedData Json?
-  createdAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
 
   @@index([gymId, expiresAt])
 }

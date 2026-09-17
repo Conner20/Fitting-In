@@ -1,6 +1,6 @@
 # Fitting In
 
-Re-engineering the fitness economy through social media.
+Find the right gym at the right price.
 
 ## Tech Stack
 

@@ -118,8 +118,7 @@ export const sendEmailVerificationEmail: Mailer = async (to, verifyUrl) => {
                             </h1>
 
                             <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#475569;">
-                                Join the fitness marketplace built to help you grow. <br> Take your next step with Fitting
-                                In.
+                                Find the right gym at the right price.
                             </p>
 
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"

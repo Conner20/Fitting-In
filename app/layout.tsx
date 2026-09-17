@@ -13,7 +13,7 @@ const anonymousPro = Anonymous_Pro({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fittingin.co";
 const siteName = "Fitting In";
-const description = "The fitness marketplace built to help you grow.";
+const description = "Find the right gym at the right price.";
 const previewImage = `${siteUrl}/images/share_card.png`;
 const pwaIcon = "/favicon_black.ico";
 
