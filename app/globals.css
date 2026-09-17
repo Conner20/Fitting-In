@@ -2553,3 +2553,63 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   background-repeat: no-repeat !important;
   background-size: 1rem 1rem !important;
 }
+
+/* Photo removal controls use one fixed circular hit target. */
+.gym-verification-page button[aria-label^="Remove cover photo"],
+.gym-verification-page button[aria-label="Remove amenity photo"] {
+  display: grid !important;
+  box-sizing: border-box !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
+  padding: 0 !important;
+  place-items: center !important;
+  border-radius: 9999px !important;
+  line-height: 0 !important;
+}
+
+/* Center the Address clear control identically at every breakpoint. Tailwind's
+   translation variables otherwise combine with the legacy transform in the
+   optimized build and move the control upward. */
+html body .gym-verification-page button.gym-address-clear-button,
+html body .gym-verification-page button.gym-address-clear-button:hover,
+html body .gym-verification-page button.gym-address-clear-button:active,
+html body .gym-verification-page button.gym-address-clear-button:focus,
+html body .gym-verification-page button.gym-address-clear-button:focus-visible {
+  --tw-translate-x: 0px !important;
+  --tw-translate-y: 0px !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: .25rem !important;
+  display: grid !important;
+  box-sizing: border-box !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
+  margin-top: auto !important;
+  margin-bottom: auto !important;
+  padding: 0 !important;
+  place-items: center !important;
+  translate: 0 0 !important;
+  transform: none !important;
+}
+
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  html body .gym-verification-page input.gym-time-input {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    overflow: hidden !important;
+    direction: ltr !important;
+  }
+
+  html body .gym-verification-page input.gym-time-input::-webkit-datetime-edit,
+  html body .gym-verification-page input.gym-time-input::-webkit-date-and-time-value {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+}
