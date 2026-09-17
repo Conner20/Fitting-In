@@ -2478,8 +2478,11 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-verification-page .gym-hours-row > div {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
-    width: 100% !important;
+    box-sizing: border-box !important;
+    width: auto !important;
     min-width: 0 !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
     align-items: center !important;
     gap: .375rem !important;
   }
@@ -2488,7 +2491,14 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     display: block !important;
     width: 100% !important;
     min-width: 0 !important;
+    max-width: 100% !important;
     overflow: visible !important;
+  }
+
+  html body .gym-verification-page .gym-hours-row > div > span:last-child {
+    justify-self: stretch !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   html body .gym-verification-page input.gym-time-input {
