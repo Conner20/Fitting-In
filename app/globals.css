@@ -2351,11 +2351,13 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page .landing-mobile-view-toggle:focus,
   html body .gym-discovery-page .landing-mobile-view-toggle:focus-visible {
     position: fixed !important;
-    right: 0 !important;
+    right: auto !important;
     left: 0 !important;
     bottom: calc(1.25rem + env(safe-area-inset-bottom)) !important;
     display: flex !important;
-    width: auto !important;
+    width: 100vw !important;
+    width: 100dvw !important;
+    max-width: none !important;
     height: 2.75rem !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -2404,16 +2406,15 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page button[data-photo-arrow="true"]:active,
   html body .gym-discovery-page button[data-photo-arrow="true"]:focus,
   html body .gym-discovery-page button[data-photo-arrow="true"]:focus-visible {
-    top: 0 !important;
-    bottom: 0 !important;
+    top: calc(50% - 18px) !important;
+    bottom: auto !important;
     display: grid !important;
     box-sizing: border-box !important;
     width: 36px !important;
     height: 36px !important;
     min-width: 36px !important;
     min-height: 36px !important;
-    margin-top: auto !important;
-    margin-bottom: auto !important;
+    margin: 0 !important;
     padding: 0 !important;
     place-items: center !important;
     border-radius: 9999px !important;
