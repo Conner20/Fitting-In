@@ -2428,6 +2428,7 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     border-radius: 0 !important;
     background: transparent !important;
     background-color: transparent !important;
+    pointer-events: none !important;
     translate: 0 0 !important;
     transform: none !important;
     filter: none !important;
@@ -2446,5 +2447,11 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     border: 1px solid transparent !important;
     border-radius: 9999px !important;
     background: rgb(0 0 0 / .65) !important;
+    pointer-events: auto !important;
+  }
+
+  html body .gym-discovery-page .mobile-profile-close {
+    z-index: 20 !important;
+    pointer-events: auto !important;
   }
 }
