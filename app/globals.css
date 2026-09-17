@@ -2368,7 +2368,7 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     background: transparent !important;
     background-color: transparent !important;
     pointer-events: none !important;
-    translate: none !important;
+    translate: 0 0 !important;
     transform: none !important;
     box-shadow: none !important;
   }
@@ -2391,7 +2391,7 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     pointer-events: auto !important;
     opacity: 1 !important;
     filter: none !important;
-    translate: none !important;
+    translate: 0 0 !important;
     transform: none !important;
     box-shadow: none !important;
     -webkit-tap-highlight-color: transparent !important;
@@ -2418,7 +2418,7 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     padding: 0 !important;
     place-items: center !important;
     border-radius: 9999px !important;
-    translate: none !important;
+    translate: 0 0 !important;
     transform: none !important;
     filter: none !important;
     box-shadow: none !important;
