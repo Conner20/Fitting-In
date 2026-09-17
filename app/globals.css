@@ -2350,6 +2350,8 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page .landing-mobile-view-toggle:active,
   html body .gym-discovery-page .landing-mobile-view-toggle:focus,
   html body .gym-discovery-page .landing-mobile-view-toggle:focus-visible {
+    --tw-translate-x: 0px !important;
+    --tw-translate-y: 0px !important;
     position: fixed !important;
     right: 0 !important;
     left: 0 !important;
@@ -2378,6 +2380,8 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page .landing-mobile-view-toggle-button:active,
   html body .gym-discovery-page .landing-mobile-view-toggle-button:focus,
   html body .gym-discovery-page .landing-mobile-view-toggle-button:focus-visible {
+    --tw-translate-x: 0px !important;
+    --tw-translate-y: 0px !important;
     width: 5rem !important;
     height: 2.75rem !important;
     min-height: 2.75rem !important;
@@ -2406,6 +2410,8 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body .gym-discovery-page button[data-photo-arrow="true"]:active,
   html body .gym-discovery-page button[data-photo-arrow="true"]:focus,
   html body .gym-discovery-page button[data-photo-arrow="true"]:focus-visible {
+    --tw-translate-x: 0px !important;
+    --tw-translate-y: 0px !important;
     top: 0 !important;
     bottom: 0 !important;
     display: flex !important;
