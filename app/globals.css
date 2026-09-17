@@ -2455,3 +2455,65 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     pointer-events: auto !important;
   }
 }
+
+/* Final mobile listing-form geometry. Neutralize Tailwind's address-button
+   translation and give native time editors explicit, unclipped columns. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  html body .gym-verification-page button.gym-address-clear-button,
+  html body .gym-verification-page button.gym-address-clear-button:hover,
+  html body .gym-verification-page button.gym-address-clear-button:active,
+  html body .gym-verification-page button.gym-address-clear-button:focus,
+  html body .gym-verification-page button.gym-address-clear-button:focus-visible {
+    --tw-translate-x: 0px !important;
+    --tw-translate-y: 0px !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 2rem !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+    translate: 0 0 !important;
+    transform: none !important;
+  }
+
+  html body .gym-verification-page .gym-hours-row > div {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    gap: .375rem !important;
+  }
+
+  html body .gym-verification-page .gym-hours-row > div > span {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body .gym-verification-page input.gym-time-input {
+    box-sizing: border-box !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 2.75rem !important;
+    padding: 0 .5rem !important;
+    line-height: 2.75rem !important;
+    text-align: center !important;
+  }
+
+  html body .gym-verification-page input.gym-time-input::-webkit-datetime-edit {
+    display: flex !important;
+    height: 100% !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  html body .gym-verification-page input.gym-time-input::-webkit-date-and-time-value {
+    margin: 0 !important;
+    text-align: center !important;
+  }
+}
