@@ -6,7 +6,7 @@ import { KeyRound, LogOut, Trash2, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-export default function ProfileMenu({ className = "" }: { className?: string }) {
+export default function ProfileMenu({ className = "", labeled = false }: { className?: string; labeled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -76,9 +76,12 @@ export default function ProfileMenu({ className = "" }: { className?: string }) 
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggleMenu}
-        className={`profile-menu-trigger flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 text-zinc-700 transition hover:border-[#22c55e] hover:text-[#22c55e] dark:border-white/15 dark:text-white ${className}`}
+        className={labeled
+          ? `profile-menu-trigger filter-pill landing-toolbar-button shrink-0 ${className}`
+          : `profile-menu-trigger flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 text-zinc-700 transition hover:border-[#22c55e] hover:text-[#22c55e] dark:border-white/15 dark:text-white ${className}`}
       >
         <UserRound className="h-5 w-5" />
+        {labeled && <span className="landing-action-label landing-profile-label">Profile</span>}
       </button>
 
       {open && typeof document !== "undefined" && createPortal(

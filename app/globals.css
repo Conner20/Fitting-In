@@ -763,7 +763,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .filter-pill{display:inline-flex;flex:none;align-items:center;gap:.4rem;white-space:nowrap;border:1px solid #ccd3c9;border-radius:999px;background:white;padding:.55rem .85rem;color:#344038;font-size:.78rem;font-weight:700}.filter-pill:hover{background:#f0f4ed}.filter-pill svg{width:14px;height:14px}.filter-pill b{display:grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:#22c55e;color:#080a08;font-size:10px}.gym-map{overflow:hidden;background-color:#e8ece5;background-image:linear-gradient(32deg,transparent 47%,rgba(255,255,255,.9) 48% 50%,transparent 51%),linear-gradient(102deg,transparent 47%,rgba(255,255,255,.78) 48% 50%,transparent 51%),linear-gradient(162deg,transparent 48%,rgba(255,255,255,.7) 49% 51%,transparent 52%),repeating-linear-gradient(90deg,transparent 0 69px,rgba(151,163,148,.18) 70px 71px),repeating-linear-gradient(0deg,transparent 0 62px,rgba(151,163,148,.18) 63px 64px)}.gym-map:before{content:"";position:absolute;inset:-20%;transform:rotate(-18deg);border:38px solid rgba(137,176,190,.45);border-radius:45%;pointer-events:none}
 .landing-toolbar-button{height:36px;min-height:36px;align-items:center;gap:.4rem;padding:.55rem .85rem;font-size:.78rem;line-height:1}.landing-toolbar-button svg{width:14px!important;height:14px!important;flex:none}
 .landing-toolbar-button { font-weight: 700 !important; }
-.landing-gym-listing-button { gap: 0 !important; }
+.landing-gym-listing-button { gap: .375rem !important; }
 .gym-discovery-page > header .landing-gym-listing-button,
 .gym-discovery-page > header .landing-gym-listing-button:link,
 .gym-discovery-page > header .landing-gym-listing-button:visited,
@@ -2268,6 +2268,104 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   }
 }
 
+/* Dedicated mobile auth controls: intentionally isolated from filter-pill and
+   global link/button interaction styles. */
+@media (max-width: 767px) {
+  html body .gym-discovery-page .landing-mobile-auth-button {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    box-sizing: border-box !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid transparent !important;
+    border-radius: 9999px !important;
+    padding: .55rem .85rem !important;
+    font-size: .78rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    translate: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+    touch-action: manipulation;
+  }
+
+  html body .gym-discovery-page #landing-mobile-login,
+  html body .gym-discovery-page #landing-mobile-login:hover,
+  html body .gym-discovery-page #landing-mobile-login:active,
+  html body .gym-discovery-page #landing-mobile-login:focus,
+  html body .gym-discovery-page #landing-mobile-login:focus-visible {
+    border-color: transparent !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    color: #e9eee9 !important;
+    -webkit-text-fill-color: #e9eee9 !important;
+    outline: none !important;
+  }
+
+  html body .gym-discovery-page #landing-mobile-signup,
+  html body .gym-discovery-page #landing-mobile-signup:hover,
+  html body .gym-discovery-page #landing-mobile-signup:active,
+  html body .gym-discovery-page #landing-mobile-signup:focus,
+  html body .gym-discovery-page #landing-mobile-signup:focus-visible {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    outline: none !important;
+  }
+}
+
+/* Admin and My Listing use the same visual contract as the Favorites,
+   Filters, and labeled Profile toolbar controls. This final override also
+   supersedes the older green CTA rules retained above for compatibility. */
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button),
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):link,
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):visited {
+  height: 36px !important;
+  min-height: 36px !important;
+  gap: .4rem !important;
+  padding: .55rem .85rem !important;
+  border: 1px solid #ccd3c9 !important;
+  background: #fff !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+}
+
+.gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):hover {
+  border-color: #fff !important;
+  background: #f0f4ed !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+}
+
+.dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button),
+.dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):link,
+.dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):visited {
+  border-color: rgba(255,255,255,.14) !important;
+  background: #111411 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+.dark .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):hover {
+  border-color: #fff !important;
+  background: #192019 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
 /* The mobile login action must remain green through iOS tap, focus, loading,
    disabled, and restored-page states. */
 @media (max-width: 767px) {
@@ -2642,5 +2740,339 @@ html body .gym-verification-page button.gym-address-clear-button:focus-visible {
     min-width: 0 !important;
     max-width: 100% !important;
     overflow: hidden !important;
+  }
+}
+
+/* Keep the authenticated landing actions visually identical to the shared
+   Favorites, Filters, and Profile pills. This must remain after legacy CTA
+   compatibility rules so optimized production CSS resolves the same way. */
+html body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button),
+html body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):link,
+html body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):visited {
+  height: 36px !important;
+  min-height: 36px !important;
+  gap: .4rem !important;
+  padding: .55rem .85rem !important;
+  border: 1px solid #ccd3c9 !important;
+  background: #fff !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+}
+
+html body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):hover {
+  border-color: #fff !important;
+  background: #f0f4ed !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+}
+
+html.dark body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button),
+html.dark body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):link,
+html.dark body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):visited {
+  border-color: rgba(255,255,255,.14) !important;
+  background: #111411 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+html.dark body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button):hover {
+  border-color: #fff !important;
+  background: #192019 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+/* Match the responsive type and spacing of Favorites, Filters, and Profile. */
+html body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button) {
+  gap: .4rem !important;
+  padding: .55rem .85rem !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+@media (min-width: 768px) {
+  html body .gym-discovery-page > header :is(.landing-admin-button, .landing-gym-listing-button) {
+    gap: .375rem !important;
+    padding: 0 1rem !important;
+    font-size: .75rem !important;
+    font-weight: 900 !important;
+  }
+}
+
+/* Admin now uses the shared toolbar classes directly. Neutralize the legacy
+   href-based CTA rule so its computed styles match every other toolbar pill. */
+html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button,
+html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button:link,
+html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button:visited {
+  height: 36px !important;
+  min-height: 36px !important;
+  gap: .4rem !important;
+  padding: .55rem .85rem !important;
+  border-color: #ccd3c9 !important;
+  background: #fff !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+  font-size: .78rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button:hover {
+  border-color: #fff !important;
+  background: #f0f4ed !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+}
+
+html.dark body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button,
+html.dark body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button:link,
+html.dark body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button:visited {
+  border-color: rgba(255,255,255,.14) !important;
+  background: #111411 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+html.dark body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button:hover {
+  border-color: #fff !important;
+  background: #192019 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+@media (min-width: 768px) {
+  html body .gym-discovery-page > header a[href="/admin"].filter-pill.landing-toolbar-button {
+    gap: .375rem !important;
+    padding: 0 1rem !important;
+    font-size: .75rem !important;
+    font-weight: 900 !important;
+  }
+}
+
+/* Keep every authenticated landing action on one line. Labels collapse in a
+   predictable priority order while their icon hit targets remain available. */
+.gym-discovery-page .landing-action-row {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .gym-discovery-page .landing-toolbar-description {
+    display: none !important;
+  }
+}
+
+@media (max-width: 410px) {
+  .gym-discovery-page .landing-action-row:has(.landing-action-listing) .landing-profile-label {
+    display: none !important;
+  }
+
+  .gym-discovery-page .landing-action-row:has(.landing-action-listing) .profile-menu-trigger.landing-toolbar-button {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .gym-discovery-page .landing-action-row:has(.landing-action-admin) .landing-profile-label {
+    display: none !important;
+  }
+
+  .gym-discovery-page .landing-action-row:has(.landing-action-admin) .profile-menu-trigger.landing-toolbar-button {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 300px) {
+  .gym-discovery-page .landing-profile-label {
+    display: none !important;
+  }
+
+  .gym-discovery-page .profile-menu-trigger.landing-toolbar-button {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .gym-discovery-page .landing-action-row:has(:is(.landing-action-admin, .landing-action-listing)) .landing-filters-label {
+    display: none !important;
+  }
+
+  .gym-discovery-page .landing-action-row:has(:is(.landing-action-admin, .landing-action-listing)) .landing-action-filters {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+
+  .gym-discovery-page .landing-action-row:has(:is(.landing-action-admin, .landing-action-listing)) .landing-action-filters:has(b) {
+    width: auto !important;
+    min-width: 54px !important;
+    padding-left: .45rem !important;
+    padding-right: .45rem !important;
+  }
+}
+
+@media (max-width: 270px) {
+  .gym-discovery-page .landing-favorites-label {
+    display: none !important;
+  }
+
+  .gym-discovery-page .landing-action-favorites {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 230px) {
+  .gym-discovery-page :is(.landing-admin-label, .landing-listing-label) {
+    display: none !important;
+  }
+
+  .gym-discovery-page :is(.landing-action-admin, .landing-action-listing) {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+/* Landing authentication actions share the toolbar's dimensions and type.
+   Login stays borderless; Sign up remains the green primary action. */
+html body .gym-discovery-page .landing-auth-login,
+html body .gym-discovery-page .landing-auth-login:link,
+html body .gym-discovery-page .landing-auth-login:visited,
+html body .gym-discovery-page .landing-auth-login:active,
+html body .gym-discovery-page .landing-auth-login:focus,
+html body .gym-discovery-page .landing-auth-login:focus-visible {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body .gym-discovery-page .landing-auth-login:hover {
+  border-color: transparent !important;
+  background: #f0f4ed !important;
+  color: #344038 !important;
+  -webkit-text-fill-color: #344038 !important;
+}
+
+html.dark body .gym-discovery-page .landing-auth-login,
+html.dark body .gym-discovery-page .landing-auth-login:link,
+html.dark body .gym-discovery-page .landing-auth-login:visited,
+html.dark body .gym-discovery-page .landing-auth-login:active,
+html.dark body .gym-discovery-page .landing-auth-login:focus,
+html.dark body .gym-discovery-page .landing-auth-login:focus-visible {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+html.dark body .gym-discovery-page .landing-auth-login:hover {
+  border-color: transparent !important;
+  background: #192019 !important;
+  color: #e9eee9 !important;
+  -webkit-text-fill-color: #e9eee9 !important;
+}
+
+html body .gym-discovery-page .landing-auth-signup,
+html body .gym-discovery-page .landing-auth-signup:link,
+html body .gym-discovery-page .landing-auth-signup:visited,
+html body .gym-discovery-page .landing-auth-signup:hover,
+html body .gym-discovery-page .landing-auth-signup:active,
+html body .gym-discovery-page .landing-auth-signup:focus,
+html body .gym-discovery-page .landing-auth-signup:focus-visible {
+  border-color: #22c55e !important;
+  background: #22c55e !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  html body .gym-discovery-page .landing-auth-login,
+  html body .gym-discovery-page .landing-auth-login:link,
+  html body .gym-discovery-page .landing-auth-login:visited,
+  html body .gym-discovery-page .landing-auth-login:hover,
+  html body .gym-discovery-page .landing-auth-login:active,
+  html body .gym-discovery-page .landing-auth-login:focus,
+  html body .gym-discovery-page .landing-auth-login:focus-visible {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    color: #344038 !important;
+    -webkit-text-fill-color: #344038 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    translate: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation;
+  }
+
+  html.dark body .gym-discovery-page .landing-auth-login,
+  html.dark body .gym-discovery-page .landing-auth-login:link,
+  html.dark body .gym-discovery-page .landing-auth-login:visited,
+  html.dark body .gym-discovery-page .landing-auth-login:hover,
+  html.dark body .gym-discovery-page .landing-auth-login:active,
+  html.dark body .gym-discovery-page .landing-auth-login:focus,
+  html.dark body .gym-discovery-page .landing-auth-login:focus-visible {
+    color: #e9eee9 !important;
+    -webkit-text-fill-color: #e9eee9 !important;
+  }
+
+  html body .gym-discovery-page .landing-auth-signup,
+  html body .gym-discovery-page .landing-auth-signup:link,
+  html body .gym-discovery-page .landing-auth-signup:visited,
+  html body .gym-discovery-page .landing-auth-signup:hover,
+  html body .gym-discovery-page .landing-auth-signup:active,
+  html body .gym-discovery-page .landing-auth-signup:focus,
+  html body .gym-discovery-page .landing-auth-signup:focus-visible {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    translate: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation;
   }
 }
