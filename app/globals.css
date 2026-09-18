@@ -469,6 +469,27 @@ html body button.gym-address-clear-button:focus-visible {
     transform: none !important;
     box-shadow: none !important;
   }
+
+  html body button.change-password-submit,
+  html body button.change-password-submit:hover,
+  html body button.change-password-submit:active,
+  html body button.change-password-submit:focus,
+  html body button.change-password-submit:focus-visible,
+  html body button.change-password-submit:disabled {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-text-fill-color: #111411 !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #111411 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
 
 .searched-location-pin {
@@ -775,6 +796,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @media (min-width: 768px) {
+  .gym-discovery-page .profile-menu-trigger:hover {
+    border-color: #fff !important;
+  }
+
   .gym-discovery-page .landing-mobile-sort-row {
     overflow-x: hidden;
   }
@@ -1982,8 +2007,14 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   }
 }
 
-/* Keep the forgot-password submit action visually stable after a phone tap. */
+/* Keep authentication submit actions visually stable after a phone tap. */
 @media (max-width: 767px) {
+  html body button[data-slot="button"].change-password-submit,
+  html body button[data-slot="button"].change-password-submit:hover,
+  html body button[data-slot="button"].change-password-submit:active,
+  html body button[data-slot="button"].change-password-submit:focus,
+  html body button[data-slot="button"].change-password-submit:focus-visible,
+  html body button[data-slot="button"].change-password-submit:disabled,
   html body button[data-slot="button"].forgot-password-submit,
   html body button[data-slot="button"].forgot-password-submit:hover,
   html body button[data-slot="button"].forgot-password-submit:active,

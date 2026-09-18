@@ -38,10 +38,6 @@ export async function DELETE(req: Request) {
     const targetEmail =
         typeof body?.targetEmail === "string" ? body.targetEmail.trim().toLowerCase() : undefined;
 
-    if (!password) {
-        return NextResponse.json({ message: "Password is required." }, { status: 400 });
-    }
-
     const requester = await db.user.findUnique({
         where: { email: session.user.email },
         select: { id: true, password: true, email: true, isAdmin: true },
@@ -51,23 +47,23 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ message: "User not found." }, { status: 404 });
     }
 
-    if (!requester.password) {
-        return NextResponse.json(
-            { message: "This account does not have a password set. Please contact support." },
-            { status: 400 },
-        );
-    }
-
-    const matches = await compare(password, requester.password);
-    if (!matches) {
-        return NextResponse.json({ message: "Incorrect password." }, { status: 401 });
-    }
-
     const hasAdminPrivileges = await hasAdminAccessByEmail(requester.email);
     const hasSuperAdminPrivileges = await hasSuperAdminAccessByEmail(requester.email);
 
     let targetId = requester.id;
     if (targetUserId || targetEmail) {
+        if (!password) {
+            return NextResponse.json({ message: "Password is required." }, { status: 400 });
+        }
+        if (!requester.password) {
+            return NextResponse.json(
+                { message: "This account does not have a password set. Please contact support." },
+                { status: 400 },
+            );
+        }
+        if (!(await compare(password, requester.password))) {
+            return NextResponse.json({ message: "Incorrect password." }, { status: 401 });
+        }
         if (!hasAdminPrivileges) {
             return NextResponse.json({ message: "Forbidden" }, { status: 403 });
         }
