@@ -47,6 +47,7 @@ export async function POST(_req: Request, { params }: Context) {
 }
 
 export async function PATCH(req: Request, { params }: Context) {
+    const verifierEmail = await currentEmail();
     const { token } = await params;
     const invite = await db.gymInvite.findUnique({ where: { tokenHash: sha256Hex(token) }, select: { id: true, gymId: true, usedAt: true, expiresAt: true, proposedData: true, gym: { select: { name: true, isVerified: true } } } });
     if (!invite || invite.usedAt || invite.expiresAt <= new Date()) return NextResponse.json({ message: "This invitation is invalid, expired, or has already been used." }, { status: 410 });
@@ -57,7 +58,7 @@ export async function PATCH(req: Request, { params }: Context) {
     if (missing.length) return NextResponse.json({ message: `Complete these required fields: ${missing.join(", ")}.` }, { status: 400 });
     const { isPublished: _isPublished, ...editable } = data;
     await db.$transaction([
-        db.gym.update({ where: { id: invite.gymId }, data: { ...editable, isVerified: true } }),
+        db.gym.update({ where: { id: invite.gymId }, data: { ...editable, isVerified: true, verifiedAt: new Date(), verifiedByEmail: verifierEmail } }),
         db.gymInvite.update({ where: { id: invite.id }, data: { proposedData: editable } }),
     ]);
     return NextResponse.json({ message: "Thanks — your gym information has been verified and the listing is now updated. Create an account to claim and manage it going forward." });

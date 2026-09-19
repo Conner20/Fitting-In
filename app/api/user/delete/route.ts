@@ -19,7 +19,7 @@ async function deleteUserAndRelations(userId: string) {
         for (const { gymId } of ownedGyms) {
             const remainingOwners = await tx.gymAccess.count({ where: { gymId } });
             if (remainingOwners > 0) continue;
-            await tx.gym.update({ where: { id: gymId }, data: { isVerified: false } });
+            await tx.gym.update({ where: { id: gymId }, data: { isVerified: false, verifiedAt: null, verifiedByEmail: null } });
             await tx.gymClaim.deleteMany({ where: { gymId } });
             await tx.gymInvite.deleteMany({ where: { gymId } });
         }

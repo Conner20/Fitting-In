@@ -13,7 +13,8 @@ export async function PATCH(req: Request, { params }: Context) {
     if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) {
         return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
-    const reviewer = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true } });
+    const adminEmail = session.user.email.toLowerCase();
+    const reviewer = await db.user.findUnique({ where: { email: adminEmail }, select: { id: true } });
     if (!reviewer) return NextResponse.json({ message: "Admin user not found." }, { status: 404 });
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
@@ -39,7 +40,7 @@ export async function PATCH(req: Request, { params }: Context) {
                 update: {},
             });
             const proposedData = reviewedGymData ?? (claim.proposedData && typeof claim.proposedData === "object" && !Array.isArray(claim.proposedData) ? claim.proposedData as Prisma.GymUpdateInput : {});
-            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true } });
+            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true, verifiedAt: new Date(), verifiedByEmail: adminEmail } });
         }
         return tx.gymClaim.update({
             where: { id },

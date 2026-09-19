@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type Props = React.ComponentPropsWithoutRef<typeof Input>;
 
 const PasswordInput = React.forwardRef<HTMLInputElement, Props>(function PasswordInput(
-    { className, ...props },
+    { className, disabled, ...props },
     ref,
 ) {
     const [visible, setVisible] = React.useState(false);
@@ -16,13 +16,15 @@ const PasswordInput = React.forwardRef<HTMLInputElement, Props>(function Passwor
             <Input
                 ref={ref}
                 type={visible ? "text" : "password"}
+                disabled={disabled}
                 className={cn("pr-10", className)}
                 {...props}
             />
             <button
                 type="button"
+                disabled={disabled}
                 onClick={() => setVisible((v) => !v)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-500 transition hover:text-gray-800"
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 transition hover:text-gray-800 disabled:pointer-events-none disabled:opacity-40"
                 aria-label={visible ? "Hide password" : "Show password"}
             >
                 {visible ? <EyeOff size={18} /> : <Eye size={18} />}

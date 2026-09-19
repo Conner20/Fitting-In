@@ -230,6 +230,41 @@ html body button.admin-delete-selected[data-confirming="true"]:focus {
   box-shadow: none !important;
 }
 
+html body button.admin-delete-selected:disabled,
+html body button.admin-delete-selected:disabled:hover,
+html body button.admin-delete-selected:disabled:active,
+html body button.admin-delete-selected:disabled:focus {
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  border-color: rgb(220 38 38 / 35%) !important;
+  background: rgb(220 38 38 / 22%) !important;
+  background-color: rgb(220 38 38 / 22%) !important;
+  color: rgb(255 255 255 / 38%) !important;
+  -webkit-text-fill-color: rgb(255 255 255 / 38%) !important;
+}
+
+@media (max-width: 767px) {
+  html body button.admin-change-access:disabled,
+  html body button.admin-change-access:disabled:hover,
+  html body button.admin-change-access:disabled:active,
+  html body button.admin-change-access:disabled:focus,
+  html body button.admin-change-access:disabled:focus-visible {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.35 !important;
+  }
+}
+
+html body button.admin-assign-owner:disabled,
+html body button.admin-assign-owner:disabled:hover,
+html body button.admin-assign-owner:disabled:active,
+html body button.admin-assign-owner:disabled:focus,
+html body button.admin-assign-owner:disabled:focus-visible {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.35 !important;
+}
+
 /* The global touch reset removes transforms from pressed buttons. Preserve the
    address clear control's centering so tapping it cannot shift the X. */
 html body button.gym-address-clear-button,
