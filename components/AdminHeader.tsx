@@ -1,7 +1,7 @@
 import Link from "next/link";
 import AdminNav from "@/components/AdminNav";
 
-type AdminSection = "overview" | "gyms" | "nutrition";
+type AdminSection = "overview" | "gyms" | "nutrition" | "legal";
 
 export default function AdminHeader({ active }: { active: AdminSection }) {
   return (
@@ -11,7 +11,7 @@ export default function AdminHeader({ active }: { active: AdminSection }) {
           fitt<span className="underline">in</span>g
         </Link>
       </div>
-      <div className="flex h-[58px] items-center gap-3 overflow-x-auto border-t px-4 dark:border-white/10">
+      <div className="flex h-[58px] min-w-0 items-center border-t px-2 sm:px-4 dark:border-white/10">
         <AdminNav active={active} />
       </div>
     </header>

@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
     "/user-onboarding",
     "/legal/terms",
     "/legal/privacy",
+    "/legal/contact",
     "/legal/support",
 ];
 

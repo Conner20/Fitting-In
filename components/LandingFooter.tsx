@@ -18,8 +18,8 @@ export default function LandingFooter() {
                     <Link href="/legal/privacy" className="transition hover:text-[#22c55e]">
                         Privacy Policy
                     </Link>
-                    <Link href="/legal/support" className="transition hover:text-[#22c55e]">
-                        Support
+                    <Link href="/legal/contact" className="transition hover:text-[#22c55e]">
+                        Contact Us
                     </Link>
                 </div>
             </div>

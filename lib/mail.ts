@@ -4,13 +4,14 @@ type Mailer = (to: string, url: string) => Promise<void>;
 
 const resendClient = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-async function sendMail(to: string, subject: string, html: string, fallbackLabel: string, fallbackUrl: string) {
+async function sendMail(to: string, subject: string, html: string, fallbackLabel: string, fallbackUrl: string, replyTo?: string) {
     if (resendClient) {
         const { error } = await resendClient.emails.send({
             from: process.env.EMAIL_FROM || "Fitting In <mail@fittingin.co>",
             to,
             subject,
             html,
+            replyTo,
         });
         if (error) {
             console.error("[mail] resend error", error);
@@ -21,6 +22,17 @@ async function sendMail(to: string, subject: string, html: string, fallbackLabel
 
     console.warn(`No email provider configured. ${fallbackLabel} logged to console.`);
     console.info(fallbackUrl);
+}
+
+function escapeHtml(value: string) {
+    return value.replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]!);
+}
+
+export async function sendContactMessage(input: { firstName: string; lastName: string; email: string; message: string }) {
+    const name = `${input.firstName} ${input.lastName}`.trim();
+    const subject = `Fitting In contact form — ${name}`;
+    const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:32px 20px;color:#111827"><h1 style="font-size:22px">New contact message</h1><p><strong>From:</strong> ${escapeHtml(name)}</p><p><strong>Email:</strong> <a href="mailto:${escapeHtml(input.email)}">${escapeHtml(input.email)}</a></p><hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0"><div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(input.message)}</div></div>`;
+    await sendMail("contactfittingin@gmail.com", subject, html, "[contact-form]", `[contact-form] ${name} <${input.email}>: ${input.message}`, input.email);
 }
 
 export const sendPasswordResetEmail: Mailer = async (to, resetUrl) => {
@@ -136,9 +148,9 @@ export const sendEmailVerificationEmail: Mailer = async (to, verifyUrl) => {
 
                             <p style="margin:0 0 24px 0;font-size:14px;line-height:1.5;color:#0f172a;">
                                 Have a question? Visit
-                                <a href="https://fittingin.co/legal/support"
+                                <a href="https://fittingin.co/legal/contact"
                                     style="color:#16a34a;text-decoration:none;">
-                                    Support
+                                    Contact Us
                                 </a>.
                             </p>
                         </td>

@@ -115,6 +115,53 @@
 }
 
 @media (max-width: 767px) {
+  html body .contact-send-button,
+  html body .contact-send-button:hover,
+  html body .contact-send-button:active,
+  html body .contact-send-button:focus,
+  html body .contact-send-button:focus-visible,
+  html body .contact-send-button:disabled {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
+    transform: none !important;
+    translate: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  html body .legal-page-tab,
+  html body .legal-page-tab:hover,
+  html body .legal-page-tab:active,
+  html body .legal-page-tab:focus,
+  html body .legal-page-tab:focus-visible {
+    transform: none !important;
+    translate: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  html body .legal-page-tab[data-active="false"],
+  html body .legal-page-tab[data-active="false"]:hover,
+  html body .legal-page-tab[data-active="false"]:active,
+  html body .legal-page-tab[data-active="false"]:focus,
+  html body .legal-page-tab[data-active="false"]:focus-visible {
+    border-color: rgb(255 255 255 / .1) !important;
+    background: #111411 !important;
+    color: rgb(255 255 255 / .6) !important;
+  }
+
+  html body .legal-page-tab[data-active="true"],
+  html body .legal-page-tab[data-active="true"]:hover,
+  html body .legal-page-tab[data-active="true"]:active,
+  html body .legal-page-tab[data-active="true"]:focus,
+  html body .legal-page-tab[data-active="true"]:focus-visible {
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    color: #000 !important;
+  }
   .gym-discovery-page .gym-swipe-hint {
     position: fixed;
     z-index: 1900;
@@ -207,42 +254,6 @@
 
 /* Keep the inline user-deletion confirmation visibly destructive instead of
    exposing the dark page background through the generic button hover state. */
-html body button.admin-delete-selected,
-html body button.admin-delete-selected:hover,
-html body button.admin-delete-selected:active,
-html body button.admin-delete-selected:focus,
-html body button.admin-delete-selected:focus-visible,
-html body button.admin-delete-selected[data-confirming="true"],
-html body button.admin-delete-selected[data-confirming="true"]:hover,
-html body button.admin-delete-selected[data-confirming="true"]:active,
-html body button.admin-delete-selected[data-confirming="true"]:focus {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  border-color: rgb(220 38 38) !important;
-  background: rgb(220 38 38) !important;
-  background-color: rgb(220 38 38) !important;
-  background-image: none !important;
-  color: white !important;
-  -webkit-text-fill-color: white !important;
-  opacity: 1 !important;
-  filter: none !important;
-  box-shadow: none !important;
-}
-
-html body button.admin-delete-selected:disabled,
-html body button.admin-delete-selected:disabled:hover,
-html body button.admin-delete-selected:disabled:active,
-html body button.admin-delete-selected:disabled:focus {
-  cursor: not-allowed !important;
-  pointer-events: none !important;
-  border-color: rgb(220 38 38 / 35%) !important;
-  background: rgb(220 38 38 / 22%) !important;
-  background-color: rgb(220 38 38 / 22%) !important;
-  color: rgb(255 255 255 / 38%) !important;
-  -webkit-text-fill-color: rgb(255 255 255 / 38%) !important;
-}
-
 @media (max-width: 767px) {
   html body button.admin-change-access:disabled,
   html body button.admin-change-access:disabled:hover,
@@ -1613,21 +1624,25 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   }
 
   nav[aria-label="Admin sections"] {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: .375rem;
     overflow: visible;
     padding-bottom: 0;
+    flex-wrap: nowrap !important;
   }
 
   nav[aria-label="Admin sections"] > a {
     display: inline-flex;
     width: 100%;
-    min-height: 44px;
+    height: 36px;
+    min-height: 36px;
     align-items: center;
     justify-content: center;
-    padding: .5rem .25rem;
-    font-size: .75rem;
+    padding: .55rem .85rem;
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1;
     text-align: center;
   }
 
@@ -2305,6 +2320,33 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
     line-height: 0 !important;
     transform: none !important;
     translate: none !important;
+  }
+}
+
+/* Final mobile lock for the Contact form primary action. Keep this after the
+   site-wide mobile active-state rules so iOS cannot apply the dark CTA state. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  html body button.contact-send-button,
+  html body button.contact-send-button:hover,
+  html body button.contact-send-button:active,
+  html body button.contact-send-button:focus,
+  html body button.contact-send-button:focus-visible,
+  html body button.contact-send-button:disabled {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    translate: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 }
 
@@ -3114,5 +3156,38 @@ html body .gym-discovery-page .landing-auth-signup:focus-visible {
     transition: none !important;
     -webkit-tap-highlight-color: transparent !important;
     touch-action: manipulation;
+  }
+}
+
+/* Definitive Contact submit state. This intentionally lives after all legacy
+   mobile CTA rules so the active and disabled states cannot turn it dark. */
+@media (max-width: 767px), (hover: none) and (pointer: coarse) {
+  html body #contact-send-message,
+  html body #contact-send-message:hover,
+  html body #contact-send-message:active,
+  html body #contact-send-message:focus,
+  html body #contact-send-message:focus-visible,
+  html body #contact-send-message:disabled,
+  html body #contact-send-another-message,
+  html body #contact-send-another-message:hover,
+  html body #contact-send-another-message:active,
+  html body #contact-send-another-message:focus,
+  html body #contact-send-another-message:focus-visible,
+  html body #contact-send-another-message:disabled {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border-color: #22c55e !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    translate: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 }

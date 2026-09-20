@@ -90,7 +90,7 @@ export default function AdminGymManager() {
         {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">{message}</p>}
         <section>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div><h2 className="text-2xl font-semibold">Gym listings</h2><p className="mt-1 text-sm text-zinc-500">Open any listing to view or update all of its public information.</p></div>
+                <div><h2 className="text-2xl font-semibold">Gym listings</h2></div>
                 <Link href="/admin/gyms/new" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#22c55e] px-4 py-2.5 text-sm font-bold text-black transition hover:bg-[#19a94e]"><Plus size={17} />Add new gym listing</Link>
             </div>
             <label className="mt-5 flex max-w-xl items-center gap-2 rounded-xl border border-black/10 bg-white px-3 dark:border-white/10 dark:bg-white/5"><Search size={17} className="text-zinc-400" /><input value={query} onChange={(event) => { requestId.current++; setQuery(event.target.value); setGyms([]); setPage(1); setHasMore(false); }} className="w-full bg-transparent py-3 text-sm outline-none" placeholder={isMobile?"Search listings":"Search current listings by name or address"} /></label>

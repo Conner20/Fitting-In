@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 const TABS = [
     { href: '/legal/terms', label: 'Terms of Use' },
     { href: '/legal/privacy', label: 'Privacy Policy' },
-    { href: '/legal/support', label: 'Support' },
+    { href: '/legal/contact', label: 'Contact Us' },
 ];
 
 export default function LegalTabs() {
@@ -21,7 +21,9 @@ export default function LegalTabs() {
                         <Link
                             key={tab.href}
                             href={tab.href}
-                            className={`whitespace-nowrap rounded-full border px-3 py-2 text-center font-bold shadow-none transition sm:px-4 ${
+                            aria-current={active ? 'page' : undefined}
+                            data-active={active ? 'true' : 'false'}
+                            className={`legal-page-tab whitespace-nowrap rounded-full border px-3 py-2 text-center font-bold shadow-none transition sm:px-4 ${
                                 active
                                     ? 'border-[#22c55e] bg-[#22c55e] text-black shadow-none'
                                     : 'border-white/10 bg-[#111411] text-white/60 hover:border-white/30 hover:text-white'

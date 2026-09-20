@@ -60,11 +60,11 @@ export default function AdminUserManager(){
 <label className="min-w-[260px] flex-1 text-sm font-medium"><span className="sr-only">Admin password</span><PasswordInput disabled={selected.length===0} placeholder="Admin password" value={password} onChange={event=>setPassword(event.target.value)}/>
 </label>
 <div className="flex w-full flex-nowrap gap-3 md:contents">
-<button type="button" data-confirming={deleteArmed?"true":"false"} onClick={()=>void remove()} disabled={selected.length===0} aria-disabled={selected.length===0} className="admin-delete-selected flex h-9 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl !bg-red-600 px-3 text-sm font-semibold !text-white transition hover:!bg-red-600 active:!bg-red-600 focus:!bg-red-600 disabled:pointer-events-none disabled:cursor-not-allowed md:flex-none md:px-4">
-<Trash2 aria-hidden="true" className={`h-4 w-4 ${selected.length===0?"opacity-30":"opacity-100"}`}/>{deleteArmed?"Are you sure?":"Delete selected"}</button>
-<button onClick={()=>void changeAdminAccess()} disabled={selected.length===0} aria-disabled={selected.length===0} className={`admin-change-access flex h-9 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold transition disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-35 md:flex-none md:px-4 ${selectedAreAdmins?"border-amber-400 bg-amber-400 text-black hover:bg-black hover:text-amber-400":"border-[#22c55e] bg-[#22c55e] text-[#111411]"}`}>{selectedAreAdmins?<>
-<ShieldX aria-hidden="true" className="h-4 w-4"/>Demote admin</>:<>
-<ShieldPlus aria-hidden="true" className="h-4 w-4"/>Make admin</>}</button>
+<button type="button" data-confirming={deleteArmed?"true":"false"} onClick={()=>void remove()} disabled={selected.length===0} aria-disabled={selected.length===0} className="flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#e6a0a0] px-2 text-xs font-bold text-[#d06b6b] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-35 md:flex-none md:px-3">
+<Trash2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0"/>{deleteArmed?"Are you sure?":"Delete selected"}</button>
+<button onClick={()=>void changeAdminAccess()} disabled={selected.length===0} aria-disabled={selected.length===0} className={`admin-change-access inline-flex h-9 min-w-0 flex-1 items-center justify-center self-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-xs font-black disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-35 md:flex-none ${selectedAreAdmins?"border-amber-400 bg-amber-400 text-black hover:bg-black hover:text-amber-400":"border-[#22c55e] bg-[#22c55e] text-[#111411]"}`}>{selectedAreAdmins?<>
+<ShieldX aria-hidden="true" className="h-3.5 w-3.5"/>Demote admin</>:<>
+<ShieldPlus aria-hidden="true" className="h-3.5 w-3.5"/>Make admin</>}</button>
 </div>
 </div>}</div>
 }

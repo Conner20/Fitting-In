@@ -3,6 +3,7 @@ import { SignJWT } from "jose";
 
 import { db } from "@/prisma/client";
 import { env } from "@/lib/env";
+import { getCurrentLegalDates } from "@/lib/legal-documents";
 
 export async function POST(req: Request) {
     try {
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "That code is invalid or expired." }, { status: 400 });
         }
 
+        const legalDates = await getCurrentLegalDates();
         await db.$transaction(async tx => {
             const existing = await tx.user.findUnique({ where: { email }, select: { id: true, emailVerified: true } });
             if (existing?.emailVerified) throw new Error("ACCOUNT_ALREADY_EXISTS");
@@ -36,6 +38,8 @@ export async function POST(req: Request) {
                     password: pendingSignup.passwordHash,
                     emailVerified: now,
                     role: "TRAINEE",
+                    termsAcceptedAt: legalDates.terms,
+                    privacyAcceptedAt: legalDates.privacy,
                 },
                 select: { id: true },
             });

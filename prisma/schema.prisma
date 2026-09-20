@@ -19,6 +19,12 @@ enum GymClaimStatus {
   REJECTED
 }
 
+enum LegalDocumentType {
+  TERMS
+  PRIVACY
+  SUPPORT
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")
@@ -58,6 +64,8 @@ model User {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @default(now()) @updatedAt
   lastLoginAt          DateTime?
+  termsAcceptedAt      DateTime?
+  privacyAcceptedAt    DateTime?
   accounts             Account[]
   sessions             Session[]
   gymAccesses          GymAccess[]
@@ -70,6 +78,25 @@ model User {
   nutritionEntries     NutritionEntry[]
   bodyweightEntries    BodyweightEntry[]
   nutritionSettings    NutritionSettings?
+}
+
+model LegalDocumentVersion {
+  id               String            @id @default(cuid())
+  type             LegalDocumentType
+  title            String
+  content          Json
+  version          Int
+  isCurrent        Boolean           @default(false)
+  originalFileName String?
+  originalFileUrl  String?
+  sourceMimeType   String?
+  uploadedByEmail  String
+  createdAt        DateTime          @default(now())
+  publishedAt      DateTime?
+
+  @@unique([type, version])
+  @@index([type, isCurrent])
+  @@index([type, publishedAt])
 }
 
 model Gym {
