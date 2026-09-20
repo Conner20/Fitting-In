@@ -115,6 +115,14 @@
 }
 
 @media (max-width: 767px) {
+  html body #admin-legal-publish:disabled,
+  html body #admin-legal-publish:disabled:hover,
+  html body #admin-legal-publish:disabled:active,
+  html body #admin-legal-publish:disabled:focus {
+    opacity: .4 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+  }
   html body .contact-send-button,
   html body .contact-send-button:hover,
   html body .contact-send-button:active,
@@ -1624,17 +1632,18 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
   }
 
   nav[aria-label="Admin sections"] {
-    display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    display: flex !important;
+    grid-template-columns: none !important;
     gap: .375rem;
     overflow: visible;
     padding-bottom: 0;
     flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
   }
 
   nav[aria-label="Admin sections"] > a {
     display: inline-flex;
-    width: 100%;
+    width: auto;
     height: 36px;
     min-height: 36px;
     align-items: center;

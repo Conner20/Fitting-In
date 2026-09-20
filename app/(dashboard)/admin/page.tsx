@@ -6,6 +6,7 @@ import AdminHeader from "@/components/AdminHeader";
 import AdminMetricCard from "@/components/AdminMetricCard";
 import AdminUserManager from "@/components/AdminUserManager";
 import AdminGymVerificationLog from "@/components/AdminGymVerificationLog";
+import AdminMetricsActions from "@/components/AdminMetricsActions";
 import { authOptions } from "@/lib/auth";
 import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
@@ -67,6 +68,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <AdminGymVerificationLog rows={verificationLogRows} />
       </section>
       <section id="behavior" className="admin-overview-behavior border-t border-black/10 pt-8 dark:border-white/10"><AdminBehaviorDashboard compact periodDays={rangeDays} /></section>
+      <div className="flex justify-center border-t border-black/10 pt-8 dark:border-white/10"><AdminMetricsActions /></div>
     </section>
   </main>;
 }
