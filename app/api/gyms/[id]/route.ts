@@ -16,10 +16,10 @@ export async function GET(_req: Request, { params }: Context) {
     });
     if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
     const { _count, ...profile } = gym;
-    if (!session?.user?.email) return NextResponse.json({ gym: { ...profile, isClaimed: profile.isVerified && _count.access > 0 } });
+    if (!session?.user?.email) return NextResponse.json({ gym: { ...profile, isClaimed: _count.access > 0 } });
 
     const user = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true } });
-    if (!user || !(await userCanEditGym(user.id, id))) return NextResponse.json({ gym: { ...profile, isClaimed: profile.isVerified && _count.access > 0 } });
+    if (!user || !(await userCanEditGym(user.id, id))) return NextResponse.json({ gym: { ...profile, isClaimed: _count.access > 0 } });
 
     // Private editors show the submitted verification data immediately. The
     // public landing API continues to read only the approved Gym record.

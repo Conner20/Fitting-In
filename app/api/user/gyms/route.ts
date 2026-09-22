@@ -15,5 +15,5 @@ export async function GET() {
 }
 
 export async function POST() {
-    return NextResponse.json({ message: "Gym listings must be verified through an administrator-issued verification link before they can be claimed." }, { status: 403 });
+    return NextResponse.json({ message: "Gym listings must be claimed and verified through an administrator-issued link." }, { status: 403 });
 }

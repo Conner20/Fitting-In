@@ -25,7 +25,7 @@ export async function GET() {
   const [events, users, gyms, latestReset] = await Promise.all([
     db.landingEvent.findMany({ where: { eventType: { not: "METRICS_RESET" } }, select: { id: true, eventType: true, visitorId: true, visitId: true, path: true, gymId: true, userId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "asc" } }),
     db.user.findMany({ where: { emailVerified: { not: null } }, select: { id: true, email: true, role: true, isAdmin: true, createdAt: true, emailVerified: true, lastLoginAt: true, gymAccesses: { select: { gym: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } }),
-    db.gym.findMany({ select: { id: true, name: true, contactEmail: true, isVerified: true, verifiedAt: true, verifiedByEmail: true, createdAt: true, updatedAt: true, access: { orderBy: { createdAt: "asc" }, take: 1, select: { createdAt: true, assignedByEmail: true, user: { select: { email: true } } } } }, orderBy: { name: "asc" } }),
+    db.gym.findMany({ select: { id: true, name: true, contactEmail: true, createdAt: true, updatedAt: true, access: { orderBy: { createdAt: "asc" }, take: 1, select: { createdAt: true, assignedByEmail: true, user: { select: { email: true } } } } }, orderBy: { name: "asc" } }),
     db.landingEvent.findFirst({ where: { eventType: "METRICS_RESET" }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
   ]);
 
@@ -39,7 +39,7 @@ export async function GET() {
   summary.columns = [{ header: "Metric", key: "metric" }, { header: "Value", key: "value" }];
   summary.addRows([
     { metric: "Export generated", value: new Date().toISOString() }, { metric: "Verified users", value: users.length }, { metric: "Gym users", value: users.filter(user => user.role === "GYM").length },
-    { metric: "Gyms", value: gyms.length }, { metric: "Verified gyms", value: gyms.filter(gym => gym.isVerified).length }, { metric: "Unique visitors", value: visitors.size }, { metric: "Visits", value: visits.size },
+    { metric: "Gyms", value: gyms.length }, { metric: "Claimed gyms", value: gyms.filter(gym => gym.access.length > 0).length }, { metric: "Unique visitors", value: visitors.size }, { metric: "Visits", value: visits.size },
     ...eventTypes.map(type => ({ metric: type, value: events.filter(event => event.eventType === type).length })),
   ]); formatSheet(summary);
 
@@ -50,7 +50,7 @@ export async function GET() {
     { item: "Metrics history begins", value: latestReset?.createdAt.toISOString() ?? "Earliest retained record" },
     { item: "Daily reporting timezone", value: "UTC" },
     { item: "Raw behavior records included", value: "Yes — see Raw events" },
-    { item: "Historical gym verification changes", value: "Only the current verification, ownership, and last-updated timestamps are retained by the database." },
+    { item: "Historical gym claim changes", value: "Only the current owner, claim timestamp, assignment source, and last-updated timestamp are retained by the database." },
     { item: "Historical account role changes", value: "Only the current role is retained by the database." },
   ]);
   formatSheet(coverage);
@@ -168,10 +168,10 @@ export async function GET() {
   for (const row of [...dailyCityRows.values()].sort((a, b) => a.date.localeCompare(b.date) || b.users.size - a.users.size)) dailyCities.addRow({ date: row.date, city: row.city, state: row.state, country: row.country, uses: row.uses, users: row.users.size });
   formatSheet(dailyCities);
 
-  const verification = workbook.addWorksheet("Gym verification");
-  verification.columns = ["Gym", "Verified", "Verified by", "Verified at", "Claimed by", "Claimed at", "Assigned by", "Last updated"].map(header => ({ header, key: header }));
-  for (const gym of gyms) { const access = gym.access[0]; verification.addRow({ Gym: gym.name, Verified: gym.isVerified ? "Yes" : "No", "Verified by": gym.verifiedByEmail ?? "", "Verified at": gym.verifiedAt?.toISOString() ?? "", "Claimed by": access?.user.email ?? "", "Claimed at": access?.createdAt.toISOString() ?? "", "Assigned by": access?.assignedByEmail ?? "", "Last updated": gym.updatedAt.toISOString() }); }
-  formatSheet(verification);
+  const claims = workbook.addWorksheet("Gym claims");
+  claims.columns = ["Gym", "Claimed", "Claimed by", "Claimed at", "Assigned by", "Last updated"].map(header => ({ header, key: header }));
+  for (const gym of gyms) { const access = gym.access[0]; claims.addRow({ Gym: gym.name, Claimed: access ? "Yes" : "No", "Claimed by": access?.user.email ?? "", "Claimed at": access?.createdAt.toISOString() ?? "", "Assigned by": access?.assignedByEmail ?? "", "Last updated": gym.updatedAt.toISOString() }); }
+  formatSheet(claims);
 
   const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
   const sections = workbook.worksheets.map(sheet => {

@@ -1,12 +1,11 @@
 "use client";
 
-import { ChangeEvent, DragEvent, FormEvent, SyntheticEvent, cloneElement, isValidElement, useEffect, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, cloneElement, isValidElement, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ImagePlus, LoaderCircle, MapPin, X } from "lucide-react";
 import GymHoursEditor from "@/components/GymHoursEditor";
 import MembershipOptionsEditor from "@/components/MembershipOptionsEditor";
 import CurrencyInput from "@/components/CurrencyInput";
-import StableExploreLink from "@/components/StableExploreLink";
 import { MembershipOption, cleanMembershipOptions, emptyMembershipOption } from "@/lib/memberships";
 
 type FormState = {
@@ -22,18 +21,6 @@ const lines = (value: string) => value.split(/[\n,]/).map((item) => item.trim())
 const AMENITY_OPTIONS = ["Sauna", "Steam room", "Pool", "Showers", "Locker rooms", "Basketball court", "Turf area", "Group classes", "Personal training", "Childcare", "Parking", "24/7 access", "Women's-only area"];
 const EQUIPMENT_OPTIONS = ["Squat rack", "Power rack", "Smith machine", "Bench press", "Deadlift platform", "Olympic lifting platform", "Hack squat", "Pendulum squat", "Belt squat", "Leg press", "Cable station", "Pec deck", "Hip thrust machine", "Dumbbells 100+ lb", "Dumbbells 120+ lb", "Dumbbells 150+ lb"];
 const GYM_TYPE_OPTIONS = ["Open", "Personal training gym", "Group training gym", "Specialty gym/studio"];
-const preserveGreenButtonColors = (event: SyntheticEvent<HTMLButtonElement>) => {
-    const button = event.currentTarget;
-    button.style.setProperty("-webkit-tap-highlight-color", "transparent", "important");
-    button.style.setProperty("background", "#22c55e", "important");
-    button.style.setProperty("background-color", "#22c55e", "important");
-    button.style.setProperty("background-image", "none", "important");
-    button.style.setProperty("border-color", "#22c55e", "important");
-    button.style.setProperty("color", "#111411", "important");
-    button.style.setProperty("-webkit-text-fill-color", "#111411", "important");
-    button.style.setProperty("filter", "none", "important");
-    button.style.setProperty("opacity", "1", "important");
-};
 const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 10);
     if (digits.length < 4) return digits;
@@ -49,7 +36,7 @@ const normalizeDayPassDays = (value: unknown) => {
     return Object.entries(words).find(([word]) => raw.toLowerCase().includes(word))?.[1] ?? "1";
 };
 
-export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, autoClaim = false, ownerMode = false }: { gymId?: string; inviteToken?: string; initialGym?: Record<string, any>; autoClaim?: boolean; ownerMode?: boolean }) {
+export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, accountEmail, ownerMode = false }: { gymId?: string; inviteToken?: string; initialGym?: Record<string, any>; accountEmail?: string; ownerMode?: boolean }) {
     const router = useRouter();
     const [form, setForm] = useState<FormState>(empty);
     const [loading, setLoading] = useState(Boolean(gymId && !initialGym));
@@ -63,32 +50,20 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     const [addressOpen, setAddressOpen] = useState(false);
     const [addressLoading, setAddressLoading] = useState(false);
     const [addressLookupComplete, setAddressLookupComplete] = useState(false);
-    const [needsAccount, setNeedsAccount] = useState(false);
-    const [verificationComplete, setVerificationComplete] = useState<"guest" | "user" | null>(null);
+    const [verificationComplete, setVerificationComplete] = useState(false);
     const [updatedFeedback, setUpdatedFeedback] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState(false);
     const updatedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const autoClaimStarted = useRef(false);
 
     useEffect(() => () => { if (updatedTimer.current) clearTimeout(updatedTimer.current); if(deleteTimer.current)clearTimeout(deleteTimer.current); }, []);
-
-    useEffect(() => {
-        if (!inviteToken || !autoClaim || autoClaimStarted.current) return;
-        autoClaimStarted.current = true; setSaving(true);
-        fetch(`/api/gym-invites/${encodeURIComponent(inviteToken)}/claim`, { method: "POST" }).then(async (response) => {
-            const result = await response.json().catch(() => ({}));
-            if (response.ok) window.location.replace("/");
-            else setMessage(result.message ?? "Unable to submit your claim.");
-        }).finally(() => setSaving(false));
-    }, [autoClaim, inviteToken]);
 
     function populate(gym: Record<string, any>) {
         const membershipOptions = cleanMembershipOptions(gym.membershipOptions);
         if (!membershipOptions.length && gym.membershipPrice != null) membershipOptions.push({ ...emptyMembershipOption(), name: "Membership", price: Number(gym.membershipPrice), access: [], purchaseUrl: gym.website ?? "", notes: gym.membershipDetails ?? "" });
         if (!membershipOptions.length) membershipOptions.push(emptyMembershipOption());
         setForm({
-            name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType === "Open gym" ? "Open" : gym.gymType ?? "", dayPassPrice: gym.dayPassPrice == null ? "" : String(gym.dayPassPrice), dayPassDetails: normalizeDayPassDays(gym.dayPassDetails), dayPassUrl: gym.dayPassUrl ?? "", membershipOptions, hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
+            name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: accountEmail ?? gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType === "Open gym" ? "Open" : gym.gymType ?? "", dayPassPrice: gym.dayPassPrice == null ? "" : String(gym.dayPassPrice), dayPassDetails: normalizeDayPassDays(gym.dayPassDetails), dayPassUrl: gym.dayPassUrl ?? "", membershipOptions, hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
         });
     }
 
@@ -100,7 +75,7 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
             const { gym } = await response.json();
             populate(gym);
         }).catch((error) => setMessage(error.message)).finally(() => setLoading(false));
-    }, [gymId, initialGym, ownerMode]);
+    }, [gymId, initialGym, ownerMode, accountEmail]);
 
     const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {setForm((current) => ({ ...current, [key]: value }))};
 
@@ -177,13 +152,7 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
         const endpoint = inviteToken ? `/api/gym-invites/${encodeURIComponent(inviteToken)}/claim` : ownerMode ? (gymId ? `/api/gyms/${gymId}` : "/api/user/gyms") : gymId ? `/api/admin/gyms/${gymId}` : "/api/admin/gyms";
         const response = await fetch(endpoint, { method: inviteToken || gymId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         const result = await response.json().catch(() => ({}));
-        if (response.ok && inviteToken) {
-            const claimResponse = await fetch(`/api/gym-invites/${encodeURIComponent(inviteToken)}/claim`, { method: "POST" });
-            const claimResult = await claimResponse.json().catch(() => ({}));
-            if (claimResponse.ok) setVerificationComplete("user");
-            else if (claimResponse.status === 401) { setVerificationComplete("guest"); setNeedsAccount(true); }
-            else { setMessage(claimResult.message ?? "Information saved, but the claim could not be submitted."); if(window.matchMedia("(max-width: 767px)").matches)window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"})); }
-        }
+        if (response.ok && inviteToken) setVerificationComplete(true);
         else if (response.ok) { if (!gymId) setMessage(result.message ?? "Gym listing created."); if (gymId) updatedTimer.current = setTimeout(() => { setUpdatedFeedback(false); updatedTimer.current = null; }, 2000); if (!gymId && result.gym?.id) router.replace(`/admin/gyms/${result.gym.id}`); }
         else { setUpdatedFeedback(false); setMessage(result.message ?? "Unable to save gym listing."); if(window.matchMedia("(max-width: 767px)").matches)window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"})); }
         setSaving(false);
@@ -207,14 +176,13 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     }
 
     if (loading) return <div className="flex min-h-[50vh] items-center justify-center"><span className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-700 border-t-transparent" /></div>;
-            if (verificationComplete && inviteToken) return <div className="fixed inset-0 z-[5000] grid min-h-screen place-items-center bg-zinc-50 p-5 text-zinc-950 dark:bg-neutral-950 dark:text-white"><div className="w-full max-w-xl rounded-3xl border border-black/10 bg-white p-7 text-center shadow-xl sm:p-10 dark:border-white/10 dark:bg-white/5"><div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#22c55e]/15 text-[#22c55e]"><Check size={28} strokeWidth={3}/></div><h1 className="mt-5 text-2xl font-black">Thank you!</h1><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-600 dark:text-zinc-300">{verificationComplete==="guest"?"Your gym information has been verified and the listing is now updated. Create an account to claim this listing and manage it going forward.":"Your gym information has been verified and the listing is now updated."}</p>{verificationComplete==="guest"?<StableExploreLink href={`/sign-up?invite=${encodeURIComponent(inviteToken)}`} className="gym-invite-create-account-action mt-7 inline-flex rounded-full bg-[#22c55e] px-6 py-3 text-sm font-black text-black">Create an account</StableExploreLink>:<a href="/" className="gym-invite-return-action mt-7 inline-flex rounded-full bg-[#22c55e] px-6 py-3 text-sm font-black text-black">Return to Fitting In</a>}</div></div>;
+            if (verificationComplete && inviteToken) return <div className="fixed inset-0 z-[5000] grid min-h-screen place-items-center bg-zinc-50 p-5 text-zinc-950 dark:bg-neutral-950 dark:text-white"><div className="w-full max-w-xl rounded-3xl border border-black/10 bg-white p-7 text-center shadow-xl sm:p-10 dark:border-white/10 dark:bg-white/5"><div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#22c55e]/15 text-[#22c55e]"><Check size={28} strokeWidth={3}/></div><h1 className="mt-5 text-2xl font-black">Thank you!</h1><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-600 dark:text-zinc-300">You have successfully claimed your gym listing.</p><a href="/" className="green-button-ui mt-7 inline-flex rounded-full border px-6 py-3 text-sm font-black">Return to Fitting In</a></div></div>;
     const input = "mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-600 dark:border-white/10 dark:bg-black/20";
     const label = "text-sm font-medium text-zinc-700 dark:text-zinc-200";
     return <form noValidate onSubmit={submit} className={`mx-auto max-w-4xl ${validationErrors.length?"gym-listing-validation-active":""}`}>
         <div className="space-y-6">
             {validationErrors.length>0&&<div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p className="font-semibold">Please correct the following fields:</p><ul className="mt-2 list-disc space-y-1 pl-5">{validationErrors.map(error=><li key={error}>{error}</li>)}</ul></div>}
             {message && <p className={`rounded-xl border p-3 text-sm ${/unable|failed|invalid|required|error/i.test(message)?"border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200":"border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"}`}>{message}</p>}
-            {needsAccount && inviteToken && <div className="grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950 sm:grid-cols-2"><div className="sm:col-span-2"><h2 className="font-semibold">Maintain this gym profile</h2><p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">Create a Gym account or log in. Your verified listing changes have already been saved.</p></div><a href={`/sign-up?invite=${encodeURIComponent(inviteToken)}`} className="rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white">Create Gym account</a><a href={`/log-in?callbackUrl=${encodeURIComponent(`/gym-invite/${inviteToken}?claim=1`)}`} className="rounded-xl border border-emerald-700 px-4 py-3 text-center text-sm font-semibold text-emerald-800 dark:text-emerald-300">Log in</a></div>}
             <EditorSection title="Identity and location" description="The basic information people use to find and contact this gym.">
                 <Field label="Gym name"><input required className={input} value={form.name} onChange={(e) => update("name", e.target.value)} /></Field>
                 <div className="relative"><Field label="Address"><div className="relative mt-1"><MapPin aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#22c55e]"/><input required autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={addressOpen&&(addressLoading||addressSuggestions.length>0||addressLookupComplete)} aria-controls="gym-address-suggestions" className={`${input} !mt-0 !pl-10 !pr-10`} value={form.address} onFocus={() => setAddressOpen(true)} onChange={(e) => { const address=e.target.value; setForm((current)=>({...current,address,city:"",state:"",country:"",lat:null,lng:null})); setAddressOpen(true); }} placeholder="Start typing an address…" />{form.address&&<button type="button" aria-label="Clear address" onClick={()=>{setForm((current)=>({...current,address:"",city:"",state:"",country:"",lat:null,lng:null}));setAddressSuggestions([]);setAddressOpen(false);setAddressLoading(false);setAddressLookupComplete(false)}} className="gym-address-clear-button absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-zinc-500 transition hover:bg-black/5 hover:text-black dark:hover:bg-white/10 dark:hover:text-white"><X className="h-4 w-4"/></button>}</div></Field>{addressOpen&&form.address.trim().length>=3&&(addressLoading||addressSuggestions.length>0||addressLookupComplete)&&<div id="gym-address-suggestions" role="listbox" className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-neutral-900">{addressLoading?<div className="flex min-h-12 items-center justify-center gap-2 px-3 py-2.5 text-sm text-zinc-500"><LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-[#22c55e]"/><span>Searching addresses…</span></div>:addressSuggestions.length?addressSuggestions.map((suggestion)=><button key={suggestion.id} type="button" role="option" aria-selected="false" onClick={()=>selectAddress(suggestion)} className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-white/10"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#22c55e]"/><span>{suggestion.label}</span></button>):<div className="px-3 py-3 text-center text-sm text-zinc-500">No addresses found.</div>}</div>}</div>
@@ -234,7 +202,7 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
                 <MembershipOptionsEditor options={form.membershipOptions} availableAmenities={lines(form.amenities)} onChange={(membershipOptions)=>update("membershipOptions",membershipOptions)} showErrors={validationErrors.length>0}/>
             </EditorSection>
             <EditorSection title="Photos" description="Add a cover photo and photos that showcase your gym's amenities."><label onDragEnter={(event)=>{event.preventDefault();setDraggingOver("cover")}} onDragOver={(event)=>event.preventDefault()} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingOver(null)}} onDrop={(event)=>dropImages(event,"cover")} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-center text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${draggingOver==="cover"?"border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]":validationErrors.length&&!form.coverPhotoUrl?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{uploadingTarget === "cover" ? "Uploading…" : form.coverPhotoUrl ? "Replace cover photo" : "Upload cover photo"}<input type="file" accept="image/*" className="hidden" disabled={Boolean(uploadingTarget)} onChange={(event) => uploadImages(event, "cover")} /></label>{form.coverPhotoUrl&&<PhotoRemovalPreview label="Cover photo" url={form.coverPhotoUrl} remove={()=>update("coverPhotoUrl","")}/>}<label onDragEnter={(event)=>{event.preventDefault();setDraggingOver("amenities")}} onDragOver={(event)=>event.preventDefault()} onDragLeave={(event)=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDraggingOver(null)}} onDrop={(event)=>dropImages(event,"amenities")} className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-center text-sm font-medium transition hover:bg-zinc-50 dark:hover:bg-white/5 ${draggingOver==="amenities"?"border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]":validationErrors.length&&!form.photoUrls.length?"border-red-500 text-red-500 dark:border-red-500 dark:text-red-400":"border-zinc-300 dark:border-white/20"}`}><ImagePlus size={18} />{uploadingTarget === "amenities" ? "Uploading…" : "Upload amenity photos"}<input type="file" accept="image/*" multiple className="hidden" disabled={Boolean(uploadingTarget)} onChange={(event)=>uploadImages(event,"amenities")} /></label><div className="grid grid-cols-3 gap-2">{form.photoUrls.map((url) => <div key={url} className="group relative aspect-square overflow-hidden rounded-lg bg-zinc-100"><img src={url} alt="" className="h-full w-full object-cover" /><button type="button" aria-label="Remove amenity photo" onClick={() => update("photoUrls", form.photoUrls.filter((item) => item !== url))} className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"><X size={13} /></button></div>)}</div></EditorSection>
-            {inviteToken ? <div className="flex justify-center py-2 pb-[max(.5rem,env(safe-area-inset-bottom))]"><button disabled={saving} style={{backgroundColor:"#22c55e",color:"#111411"}} onPointerDownCapture={preserveGreenButtonColors} onTouchStartCapture={preserveGreenButtonColors} onMouseDownCapture={preserveGreenButtonColors} onFocus={preserveGreenButtonColors} onClickCapture={preserveGreenButtonColors} className="gym-listing-primary-action verify-information-button min-w-52 rounded-xl border border-transparent bg-[#22c55e] px-7 py-3 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-black hover:text-[#22c55e] disabled:opacity-50">{saving ? "Saving…" : "Verify information"}</button></div> : <div className="flex flex-wrap items-center justify-center gap-3 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">{!gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{ownerMode&&<button type="button" onClick={()=>router.push("/")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId&&!ownerMode&&<button type="button" onClick={deleteGym} disabled={saving||updatedFeedback} className={`gym-listing-delete-action min-w-32 rounded-xl border border-transparent bg-[#e66b6b] px-5 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#e66b6b] hover:bg-zinc-50 hover:text-[#e66b6b] dark:hover:bg-neutral-950 ${deleteConfirmation?"!border-[#e66b6b] !bg-[#e66b6b] !text-[#111411]":""}`}>{deleting?"Deleting…":deleteConfirmation?"Are you sure?":"Delete listing"}</button>}<button disabled={saving} className="gym-listing-primary-action gym-listing-submit-action rounded-xl border border-transparent bg-[#22c55e] px-6 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-zinc-50 hover:text-[#22c55e] disabled:cursor-default dark:hover:bg-neutral-950">{updatedFeedback?<span className="gym-listing-updated-feedback flex animate-[copy-confirm_.35s_ease-out] items-center justify-center gap-2"><Check size={16} strokeWidth={3}/>Updated!</span>:saving?"Saving…":gymId?"Submit changes":"Create listing"}</button></div>}
+            {inviteToken ? <div className="flex justify-center py-2 pb-[max(.5rem,env(safe-area-inset-bottom))]"><button disabled={saving} className="green-button-ui gym-listing-primary-action verify-information-button min-w-52 rounded-xl border px-7 py-3 text-sm font-black transition">{saving ? "Saving…" : "Verify information"}</button></div> : <div className="flex flex-wrap items-center justify-center gap-3 py-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">{!gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{ownerMode&&<button type="button" onClick={()=>router.push("/")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId&&!ownerMode&&<button type="button" onClick={()=>router.push("/admin/gyms")} className="gym-owner-back-button rounded-xl border border-zinc-300 bg-transparent px-6 py-2.5 text-sm font-black text-zinc-700 transition hover:border-white hover:text-white dark:border-white/20 dark:text-white/75">Back</button>}{gymId&&!ownerMode&&<button type="button" onClick={deleteGym} disabled={saving||updatedFeedback} className={`gym-listing-delete-action min-w-32 rounded-xl border border-transparent bg-[#e66b6b] px-5 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#e66b6b] hover:bg-zinc-50 hover:text-[#e66b6b] dark:hover:bg-neutral-950 ${deleteConfirmation?"!border-[#e66b6b] !bg-[#e66b6b] !text-[#111411]":""}`}>{deleting?"Deleting…":deleteConfirmation?"Are you sure?":"Delete listing"}</button>}<button disabled={saving} className="gym-listing-primary-action gym-listing-submit-action rounded-xl border border-transparent bg-[#22c55e] px-6 py-2.5 text-sm font-black text-[#111411] transition hover:border-[#22c55e] hover:bg-zinc-50 hover:text-[#22c55e] disabled:cursor-default dark:hover:bg-neutral-950">{updatedFeedback?<span className="gym-listing-updated-feedback flex animate-[copy-confirm_.35s_ease-out] items-center justify-center gap-2"><Check size={16} strokeWidth={3}/>Updated!</span>:saving?"Saving…":gymId?"Submit changes":"Create listing"}</button></div>}
         </div>
     </form>;
 }

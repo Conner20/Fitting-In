@@ -53,7 +53,7 @@ export async function GET(req: Request) {
         return { total: value?.total ?? 0, uniqueUsers: value?.uniqueUsers.size ?? 0 };
     };
     return NextResponse.json({
-        gyms: gyms.map((gym) => ({ ...gym, isClaimed: gym.isVerified && gym._count.access > 0, ownerEmails: gym.access.map(({ user }) => user.email).filter(Boolean), analytics: { listingClicks: metric(gym.id, "GYM_OPENED"), dayPassClicks: metric(gym.id, "DAY_PASS_CLICKED"), websiteVisits: metric(gym.id, "WEBSITE_CLICKED"), confirmedClaims: metric(gym.id, "DAY_PASS_CLAIM_CONFIRMED"), postClickSignups: metric(gym.id, "DAY_PASS_SIGNUP") } })),
+        gyms: gyms.map((gym) => ({ ...gym, isClaimed: gym._count.access > 0, ownerEmails: gym.access.map(({ user }) => user.email).filter(Boolean), analytics: { listingClicks: metric(gym.id, "GYM_OPENED"), dayPassClicks: metric(gym.id, "DAY_PASS_CLICKED"), websiteVisits: metric(gym.id, "WEBSITE_CLICKED"), confirmedClaims: metric(gym.id, "DAY_PASS_CLAIM_CONFIRMED"), postClickSignups: metric(gym.id, "DAY_PASS_SIGNUP") } })),
         pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) },
     });
 }

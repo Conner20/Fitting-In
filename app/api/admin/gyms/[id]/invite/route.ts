@@ -15,8 +15,9 @@ export async function POST(req: Request, { params }: Context) {
     const creator = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { id: true } });
     if (!creator) return NextResponse.json({ message: "Admin user not found." }, { status: 404 });
     const { id: gymId } = await params;
-    const gym = await db.gym.findUnique({ where: { id: gymId }, select: { id: true, name: true } });
+    const gym = await db.gym.findUnique({ where: { id: gymId }, select: { id: true, name: true, _count: { select: { access: true } } } });
     if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
+    if (gym._count.access > 0) return NextResponse.json({ message: "Claimed gym listings cannot receive another verification link." }, { status: 409 });
 
     const rawToken = generateRawToken(32);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);

@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     const inviteToken = new URL(req.url).searchParams.get("invite")?.trim();
     const invite = inviteToken ? await db.gymInvite.findUnique({ where: { tokenHash: sha256Hex(inviteToken) }, select: { usedAt: true, expiresAt: true } }) : null;
-    const validInvite = Boolean(invite && !invite.usedAt && invite.expiresAt > new Date());
+    const validInvite = Boolean(session?.user?.email && invite && !invite.usedAt && invite.expiresAt > new Date());
     const signedInUploader = session?.user?.email
         ? await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { role: true } })
         : null;

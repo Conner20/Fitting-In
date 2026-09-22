@@ -21,17 +21,18 @@ const FormSchema = z.object({
 const inputClass =
     "border border-white/10 bg-white/[.06] text-white placeholder:text-white/35 focus-visible:border-[#22c55e] focus-visible:ring-[#22c55e]/20";
 
-const LogInForm = () => {
+const LogInForm = ({ defaultCallbackUrl = "/" }: { defaultCallbackUrl?: string }) => {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const requestedCallback = searchParams?.get("callbackUrl") || "";
+    const requestedCallback = searchParams?.get("callbackUrl") || defaultCallbackUrl;
     const callbackUrl = requestedCallback.startsWith("/") && !requestedCallback.startsWith("//") ? requestedCallback : "/";
     const dayPassGymId = callbackUrl.match(/^\/day-pass\/([^/?#]+)/)?.[1] || "";
     const membershipGymId = callbackUrl.match(/^\/membership\/([^/?#]+)/)?.[1] || "";
     const membershipOptionId = membershipGymId ? new URL(callbackUrl, "http://local").searchParams.get("optionId") || "" : "";
+    const gymInviteToken = callbackUrl.match(/^\/gym-invite\/([^/?#]+)/)?.[1] || "";
     const purchaseGymId = dayPassGymId || membershipGymId;
     const purchaseIntent = membershipGymId ? "membership" : "day-pass";
-    const signUpHref = purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? `&intent=membership${membershipOptionId ? `&optionId=${encodeURIComponent(membershipOptionId)}` : ""}` : ""}` : "/sign-up";
+    const signUpHref = gymInviteToken ? `/sign-up?invite=${encodeURIComponent(decodeURIComponent(gymInviteToken))}` : purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? `&intent=membership${membershipOptionId ? `&optionId=${encodeURIComponent(membershipOptionId)}` : ""}` : ""}` : "/sign-up";
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showResendPrompt, setShowResendPrompt] = useState(false);
     const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");

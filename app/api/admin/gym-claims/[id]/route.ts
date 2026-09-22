@@ -20,7 +20,7 @@ export async function PATCH(req: Request, { params }: Context) {
     const body = await req.json().catch(() => ({}));
     const status = body.status === "APPROVED" ? "APPROVED" : body.status === "REJECTED" ? "REJECTED" : null;
     if (!status) return NextResponse.json({ message: "Status must be APPROVED or REJECTED." }, { status: 400 });
-    const claim = await db.gymClaim.findUnique({ where: { id }, select: { id: true, gymId: true, claimantId: true, status: true, proposedData: true } });
+    const claim = await db.gymClaim.findUnique({ where: { id }, select: { id: true, gymId: true, claimantId: true, status: true, proposedData: true, claimant: { select: { email: true } } } });
     if (!claim) return NextResponse.json({ message: "Claim not found." }, { status: 404 });
     if (claim.status !== "PENDING") return NextResponse.json({ message: "Claim has already been reviewed." }, { status: 409 });
     const reviewNote = typeof body.reviewNote === "string" ? body.reviewNote.trim() : null;
@@ -36,11 +36,12 @@ export async function PATCH(req: Request, { params }: Context) {
         if (status === "APPROVED") {
             await tx.gymAccess.upsert({
                 where: { gymId_userId: { gymId: claim.gymId, userId: claim.claimantId } },
-                create: { gymId: claim.gymId, userId: claim.claimantId },
+                create: { gymId: claim.gymId, userId: claim.claimantId, assignedByEmail: adminEmail },
                 update: {},
             });
             const proposedData = reviewedGymData ?? (claim.proposedData && typeof claim.proposedData === "object" && !Array.isArray(claim.proposedData) ? claim.proposedData as Prisma.GymUpdateInput : {});
-            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true, verifiedAt: new Date(), verifiedByEmail: adminEmail } });
+            await tx.user.update({ where: { id: claim.claimantId }, data: { role: "GYM" } });
+            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true, verifiedAt: new Date(), verifiedByEmail: claim.claimant.email } });
         }
         return tx.gymClaim.update({
             where: { id },

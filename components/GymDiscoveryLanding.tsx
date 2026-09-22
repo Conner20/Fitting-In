@@ -232,14 +232,18 @@ const lookupCity = async (lat: number, lng: number) => {
   }
 };
 export default function GymDiscoveryLanding({
+  initiallySignedIn = false,
   isAdmin = false,
   managedGymId = null,
 }: {
+  initiallySignedIn?: boolean;
   isAdmin?: boolean;
   managedGymId?: string | null;
 }) {
   const { status } = useSession(),
-    signedIn = status === "authenticated";
+    signedIn =
+      status === "authenticated" ||
+      (status === "loading" && initiallySignedIn);
   const [all, setAll] = useState<LandingGym[]>([]),
     [selected, setSelected] = useState<string | null>(null),
     [compare, setCompare] = useState<string[]>([]),

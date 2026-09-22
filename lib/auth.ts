@@ -61,14 +61,12 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async jwt({ token, user }) {
-            if (!user && typeof token.email === "string" && !token.role) {
+            if (!user && typeof token.email === "string") {
                 const existingUser = await db.user.findUnique({
                     where: { email: token.email },
                     select: { role: true },
                 });
-                if (existingUser?.role) {
-                    token.role = existingUser.role;
-                }
+                token.role = existingUser?.role ?? undefined;
             }
 
             if(user) {

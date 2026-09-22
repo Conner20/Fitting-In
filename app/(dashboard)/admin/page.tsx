@@ -42,14 +42,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const verificationLog = await db.gym.findMany({
     orderBy: { updatedAt: "desc" },
     select: {
-      id: true, name: true, isVerified: true, verifiedAt: true, verifiedByEmail: true, updatedAt: true,
+      id: true, name: true, updatedAt: true,
       access: { orderBy: { createdAt: "asc" }, take: 1, select: { createdAt: true, assignedByEmail: true, user: { select: { email: true } } } },
     },
   });
   const verificationLogRows = verificationLog.map(gym => {
     const claim = gym.access[0] ?? null;
     const claimantEmail = claim?.user.email ?? null;
-    return { id: gym.id, name: gym.name, isVerified: gym.isVerified, hasOwner: Boolean(claim), verifiedBy: gym.isVerified && gym.verifiedAt ? gym.verifiedByEmail ?? claimantEmail ?? "—" : "—", verifiedAt: gym.isVerified ? gym.verifiedAt?.toISOString() ?? null : null, claimedBy: claimantEmail ?? "—", claimedAt: claim?.createdAt.toISOString() ?? null, assignedBy: claim?.assignedByEmail ?? "—", updatedAt: gym.updatedAt.toISOString() };
+    return { id: gym.id, name: gym.name, isClaimed: Boolean(claim), claimedBy: claimantEmail ?? "—", claimedAt: claim?.createdAt.toISOString() ?? null, updatedAt: gym.updatedAt.toISOString() };
   });
   const cards: readonly (readonly [string, number | string, string?])[] = [
     ["Users", users], ["Gym Users", gymUsers], ["Day-pass clicks", dayPassClicks], ["Confirmed day passes", confirmedDayPasses], ["Confirmed day passes by gym", confirmedDayPassesByGym],
@@ -64,7 +64,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">{cards.map(([label,value,breakdown])=><AdminMetricCard key={label} label={label} value={value} breakdown={breakdown}/>)}</div>
       <section id="users" className="space-y-4"><div><h2 className="text-xl font-black">Users</h2></div><AdminUserManager /></section>
       <section id="gym-verification-log" className="space-y-4 border-t border-black/10 pt-8 dark:border-white/10">
-        <h2 className="text-xl font-black">Gym verification log</h2>
+        <h2 className="text-xl font-black">Gym claim log</h2>
         <AdminGymVerificationLog rows={verificationLogRows} />
       </section>
       <section id="behavior" className="admin-overview-behavior border-t border-black/10 pt-8 dark:border-white/10"><AdminBehaviorDashboard compact periodDays={rangeDays} /></section>

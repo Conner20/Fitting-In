@@ -26,7 +26,6 @@ export async function GET(req: Request, { params }: Context) {
     db.gym.findUnique({
       where: { id: gymId },
       select: {
-        isVerified: true,
         access: { orderBy: { createdAt: "asc" }, select: { createdAt: true, user: { select: { id: true, email: true } } } },
       },
     }),
@@ -38,7 +37,7 @@ export async function GET(req: Request, { params }: Context) {
     }),
   ]);
   if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
-  return NextResponse.json({ isVerified: gym.isVerified, owners: gym.access.map(access => ({ id: access.user.id, email: access.user.email, claimedAt: access.createdAt })), users });
+  return NextResponse.json({ owners: gym.access.map(access => ({ id: access.user.id, email: access.user.email, claimedAt: access.createdAt })), users });
 }
 
 export async function PATCH(req: Request, { params }: Context) {
@@ -48,7 +47,7 @@ export async function PATCH(req: Request, { params }: Context) {
   const body = await req.json().catch(() => ({}));
   const action = body.action;
 
-  if (action === "unverify") {
+  if (action === "removeClaim" || action === "unverify" || action === "removeOwner") {
     await db.$transaction(async tx => {
       const owners = await tx.gymAccess.findMany({ where: { gymId }, select: { userId: true } });
       const latestInvite = await tx.gymInvite.findFirst({ where: { gymId }, orderBy: { createdAt: "desc" }, select: { id: true } });
@@ -61,17 +60,7 @@ export async function PATCH(req: Request, { params }: Context) {
       await tx.gym.update({ where: { id: gymId }, data: { isVerified: false, verifiedAt: null, verifiedByEmail: null } });
       for (const owner of owners) await demoteIfUnassigned(tx, owner.userId);
     });
-    return NextResponse.json({ message: "Verification and ownership removed." });
-  }
-
-  if (action === "removeOwner") {
-    await db.$transaction(async tx => {
-      const owners = await tx.gymAccess.findMany({ where: { gymId }, select: { userId: true } });
-      await tx.gymAccess.deleteMany({ where: { gymId } });
-      await tx.gymClaim.deleteMany({ where: { gymId, claimantId: { in: owners.map(owner => owner.userId) } } });
-      for (const owner of owners) await demoteIfUnassigned(tx, owner.userId);
-    });
-    return NextResponse.json({ message: "Gym owner removed." });
+    return NextResponse.json({ message: "Gym claim removed. The listing can now be claimed and verified again." });
   }
 
   if (action === "assignOwner") {
@@ -79,25 +68,26 @@ export async function PATCH(req: Request, { params }: Context) {
     if (!userId) return NextResponse.json({ message: "Select a trainee account." }, { status: 400 });
     await db.$transaction(async tx => {
       const [gym, user, oldOwners] = await Promise.all([
-        tx.gym.findUnique({ where: { id: gymId }, select: { isVerified: true } }),
-        tx.user.findUnique({ where: { id: userId }, select: { id: true, role: true } }),
+        tx.gym.findUnique({ where: { id: gymId }, select: { id: true } }),
+        tx.user.findUnique({ where: { id: userId }, select: { id: true, role: true, email: true, gymAccesses: { select: { gymId: true } } } }),
         tx.gymAccess.findMany({ where: { gymId }, select: { userId: true } }),
       ]);
       if (!gym) throw new Error("Gym not found.");
-      if (!gym.isVerified) throw new Error("Verify the listing before assigning an owner.");
       if (!user || user.role !== "TRAINEE") throw new Error("The selected account is no longer an available trainee.");
+      if (user.gymAccesses.some(access => access.gymId !== gymId)) throw new Error("The selected account is already associated with another gym.");
       await tx.gymAccess.deleteMany({ where: { gymId } });
       await tx.gymClaim.deleteMany({ where: { gymId, claimantId: { in: oldOwners.map(owner => owner.userId) } } });
       for (const owner of oldOwners) if (owner.userId !== userId) await demoteIfUnassigned(tx, owner.userId);
       await tx.user.update({ where: { id: userId }, data: { role: "GYM" } });
       await tx.gymAccess.create({ data: { gymId, userId, assignedByEmail: assigningAdminEmail } });
+      await tx.gym.update({ where: { id: gymId }, data: { isVerified: true, verifiedAt: new Date(), verifiedByEmail: user.email } });
       await tx.gymClaim.upsert({
         where: { gymId_claimantId: { gymId, claimantId: userId } },
         create: { gymId, claimantId: userId, status: "APPROVED", businessRole: "Gym representative", evidence: "Assigned by an administrator." },
         update: { status: "APPROVED", reviewedAt: new Date() },
       });
     });
-    return NextResponse.json({ message: "Gym owner assigned." });
+    return NextResponse.json({ message: "Gym claim assigned." });
   }
 
   return NextResponse.json({ message: "Unsupported ownership action." }, { status: 400 });

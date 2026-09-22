@@ -17,6 +17,8 @@ const PUBLIC_PATHS = [
 ];
 
 const RETAINED_PAGE_PREFIXES = ["/admin", "/gym-invite", "/gym-listing", "/day-pass", "/change-password"];
+const PENDING_GYM_INVITE_COOKIE = "fittingin_pending_gym_invite";
+const PENDING_GYM_INVITE_MAX_AGE = 60 * 60 * 24 * 14;
 
 const startsWithAny = (pathname: string, prefixes: string[]) =>
     prefixes.some((prefix) => pathname.startsWith(prefix));
@@ -40,7 +42,18 @@ export async function middleware(req: NextRequest) {
         startsWithAny(pathname, ["/verify-email", "/reset-password", "/gym-invite/"]);
 
     if (isPublic) {
-        return NextResponse.next();
+        const response = NextResponse.next();
+        const inviteMatch = pathname.match(/^\/gym-invite\/([^/]+)\/?$/);
+        if (inviteMatch) {
+            response.cookies.set(PENDING_GYM_INVITE_COOKIE, decodeURIComponent(inviteMatch[1]), {
+                httpOnly: true,
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+                path: "/",
+                maxAge: PENDING_GYM_INVITE_MAX_AGE,
+            });
+        }
+        return response;
     }
 
     // Product pages are intentionally limited to discovery, authentication,

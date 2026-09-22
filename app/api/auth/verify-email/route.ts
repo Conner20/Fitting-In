@@ -115,7 +115,7 @@ export async function GET(req: Request) {
 
         const gymInvite = req.headers.get("cookie")?.match(/(?:^|; )gym_invite=([^;]+)/)?.[1];
         const callbackUrl = gymInvite
-            ? `/gym-invite/${encodeURIComponent(decodeURIComponent(gymInvite))}?claim=1`
+            ? `/gym-invite/${encodeURIComponent(decodeURIComponent(gymInvite))}`
             : `/user-onboarding?email=${encodeURIComponent(user.email ?? "")}`;
 
         const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);

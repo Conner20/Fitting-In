@@ -1,65 +1,59 @@
-import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
-import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { cleanGymInput, validateCompleteGymInput } from "@/lib/gyms";
+import { PENDING_GYM_INVITE_COOKIE } from "@/lib/pending-gym-invite";
 import { sha256Hex } from "@/lib/token";
 import { db } from "@/prisma/client";
-import { cleanGymInput, validateCompleteGymInput } from "@/lib/gyms";
 
 type Context = { params: Promise<{ token: string }> };
 
-async function currentEmail() {
+export async function PATCH(req: Request, { params }: Context) {
     const session = await getServerSession(authOptions);
-    if (session?.user?.email) return session.user.email.toLowerCase();
-    const onboardingToken = (await cookies()).get("onboarding_token")?.value;
-    if (!onboardingToken) return null;
-    try {
-        const { payload } = await jwtVerify(onboardingToken, new TextEncoder().encode(env.NEXTAUTH_SECRET));
-        return typeof payload.email === "string" ? payload.email.toLowerCase() : null;
-    } catch { return null; }
-}
+    const accountEmail = session?.user?.email?.trim().toLowerCase();
+    if (!accountEmail) return NextResponse.json({ message: "Sign up or log in before claiming this listing." }, { status: 401 });
 
-export async function POST(_req: Request, { params }: Context) {
-    const email = await currentEmail();
-    if (!email) return NextResponse.json({ message: "Sign up or log in to claim this listing." }, { status: 401 });
     const { token } = await params;
     const invite = await db.gymInvite.findUnique({
         where: { tokenHash: sha256Hex(token) },
-        include: { gym: { select: { id: true, name: true, isVerified: true } } },
+        select: { id: true, gymId: true, usedAt: true, expiresAt: true, gym: { select: { name: true, _count: { select: { access: true } } } } },
     });
-    if (!invite || invite.usedAt || invite.expiresAt <= new Date()) {
-        return NextResponse.json({ message: "This invitation is invalid, expired, or has already been used." }, { status: 410 });
-    }
-    const user = await db.user.findUnique({ where: { email }, select: { id: true } });
-    if (!user) return NextResponse.json({ message: "User not found." }, { status: 404 });
-    if (invite.gym.isVerified) {
-        await db.$transaction(async (tx) => {
-            await tx.user.update({ where: { id: user.id }, data: { role: "GYM" } });
-            await tx.gymAccess.upsert({ where: { gymId_userId: { gymId: invite.gymId, userId: user.id } }, create: { gymId: invite.gymId, userId: user.id }, update: {} });
-            await tx.gymClaim.upsert({ where: { gymId_claimantId: { gymId: invite.gymId, claimantId: user.id } }, create: { gymId: invite.gymId, claimantId: user.id, status: "APPROVED", businessRole: "Gym representative", evidence: "Account created after admin verification." }, update: { status: "APPROVED", reviewedAt: new Date() } });
-            await tx.gymInvite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
-        });
-        return NextResponse.json({ message: `Your Gym account is now associated with ${invite.gym.name}.` });
-    }
-    return NextResponse.json({ message: "Verify the gym information before claiming this listing." }, { status: 409 });
-}
-
-export async function PATCH(req: Request, { params }: Context) {
-    const verifierEmail = await currentEmail();
-    const { token } = await params;
-    const invite = await db.gymInvite.findUnique({ where: { tokenHash: sha256Hex(token) }, select: { id: true, gymId: true, usedAt: true, expiresAt: true, proposedData: true, gym: { select: { name: true, isVerified: true } } } });
     if (!invite || invite.usedAt || invite.expiresAt <= new Date()) return NextResponse.json({ message: "This invitation is invalid, expired, or has already been used." }, { status: 410 });
-    if (invite.gym.isVerified) return NextResponse.json({ message: `The listing for ${invite.gym.name} has already been verified.` }, { status: 409 });
+    if (invite.gym._count.access) return NextResponse.json({ message: `The listing for ${invite.gym.name} has already been claimed.` }, { status: 409 });
+
     const body = await req.json().catch(() => ({}));
     const data = cleanGymInput(body);
     const missing = validateCompleteGymInput(body, data);
     if (missing.length) return NextResponse.json({ message: `Complete these required fields: ${missing.join(", ")}.` }, { status: 400 });
     const { isPublished: _isPublished, ...editable } = data;
-    await db.$transaction([
-        db.gym.update({ where: { id: invite.gymId }, data: { ...editable, isVerified: true, verifiedAt: new Date(), verifiedByEmail: verifierEmail } }),
-        db.gymInvite.update({ where: { id: invite.id }, data: { proposedData: editable } }),
-    ]);
-    return NextResponse.json({ message: "Thanks — your gym information has been verified and the listing is now updated. Create an account to claim and manage it going forward." });
+    const claimedAt = new Date();
+
+    try {
+        await db.$transaction(async tx => {
+            const user = await tx.user.findUnique({ where: { email: accountEmail }, select: { id: true, emailVerified: true, gymAccesses: { select: { gymId: true } } } });
+            if (!user?.emailVerified) throw new Error("VERIFIED_ACCOUNT_REQUIRED");
+            if (user.gymAccesses.some(access => access.gymId !== invite.gymId)) throw new Error("ACCOUNT_ALREADY_HAS_GYM");
+            const otherOwner = await tx.gymAccess.findFirst({ where: { gymId: invite.gymId, userId: { not: user.id } }, select: { id: true } });
+            if (otherOwner) throw new Error("GYM_ALREADY_CLAIMED");
+
+            await tx.gym.update({ where: { id: invite.gymId }, data: { ...editable, isVerified: true, verifiedAt: claimedAt, verifiedByEmail: accountEmail } });
+            await tx.user.update({ where: { id: user.id }, data: { role: "GYM" } });
+            await tx.gymAccess.upsert({ where: { gymId_userId: { gymId: invite.gymId, userId: user.id } }, create: { gymId: invite.gymId, userId: user.id }, update: {} });
+            await tx.gymClaim.upsert({
+                where: { gymId_claimantId: { gymId: invite.gymId, claimantId: user.id } },
+                create: { gymId: invite.gymId, claimantId: user.id, status: "APPROVED", businessRole: "Gym representative", evidence: "Claimed through an administrator-issued verification link.", reviewedAt: claimedAt },
+                update: { status: "APPROVED", proposedData: editable, reviewedAt: claimedAt },
+            });
+            await tx.gymInvite.update({ where: { id: invite.id }, data: { usedAt: claimedAt, proposedData: editable } });
+        });
+    } catch (error) {
+        if (error instanceof Error && error.message === "VERIFIED_ACCOUNT_REQUIRED") return NextResponse.json({ message: "A verified account is required to claim this listing." }, { status: 401 });
+        if (error instanceof Error && error.message === "ACCOUNT_ALREADY_HAS_GYM") return NextResponse.json({ message: "This account is already associated with another gym listing." }, { status: 409 });
+        if (error instanceof Error && error.message === "GYM_ALREADY_CLAIMED") return NextResponse.json({ message: "This gym listing has already been claimed." }, { status: 409 });
+        throw error;
+    }
+
+    const response = NextResponse.json({ message: `You claimed and verified ${invite.gym.name}.`, gymId: invite.gymId });
+    response.cookies.delete(PENDING_GYM_INVITE_COOKIE);
+    return response;
 }

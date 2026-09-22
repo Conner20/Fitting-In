@@ -639,12 +639,6 @@ html body button.gym-address-clear-button:focus-visible {
   border-color: #22c55e !important;
 }
 
-.gym-verification-page .verify-information-button:hover:not(:disabled) {
-  border-color: #22c55e !important;
-  background-color: transparent !important;
-  color: #22c55e !important;
-}
-
 .gym-verification-page input[type="checkbox"] {
   accent-color: #22c55e !important;
 }
@@ -1007,35 +1001,6 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
 .dark :is(button, a)[class*="bg-[#22c55e]"]:hover,
 .dark :is(button, a)[class*="bg-emerald-700"]:hover {
   background-color: transparent !important;
-}
-
-.verify-information-button,
-.verify-information-button:hover,
-.verify-information-button:active,
-.verify-information-button:focus,
-.verify-information-button:focus-visible,
-.verify-information-button:disabled {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  border-color: #22c55e !important;
-  background: #22c55e !important;
-  background-color: #22c55e !important;
-  background-image: none !important;
-  color: #111411 !important;
-  -webkit-text-fill-color: #111411 !important;
-  filter: none !important;
-  box-shadow: none !important;
-}
-
-@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
-  html body .gym-verification-page .verify-information-button:hover {
-    border-color: #22c55e !important;
-    background: #050505 !important;
-    background-color: #050505 !important;
-    color: #22c55e !important;
-    -webkit-text-fill-color: #22c55e !important;
-  }
 }
 
 .gym-invite-create-account-action,
@@ -2234,10 +2199,10 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
 
   /* Restore the verification-link action after the two-second copied state;
      iOS otherwise keeps its former tap-hover background. */
-  html body .gym-verification-copy-button[data-copied="false"],
-  html body .gym-verification-copy-button[data-copied="false"]:hover,
-  html body .gym-verification-copy-button[data-copied="false"]:active,
-  html body .gym-verification-copy-button[data-copied="false"]:focus {
+  html body .gym-verification-copy-button[data-copied="false"]:not(:disabled),
+  html body .gym-verification-copy-button[data-copied="false"]:not(:disabled):hover,
+  html body .gym-verification-copy-button[data-copied="false"]:not(:disabled):active,
+  html body .gym-verification-copy-button[data-copied="false"]:not(:disabled):focus {
     border-color: #22c55e !important;
     background: transparent !important;
     background-color: transparent !important;
@@ -2248,10 +2213,10 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     box-shadow: none !important;
   }
 
-  html body .gym-verification-copy-button[data-copied="true"],
-  html body .gym-verification-copy-button[data-copied="true"]:hover,
-  html body .gym-verification-copy-button[data-copied="true"]:active,
-  html body .gym-verification-copy-button[data-copied="true"]:focus {
+  html body .gym-verification-copy-button[data-copied="true"]:not(:disabled),
+  html body .gym-verification-copy-button[data-copied="true"]:not(:disabled):hover,
+  html body .gym-verification-copy-button[data-copied="true"]:not(:disabled):active,
+  html body .gym-verification-copy-button[data-copied="true"]:not(:disabled):focus {
     border-color: #22c55e !important;
     background: #22c55e !important;
     background-color: #22c55e !important;
@@ -2260,6 +2225,23 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     filter: none !important;
     transform: none !important;
     box-shadow: none !important;
+  }
+
+  html body .gym-verification-copy-button:disabled,
+  html body .gym-verification-copy-button:disabled:hover,
+  html body .gym-verification-copy-button:disabled:active,
+  html body .gym-verification-copy-button:disabled:focus,
+  html body .gym-verification-copy-button:disabled:focus-visible {
+    cursor: not-allowed !important;
+    border-color: rgb(113 113 122 / .35) !important;
+    background: rgb(113 113 122 / .08) !important;
+    background-color: rgb(113 113 122 / .08) !important;
+    color: rgb(113 113 122) !important;
+    opacity: .55 !important;
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 }
 
@@ -2467,31 +2449,6 @@ html body .gym-discovery-page :is(.landing-sort-switch, .landing-pricing-switch)
   html body button[data-slot="button"].login-submit-action:focus-visible,
   html body button[data-slot="button"].login-submit-action:disabled,
   html body button[data-slot="button"].login-submit-action[aria-disabled="true"] {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-    border-color: #22c55e !important;
-    background: #22c55e !important;
-    background-color: #22c55e !important;
-    background-image: none !important;
-    color: #111411 !important;
-    -webkit-text-fill-color: #111411 !important;
-    opacity: 1 !important;
-    filter: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-}
-
-/* Final mobile lock for the authenticated post-verification return link. */
-@media (max-width: 767px) {
-  html body a.gym-invite-return-action,
-  html body a.gym-invite-return-action:link,
-  html body a.gym-invite-return-action:visited,
-  html body a.gym-invite-return-action:hover,
-  html body a.gym-invite-return-action:active,
-  html body a.gym-invite-return-action:focus,
-  html body a.gym-invite-return-action:focus-visible {
     appearance: none !important;
     -webkit-appearance: none !important;
     -webkit-tap-highlight-color: transparent !important;
@@ -3198,5 +3155,150 @@ html body .gym-discovery-page .landing-auth-signup:focus-visible {
     translate: none !important;
     transition: none !important;
     -webkit-tap-highlight-color: transparent !important;
+  }
+}
+@media (max-width: 767px) {
+  html body a.gym-invite-signup-action,
+  html body a.gym-invite-signup-action:link,
+  html body a.gym-invite-signup-action:visited,
+  html body a.gym-invite-signup-action:hover,
+  html body a.gym-invite-signup-action:active,
+  html body a.gym-invite-signup-action:focus,
+  html body a.gym-invite-signup-action:focus-visible {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    border-color: #22c55e !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  html body a.gym-invite-login-action,
+  html body a.gym-invite-login-action:link,
+  html body a.gym-invite-login-action:visited,
+  html body a.gym-invite-login-action:hover,
+  html body a.gym-invite-login-action:active,
+  html body a.gym-invite-login-action:focus,
+  html body a.gym-invite-login-action:focus-visible {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: #52525b !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) and (hover: hover) and (pointer: fine) {
+  html body a.gym-invite-signup-action:hover {
+    background: #111411 !important;
+    background-color: #111411 !important;
+    border-color: #22c55e !important;
+    color: #22c55e !important;
+    -webkit-text-fill-color: #22c55e !important;
+  }
+}
+
+/* Invitation status screens: desktop gets the standard inverse hover while
+   phones and touch devices retain the green action through every tap state. */
+@media (hover: hover) and (pointer: fine) {
+  html body a.gym-invite-explore-action:hover {
+    background: #111411 !important;
+    background-color: #111411 !important;
+    border-color: #22c55e !important;
+    color: #22c55e !important;
+    -webkit-text-fill-color: #22c55e !important;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  html body a.gym-invite-explore-action,
+  html body a.gym-invite-explore-action:link,
+  html body a.gym-invite-explore-action:visited,
+  html body a.gym-invite-explore-action:hover,
+  html body a.gym-invite-explore-action:active,
+  html body a.gym-invite-explore-action:focus,
+  html body a.gym-invite-explore-action:focus-visible {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    border-color: #22c55e !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+}
+
+/* Reusable Green Button UI. Keep this final in the cascade so legacy button
+   rules cannot override the shared interaction contract. */
+html body :is(a, button).green-button-ui.green-button-ui,
+html body :is(a, button).green-button-ui.green-button-ui:active,
+html body :is(a, button).green-button-ui.green-button-ui:focus,
+html body :is(a, button).green-button-ui.green-button-ui:focus-visible,
+html body :is(a, button).green-button-ui.green-button-ui:disabled {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: #22c55e !important;
+  background-color: #22c55e !important;
+  background-image: none !important;
+  border-color: #22c55e !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  translate: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html body :is(a, button).green-button-ui.green-button-ui:hover {
+    background: #111411 !important;
+    background-color: #111411 !important;
+    border-color: #22c55e !important;
+    color: #22c55e !important;
+    -webkit-text-fill-color: #22c55e !important;
+    transform: none !important;
+    translate: none !important;
+  }
+}
+
+@media (max-width: 767px), (hover: none), (pointer: coarse) {
+  html body :is(a, button).green-button-ui.green-button-ui,
+  html body :is(a, button).green-button-ui.green-button-ui:hover,
+  html body :is(a, button).green-button-ui.green-button-ui:active,
+  html body :is(a, button).green-button-ui.green-button-ui:focus,
+  html body :is(a, button).green-button-ui.green-button-ui:focus-visible,
+  html body :is(a, button).green-button-ui.green-button-ui:disabled {
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    background-image: none !important;
+    border-color: #22c55e !important;
+    color: #111411 !important;
+    -webkit-text-fill-color: #111411 !important;
+    opacity: 1 !important;
+    transform: none !important;
+    translate: none !important;
   }
 }

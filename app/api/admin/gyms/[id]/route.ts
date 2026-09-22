@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: Context) {
     const { id } = await params;
     const gym = await db.gym.findUnique({ where: { id }, include: { _count: { select: { access: true } } } });
     if (!gym) return NextResponse.json({ message: "Gym not found." }, { status: 404 });
-    return NextResponse.json({ gym: { ...gym, isClaimed: gym.isVerified && gym._count.access > 0 } });
+    return NextResponse.json({ gym: { ...gym, isClaimed: gym._count.access > 0 } });
 }
 
 export async function PATCH(req: Request, { params }: Context) {

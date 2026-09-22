@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, CheckCircle2, Copy, LoaderCircle, MapPin, Plus, Search, Share2 } from "lucide-react";
+import { Check, Copy, LoaderCircle, MapPin, Plus, Search, Share2 } from "lucide-react";
 
-type Gym = { id: string; name: string; address: string; coverPhotoUrl: string | null; isPublished: boolean; isVerified: boolean; isClaimed: boolean; ownerEmails: string[] };
+type Gym = { id: string; name: string; address: string; coverPhotoUrl: string | null; isPublished: boolean; isClaimed: boolean; ownerEmails: string[] };
 export default function AdminGymManager() {
     const [gyms, setGyms] = useState<Gym[]>([]);
     const [query, setQuery] = useState("");
@@ -15,6 +15,7 @@ export default function AdminGymManager() {
     const [isMobile, setIsMobile] = useState(false);
     const [message, setMessage] = useState("");
     const [copiedGymId, setCopiedGymId] = useState<string | null>(null);
+    const [visibleClaimOwnerGymId, setVisibleClaimOwnerGymId] = useState<string | null>(null);
     const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const loadMoreMarker = useRef<HTMLDivElement>(null);
     const requestId = useRef(0);
@@ -72,6 +73,7 @@ export default function AdminGymManager() {
     useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
 
     async function shareGym(gym: Gym) {
+        if (gym.isClaimed) return;
         setMessage("");
         setCopiedGymId(gym.id);
         if (copyTimer.current) { clearTimeout(copyTimer.current); copyTimer.current = null; }
@@ -97,8 +99,8 @@ export default function AdminGymManager() {
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {gyms.map((gym) => <article key={gym.id} className="group overflow-hidden rounded-2xl border border-black/10 bg-white transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/5">
                     <Link href={`/admin/gyms/${gym.id}`} className="block"><div className="relative h-28 bg-zinc-100 dark:bg-white/10">{gym.coverPhotoUrl && <img src={gym.coverPhotoUrl} alt="" className="h-full w-full object-cover" />}</div>
-                    <div className="p-4"><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="truncate font-semibold">{gym.name}</p>{gym.isVerified && <CheckCircle2 size={15} className="shrink-0 text-[#22c55e]" />}</div><p className="mt-1 flex items-start gap-1 text-xs text-zinc-500"><MapPin size={13} className="shrink-0" />{gym.address}</p></div><div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wide"><span tabIndex={gym.isClaimed?0:undefined} aria-label={gym.isClaimed?`Claimed by ${gym.ownerEmails.join(", ")}`:undefined} className={`group/claim relative rounded-full border px-2 py-1 ${gym.isClaimed?"cursor-help border-[#22c55e]/40 bg-[#22c55e]/10 text-[#16803d] dark:text-[#86efac]":"border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-white/60"}`}>{gym.isClaimed?"Claimed":"Unclaimed"}{gym.isClaimed&&<span role="tooltip" className="pointer-events-none absolute bottom-[calc(100%+.45rem)] left-0 z-30 hidden max-w-64 normal-case tracking-normal text-white group-hover/claim:block group-focus/claim:block"><span className="block rounded-lg border border-white/10 bg-[#111411] px-3 py-2 text-left text-xs font-semibold shadow-xl">{gym.ownerEmails.join(", ")}</span></span>}</span><span className={`rounded-full border px-2 py-1 ${gym.isVerified?"border-[#22c55e]/40 bg-[#22c55e]/10 text-[#16803d] dark:text-[#86efac]":"border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-white/60"}`}>{gym.isVerified?"Verified":"Unverified"}</span></div></div></Link>
-                    <div className="border-t border-black/5 p-3 dark:border-white/10"><button type="button" data-copied={copiedGymId===gym.id} aria-live="polite" onClick={() => void shareGym(gym)} className={`gym-verification-copy-button flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-[#22c55e] px-3 py-2 text-sm font-semibold transition-all duration-300 ${copiedGymId===gym.id?"scale-[1.02] bg-[#22c55e] text-black":"text-[#22c55e] hover:bg-[#22c55e]/10"}`}>{copiedGymId===gym.id?<span className="flex animate-[copy-confirm_.35s_ease-out] items-center gap-2"><Check size={16} strokeWidth={3}/>Copied!</span>:<span className="flex items-center gap-2"><Share2 size={15}/><Copy size={14}/>Copy verification link</span>}</button></div>
+                    <div className="p-4"><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="truncate font-semibold">{gym.name}</p></div><p className="mt-1 flex items-start gap-1 text-xs text-zinc-500"><MapPin size={13} className="shrink-0" />{gym.address}</p></div><div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-wide"><span tabIndex={gym.isClaimed?0:undefined} aria-label={gym.isClaimed?`Claimed by ${gym.ownerEmails.join(", ")}`:undefined} onClick={gym.isClaimed?(event)=>{event.preventDefault();event.stopPropagation();setVisibleClaimOwnerGymId(current=>current===gym.id?null:gym.id)}:undefined} onKeyDown={gym.isClaimed?(event)=>{if(event.key!=="Enter"&&event.key!==" ")return;event.preventDefault();event.stopPropagation();setVisibleClaimOwnerGymId(current=>current===gym.id?null:gym.id)}:undefined} className={`group/claim relative rounded-full border px-2 py-1 ${gym.isClaimed?"cursor-help border-[#22c55e]/40 bg-[#22c55e]/10 text-[#16803d] dark:text-[#86efac]":"border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-white/60"}`}>{gym.isClaimed?"Claimed":"Unclaimed"}{gym.isClaimed&&<span role="tooltip" className={`pointer-events-none absolute bottom-[calc(100%+.45rem)] left-0 z-30 hidden max-w-64 normal-case tracking-normal text-white md:group-hover/claim:block md:group-focus/claim:block ${visibleClaimOwnerGymId===gym.id?"!block":""}`}><span className="block rounded-lg border border-white/10 bg-[#111411] px-3 py-2 text-left text-xs font-semibold shadow-xl">{gym.ownerEmails.join(", ")}</span></span>}</span></div></div></Link>
+                    <div className="border-t border-black/5 p-3 dark:border-white/10"><button type="button" disabled={gym.isClaimed} title={gym.isClaimed?"This listing is already claimed.":"Copy verification link"} data-copied={copiedGymId===gym.id} aria-live="polite" onClick={() => void shareGym(gym)} className={`gym-verification-copy-button flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl border px-3 py-2 text-sm font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:text-zinc-400 disabled:opacity-50 dark:disabled:border-white/15 dark:disabled:text-white/35 ${gym.isClaimed?"border-zinc-300 text-zinc-400 dark:border-white/15 dark:text-white/35":copiedGymId===gym.id?"scale-[1.02] border-[#22c55e] bg-[#22c55e] text-black":"border-[#22c55e] text-[#22c55e] hover:bg-[#22c55e]/10"}`}>{copiedGymId===gym.id&&!gym.isClaimed?<span className="flex animate-[copy-confirm_.35s_ease-out] items-center gap-2"><Check size={16} strokeWidth={3}/>Copied!</span>:<span className="flex items-center gap-2"><Share2 size={15}/><Copy size={14}/>Copy verification link</span>}</button></div>
                 </article>)}
                 {!loading && gyms.length === 0 && <p className="text-sm text-zinc-500">No gym listings found.</p>}
             </div>
