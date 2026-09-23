@@ -1,5 +1,6 @@
 import { db } from "@/prisma/client";
 import { cleanMembershipOptions, effectiveMonthlyPrice, lowestMembershipOption } from "@/lib/memberships";
+import { cleanDayPassOptions, lowestDayPassOption } from "@/lib/day-passes";
 
 const GYM_TYPES = new Set(["Open", "Personal training gym", "Group training gym", "Specialty gym/studio"]);
 
@@ -42,6 +43,8 @@ export function cleanGymInput(body: Record<string, unknown>) {
         : [];
     const gymType = optionalText("gymType");
     const amenities = stringList("amenities");
+    const dayPassOptions = cleanDayPassOptions(body.dayPassOptions).map(option => ({ ...option, access: option.access.filter(item => amenities.includes(item)) }));
+    const lowestDayPass = lowestDayPassOption(dayPassOptions);
     const membershipOptions = cleanMembershipOptions(body.membershipOptions).map(option => ({ ...option, access: option.access.filter(item => amenities.includes(item)) }));
     const lowestMembership = lowestMembershipOption(membershipOptions);
     return {
@@ -57,9 +60,10 @@ export function cleanGymInput(body: Record<string, unknown>) {
         lng: body.lng == null ? undefined : number("lng"),
         amenities,
         equipment: stringList("equipment"),
-        dayPassPrice: optionalNumber("dayPassPrice"),
-        dayPassDetails: optionalText("dayPassDetails"),
-        dayPassUrl: optionalText("dayPassUrl"),
+        dayPassPrice: lowestDayPass?.price ?? optionalNumber("dayPassPrice"),
+        dayPassDetails: lowestDayPass ? String(lowestDayPass.durationDays) : optionalText("dayPassDetails"),
+        dayPassUrl: dayPassOptions[0]?.purchaseUrl || optionalText("dayPassUrl"),
+        dayPassOptions,
         membershipPrice: lowestMembership ? effectiveMonthlyPrice(lowestMembership) : optionalNumber("membershipPrice"),
         membershipDetails: optionalText("membershipDetails"),
         membershipOptions,
@@ -83,11 +87,22 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
     [
         ["name", "gym name"], ["address", "street address"], ["city", "city"], ["state", "state"],
         ["country", "country"], ["phone", "phone"], ["contactEmail", "contact email"], ["website", "website"],
-        ["gymType", "gym type"], ["dayPassDetails", "day pass duration"],
+        ["gymType", "gym type"],
         ["hours", "hours"], ["coverPhotoUrl", "cover photo"],
     ].forEach(([key, label]) => requireText(key as keyof typeof data, label));
     if (!data.gymType || !GYM_TYPES.has(data.gymType)) missing.push("gym type");
-    if (!data.dayPassDetails || !/^\d+$/.test(data.dayPassDetails) || Number(data.dayPassDetails) < 1) missing.push("day pass duration in whole days");
+    if (!data.dayPassOptions.length) missing.push("at least one day pass option");
+    const dayPassDurations = new Set<number>();
+    data.dayPassOptions.forEach((option, index) => {
+        const prefix = `day pass option ${index + 1}`;
+        if (!Number.isFinite(option.price) || option.price < 0) missing.push(`${prefix} price`);
+        if (!Number.isInteger(option.durationDays) || option.durationDays < 1) missing.push(`${prefix} duration`);
+        if (!option.access.length) missing.push(`${prefix} access`);
+        if (dayPassDurations.has(option.durationDays)) missing.push("unique day pass durations");
+        dayPassDurations.add(option.durationDays);
+        const destination = option.purchaseUrl || data.dayPassOptions[0]?.purchaseUrl;
+        if (!destination || (!/^[a-z][a-z\d+.-]*:\/\//i.test(destination) && !destination.includes("."))) missing.push(index === 0 ? `${prefix} URL` : `${prefix} URL or a valid first-option URL`);
+    });
     if (!data.membershipOptions.length) missing.push("at least one membership option");
     data.membershipOptions.forEach((option, index) => {
         const prefix = `membership option ${index + 1}`;
@@ -104,9 +119,6 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
     requireList("amenities", "amenities");
     requireList("equipment", "equipment");
     requireList("photoUrls", "amenity photos");
-    ["dayPassPrice"].forEach((key) => {
-        if (!(key in body) || body[key] === "" || body[key] == null || !Number.isFinite(Number(body[key]))) missing.push(key);
-    });
     if (body.lat == null || body.lat === "" || !Number.isFinite(Number(body.lat))) missing.push("mapped latitude");
     if (body.lng == null || body.lng === "" || !Number.isFinite(Number(body.lng))) missing.push("mapped longitude");
     return [...new Set(missing)];

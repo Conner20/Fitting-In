@@ -5,17 +5,18 @@ import { useRouter } from "next/navigation";
 import { Check, ImagePlus, LoaderCircle, MapPin, X } from "lucide-react";
 import GymHoursEditor from "@/components/GymHoursEditor";
 import MembershipOptionsEditor from "@/components/MembershipOptionsEditor";
-import CurrencyInput from "@/components/CurrencyInput";
+import DayPassOptionsEditor from "@/components/DayPassOptionsEditor";
 import { MembershipOption, cleanMembershipOptions, emptyMembershipOption } from "@/lib/memberships";
+import { DayPassOption, cleanDayPassOptions, emptyDayPassOption } from "@/lib/day-passes";
 
 type FormState = {
     name: string; address: string; city: string; state: string; country: string; lat: number | null; lng: number | null; phone: string; contactEmail: string;
-    website: string; gymType: string; dayPassPrice: string; dayPassDetails: string; dayPassUrl: string; membershipOptions: MembershipOption[];
+    website: string; gymType: string; dayPassOptions: DayPassOption[]; membershipOptions: MembershipOption[];
     hours: string; amenities: string; equipment: string; coverPhotoUrl: string; photoUrls: string[];
     isPublished: boolean;
 };
 
-const empty: FormState = { name: "", address: "", city: "", state: "", country: "", lat: null, lng: null, phone: "", contactEmail: "", website: "", gymType: "", dayPassPrice: "0.00", dayPassDetails: "", dayPassUrl: "", membershipOptions: [emptyMembershipOption()], hours: "", amenities: "", equipment: "", coverPhotoUrl: "", photoUrls: [], isPublished: true };
+const empty: FormState = { name: "", address: "", city: "", state: "", country: "", lat: null, lng: null, phone: "", contactEmail: "", website: "", gymType: "", dayPassOptions: [emptyDayPassOption()], membershipOptions: [emptyMembershipOption()], hours: "", amenities: "", equipment: "", coverPhotoUrl: "", photoUrls: [], isPublished: true };
 type AddressSuggestion = { id: string; label: string; lat: number; lng: number; city?: string; state?: string; country?: string };
 const lines = (value: string) => value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
 const AMENITY_OPTIONS = ["Sauna", "Steam room", "Pool", "Showers", "Locker rooms", "Basketball court", "Turf area", "Group classes", "Personal training", "Childcare", "Parking", "24/7 access", "Women's-only area"];
@@ -59,11 +60,14 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     useEffect(() => () => { if (updatedTimer.current) clearTimeout(updatedTimer.current); if(deleteTimer.current)clearTimeout(deleteTimer.current); }, []);
 
     function populate(gym: Record<string, any>) {
+        const dayPassOptions = cleanDayPassOptions(gym.dayPassOptions);
+        if (!dayPassOptions.length && gym.dayPassPrice != null) dayPassOptions.push({ ...emptyDayPassOption(), price: Number(gym.dayPassPrice), durationDays: Number(normalizeDayPassDays(gym.dayPassDetails)) || 1, purchaseUrl: gym.dayPassUrl ?? gym.website ?? "", access: gym.amenities ?? [] });
+        if (!dayPassOptions.length) dayPassOptions.push(emptyDayPassOption());
         const membershipOptions = cleanMembershipOptions(gym.membershipOptions);
         if (!membershipOptions.length && gym.membershipPrice != null) membershipOptions.push({ ...emptyMembershipOption(), name: "Membership", price: Number(gym.membershipPrice), access: [], purchaseUrl: gym.website ?? "", notes: gym.membershipDetails ?? "" });
         if (!membershipOptions.length) membershipOptions.push(emptyMembershipOption());
         setForm({
-            name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: accountEmail ?? gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType === "Open gym" ? "Open" : gym.gymType ?? "", dayPassPrice: gym.dayPassPrice == null ? "" : String(gym.dayPassPrice), dayPassDetails: normalizeDayPassDays(gym.dayPassDetails), dayPassUrl: gym.dayPassUrl ?? "", membershipOptions, hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
+            name: gym.name ?? "", address: gym.address ?? "", city: gym.city ?? "", state: gym.state ?? "", country: gym.country ?? "", lat: gym.lat ?? null, lng: gym.lng ?? null, phone: formatPhone(gym.phone ?? ""), contactEmail: accountEmail ?? gym.contactEmail ?? "", website: gym.website ?? "", gymType: gym.gymType === "Open gym" ? "Open" : gym.gymType ?? "", dayPassOptions, membershipOptions, hours: gym.hours ?? "", amenities: (gym.amenities ?? []).join("\n"), equipment: (gym.equipment ?? []).join("\n"), coverPhotoUrl: gym.coverPhotoUrl ?? "", photoUrls: gym.photoUrls ?? [], isPublished: gym.isPublished ?? true,
         });
     }
 
@@ -128,33 +132,34 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
     async function submit(event: FormEvent) {
         event.preventDefault(); setSaving(true); setMessage(""); setValidationErrors([]);
         const errors:string[]=[], selectedAmenities=lines(form.amenities);
-        const required:[string,string][]=[["Gym name",form.name],["Address",form.address],["Phone",form.phone],["Email",form.contactEmail],["Website",form.website],["Day pass price",form.dayPassPrice],["Day pass duration",form.dayPassDetails],["Hours",form.hours],["Amenities",form.amenities],["Equipment",form.equipment]];
+        const required:[string,string][]=[["Gym name",form.name],["Address",form.address],["Phone",form.phone],["Email",form.contactEmail],["Website",form.website],["Hours",form.hours],["Amenities",form.amenities],["Equipment",form.equipment]];
         required.forEach(([field,value])=>{if(!value.trim())errors.push(`${field} is required.`)});
         if(!GYM_TYPE_OPTIONS.includes(form.gymType))errors.push("Gym type must be selected.");
         if(form.phone&&form.phone.replace(/\D/g,"").length!==10)errors.push("Phone must include 10 digits.");
         if(form.contactEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail))errors.push("Contact email must be a valid email address.");
-        if(form.dayPassDetails&&(!/^\d+$/.test(form.dayPassDetails)||Number(form.dayPassDetails)<1))errors.push("Day pass duration must be a whole number of days.");
         if(form.website&&!/^[a-z][a-z\d+.-]*:\/\//i.test(form.website)&&!form.website.includes("."))errors.push("Website must be a valid domain, such as example.com.");
         if(form.address.trim()&&(form.lat==null||form.lng==null||!form.city.trim()||!form.state.trim()||!form.country.trim()))errors.push("Address must be selected from the address suggestions.");
         if(!form.coverPhotoUrl)errors.push("Cover photo is required.");
         if(!form.photoUrls.length)errors.push("At least one amenity photo is required.");
-        if(form.dayPassUrl&&!/^[a-z][a-z\d+.-]*:\/\//i.test(form.dayPassUrl)&&!form.dayPassUrl.includes("."))errors.push("Day pass URL must be a valid destination, such as gym.com/day-pass.");
+        if(!form.dayPassOptions.length)errors.push("At least one day pass option is required.");
+        const dayPassDurations=new Set<number>();
+        form.dayPassOptions.forEach((option,index)=>{const label=`Day pass option ${index+1}`;if(!Number.isFinite(option.price)||option.price<0)errors.push(`${label} price is required.`);if(!Number.isInteger(option.durationDays)||option.durationDays<1)errors.push(`${label} duration must be a whole number of days.`);if(dayPassDurations.has(option.durationDays))errors.push("Each day-pass duration must be unique.");dayPassDurations.add(option.durationDays);if(!option.access.some(item=>selectedAmenities.includes(item)))errors.push(`${label} access is required.`);const destination=option.purchaseUrl.trim()||form.dayPassOptions[0]?.purchaseUrl.trim();if(!destination||(!/^[a-z][a-z\d+.-]*:\/\//i.test(destination)&&!destination.includes(".")))errors.push(index===0?`${label} URL must be valid.`:`${label} needs a valid URL or a valid first-option URL.`)});
         if(!form.membershipOptions.length)errors.push("At least one membership option is required.");
         form.membershipOptions.forEach((option,index)=>{const label=`Membership option ${index+1}`;if(!option.name.trim())errors.push(`${label} name is required.`);if(!Number.isFinite(option.price)||option.price<=0)errors.push(`${label} price is required.`);if(option.billingFrequency==="custom"&&(!option.billingInterval||option.billingInterval<1))errors.push(`${label} billing interval is required.`);if(!option.contractLength||option.contractLength<1)errors.push(`${label} contract length is required.`);if(!option.access.some(item=>selectedAmenities.includes(item)))errors.push(`${label} access is required.`);const destination=option.purchaseUrl.trim()||form.membershipOptions[0]?.purchaseUrl.trim();if(!destination||(!/^[a-z][a-z\d+.-]*:\/\//i.test(destination)&&!destination.includes(".")))errors.push(index===0?`${label} purchase URL must be valid.`:`${label} needs a valid URL or a valid first-option purchase URL.`)});
         if(errors.length){
             setValidationErrors(errors);
             setSaving(false);
-            if(inviteToken || window.matchMedia("(max-width: 767px)").matches) window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"}));
+            window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"}));
             return;
         }
-        const payload = { ...form, dayPassPrice: form.dayPassPrice, amenities: selectedAmenities, equipment: lines(form.equipment), membershipOptions: form.membershipOptions.map(option=>({...option,access:option.access.filter(item=>selectedAmenities.includes(item))})) };
+        const payload = { ...form, amenities: selectedAmenities, equipment: lines(form.equipment), dayPassOptions: form.dayPassOptions.map(option=>({...option,access:option.access.filter(item=>selectedAmenities.includes(item))})), membershipOptions: form.membershipOptions.map(option=>({...option,access:option.access.filter(item=>selectedAmenities.includes(item))})) };
         if (gymId && !inviteToken) { setUpdatedFeedback(true); if (updatedTimer.current) { clearTimeout(updatedTimer.current); updatedTimer.current = null; } }
         const endpoint = inviteToken ? `/api/gym-invites/${encodeURIComponent(inviteToken)}/claim` : ownerMode ? (gymId ? `/api/gyms/${gymId}` : "/api/user/gyms") : gymId ? `/api/admin/gyms/${gymId}` : "/api/admin/gyms";
         const response = await fetch(endpoint, { method: inviteToken || gymId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         const result = await response.json().catch(() => ({}));
         if (response.ok && inviteToken) setVerificationComplete(true);
         else if (response.ok) { if (!gymId) setMessage(result.message ?? "Gym listing created."); if (gymId) updatedTimer.current = setTimeout(() => { setUpdatedFeedback(false); updatedTimer.current = null; }, 2000); if (!gymId && result.gym?.id) router.replace(`/admin/gyms/${result.gym.id}`); }
-        else { setUpdatedFeedback(false); setMessage(result.message ?? "Unable to save gym listing."); if(window.matchMedia("(max-width: 767px)").matches)window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"})); }
+        else { setUpdatedFeedback(false); setMessage(result.message ?? "Unable to save gym listing."); window.requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"smooth"})); }
         setSaving(false);
     }
 
@@ -186,17 +191,12 @@ export default function AdminGymListingEditor({ gymId, inviteToken, initialGym, 
             <EditorSection title="Identity and location" description="The basic information people use to find and contact this gym.">
                 <Field label="Gym name"><input required className={input} value={form.name} onChange={(e) => update("name", e.target.value)} /></Field>
                 <div className="relative"><Field label="Address"><div className="relative mt-1"><MapPin aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#22c55e]"/><input required autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={addressOpen&&(addressLoading||addressSuggestions.length>0||addressLookupComplete)} aria-controls="gym-address-suggestions" className={`${input} !mt-0 !pl-10 !pr-10`} value={form.address} onFocus={() => setAddressOpen(true)} onChange={(e) => { const address=e.target.value; setForm((current)=>({...current,address,city:"",state:"",country:"",lat:null,lng:null})); setAddressOpen(true); }} placeholder="Start typing an address…" />{form.address&&<button type="button" aria-label="Clear address" onClick={()=>{setForm((current)=>({...current,address:"",city:"",state:"",country:"",lat:null,lng:null}));setAddressSuggestions([]);setAddressOpen(false);setAddressLoading(false);setAddressLookupComplete(false)}} className="gym-address-clear-button absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-zinc-500 transition hover:bg-black/5 hover:text-black dark:hover:bg-white/10 dark:hover:text-white"><X className="h-4 w-4"/></button>}</div></Field>{addressOpen&&form.address.trim().length>=3&&(addressLoading||addressSuggestions.length>0||addressLookupComplete)&&<div id="gym-address-suggestions" role="listbox" className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-neutral-900">{addressLoading?<div className="flex min-h-12 items-center justify-center gap-2 px-3 py-2.5 text-sm text-zinc-500"><LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-[#22c55e]"/><span>Searching addresses…</span></div>:addressSuggestions.length?addressSuggestions.map((suggestion)=><button key={suggestion.id} type="button" role="option" aria-selected="false" onClick={()=>selectAddress(suggestion)} className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-white/10"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#22c55e]"/><span>{suggestion.label}</span></button>):<div className="px-3 py-3 text-center text-sm text-zinc-500">No addresses found.</div>}</div>}</div>
-                <div className="grid gap-3 sm:grid-cols-2"><Field label="Phone"><input required type="tel" inputMode="numeric" maxLength={14} className={input} value={form.phone} onChange={(e) => update("phone", formatPhone(e.target.value))} placeholder="(202) 555-0123" /></Field><Field label="Email"><input required type="email" className={input} value={form.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} /></Field></div>
-                <Field label="Website"><input required type="text" inputMode="url" className={input} value={form.website} onChange={(e) => update("website", e.target.value)} placeholder="example.com" /></Field>
+                <div className="grid gap-3 sm:grid-cols-2"><Field label="Phone"><input required type="tel" inputMode="numeric" maxLength={14} className={input} value={form.phone} onChange={(e) => update("phone", formatPhone(e.target.value))} placeholder="(555) 555-5555" /></Field><Field label="Email"><input required type="email" className={input} value={form.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} placeholder="contact@example.com" /></Field></div>
+                <div className="grid gap-3 md:grid-cols-2"><Field label="Website"><input required type="text" inputMode="url" className={input} value={form.website} onChange={(e) => update("website", e.target.value)} placeholder="example.com" /></Field><Field label="Gym type"><select required className={input} value={GYM_TYPE_OPTIONS.includes(form.gymType) ? form.gymType : ""} onChange={(e) => update("gymType", e.target.value)}><option value="" disabled>Select a gym type</option><option value="Open">Open</option><option value="Personal training gym">Personal training gym</option><option value="Group training gym">Group training gym</option><option value="Specialty gym/studio">Specialty gym/studio</option></select></Field></div>
             </EditorSection>
             <EditorSection title="Facility details"><Field label="Hours"><GymHoursEditor value={form.hours} onChange={(value) => update("hours", value)} /></Field><div><h3 className={`text-sm font-medium ${validationErrors.includes("Amenities is required.")&&!form.amenities.trim()?"text-red-500 dark:text-red-400":"text-zinc-700 dark:text-zinc-200"}`}>Amenities</h3><p className="mt-1 text-xs text-zinc-500">Select every amenity available at this gym. These choices power search and membership access.</p><StructuredChecklist options={AMENITY_OPTIONS} selected={lines(form.amenities)} onChange={(items)=>update("amenities",items.join("\n"))} otherLabel="Other amenities" /></div><div><h3 className={`text-sm font-medium ${validationErrors.includes("Equipment is required.")&&!form.equipment.trim()?"text-red-500 dark:text-red-400":"text-zinc-700 dark:text-zinc-200"}`}>Equipment</h3><p className="mt-1 text-xs text-zinc-500">Select all equipment available at this location.</p><StructuredChecklist options={EQUIPMENT_OPTIONS} selected={lines(form.equipment)} onChange={(items)=>update("equipment",items.join("\n"))} otherLabel="Other equipment" /></div></EditorSection>
-            <EditorSection title="Gym type and day pass" description="Day-pass pricing is shown when visitors compare day passes.">
-                <div className="grid gap-3 sm:grid-cols-2 [&_input]:py-2 [&_select]:py-2 [&_textarea]:py-2">
-                    <Field label="Gym type"><select required className={input} value={GYM_TYPE_OPTIONS.includes(form.gymType) ? form.gymType : ""} onChange={(e) => update("gymType", e.target.value)}><option value="" disabled>Select a gym type</option><option value="Open">Open</option><option value="Personal training gym">Personal training gym</option><option value="Group training gym">Group training gym</option><option value="Specialty gym/studio">Specialty gym/studio</option></select></Field>
-                    <Field label="Day pass price"><CurrencyInput label="Day pass price" className={input} value={Number(form.dayPassPrice)||0} onChange={(value)=>update("dayPassPrice",value.toFixed(2))}/></Field>
-                    <Field label="Day pass URL"><input type="text" inputMode="url" className={input} value={form.dayPassUrl} onChange={(e) => update("dayPassUrl", e.target.value)} placeholder="gym.com/day-pass" /></Field>
-                    <Field label="Day pass duration (days)"><input required type="number" inputMode="numeric" min="1" step="1" className={input} value={form.dayPassDetails} onChange={(e) => update("dayPassDetails", e.target.value.replace(/\D/g, ""))} placeholder="1" /></Field>
-                </div>
+            <EditorSection title="Day pass options">
+                <DayPassOptionsEditor options={form.dayPassOptions} availableAmenities={lines(form.amenities)} onChange={(dayPassOptions)=>update("dayPassOptions",dayPassOptions)} showErrors={validationErrors.length>0}/>
             </EditorSection>
             <EditorSection title="Membership options">
                 <MembershipOptionsEditor options={form.membershipOptions} availableAmenities={lines(form.amenities)} onChange={(membershipOptions)=>update("membershipOptions",membershipOptions)} showErrors={validationErrors.length>0}/>

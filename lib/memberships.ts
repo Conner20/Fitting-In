@@ -100,17 +100,30 @@ export function membershipMonthlyBreakdown(option: MembershipOption) {
     : option.contractLengthUnit === "weeks" ? option.contractLength * 12 / 52
       : option.contractLengthUnit === "years" ? option.contractLength * 12
         : option.contractLength);
+  const isMonthToMonth = option.contractLength === 1 && option.contractLengthUnit === "months";
+  const upfrontAmortizationMonths = isMonthToMonth ? 12 : contractMonths;
   const recurringMonthly = rawRecurringMonthlyPrice(option);
   const annualFeeMonthly = option.annualFee / 12;
   const upfrontFees = option.enrollmentFee + option.additionalFees;
-  const upfrontFeesMonthly = upfrontFees / contractMonths;
-  const recurringFormula = option.billingFrequency === "weekly" ? `$${option.price.toFixed(2)} × 52 ÷ 12`
-    : option.billingFrequency === "biweekly" ? `$${option.price.toFixed(2)} × 26 ÷ 12`
-      : option.billingFrequency === "quarterly" ? `$${option.price.toFixed(2)} ÷ 3`
-        : option.billingFrequency === "semiannual" ? `$${option.price.toFixed(2)} ÷ 6`
-          : option.billingFrequency === "annual" ? `$${option.price.toFixed(2)} ÷ 12`
-            : option.billingFrequency === "custom" ? `$${option.price.toFixed(2)} ÷ ${intervalMonths.toFixed(2)} months`
-              : `$${option.price.toFixed(2)}`;
+  const upfrontFeesMonthly = upfrontFees / upfrontAmortizationMonths;
+  const recurringFormula = option.billingFrequency === "weekly" ? `$${option.price.toFixed(2)} × 52 weeks ÷ 12 months`
+    : option.billingFrequency === "biweekly" ? `$${option.price.toFixed(2)} × 26 billing periods ÷ 12 months`
+      : option.billingFrequency === "quarterly" ? `$${option.price.toFixed(2)} ÷ 3 months`
+        : option.billingFrequency === "semiannual" ? `$${option.price.toFixed(2)} ÷ 6 months`
+          : option.billingFrequency === "annual" ? `$${option.price.toFixed(2)} ÷ 12 months`
+            : option.billingFrequency === "custom" && option.billingIntervalUnit === "days" ? `$${option.price.toFixed(2)} × 365.25 days ÷ (${option.billingInterval} days × 12 months)`
+              : option.billingFrequency === "custom" && option.billingIntervalUnit === "weeks" ? `$${option.price.toFixed(2)} × 52 weeks ÷ (${option.billingInterval} weeks × 12 months)`
+                : option.billingFrequency === "custom" ? `$${option.price.toFixed(2)} ÷ ${option.billingInterval} months`
+              : `$${option.price.toFixed(2)} per month`;
+  const contractMonthsFormula = isMonthToMonth
+    ? "12 months (first-year average)"
+    : option.contractLengthUnit === "days"
+    ? `(${option.contractLength} days × 12 months ÷ 365.25 days)`
+    : option.contractLengthUnit === "weeks"
+      ? `(${option.contractLength} weeks × 12 months ÷ 52 weeks)`
+      : option.contractLengthUnit === "years"
+        ? `(${option.contractLength} years × 12 months per year)`
+        : `${option.contractLength} ${option.contractLength === 1 ? "month" : "months"}`;
   return {
     recurringMonthly,
     recurringFormula,
@@ -118,6 +131,8 @@ export function membershipMonthlyBreakdown(option: MembershipOption) {
     upfrontFees,
     upfrontFeesMonthly,
     contractMonths,
+    upfrontAmortizationMonths,
+    contractMonthsFormula,
     averageMonthly: Math.round((recurringMonthly + annualFeeMonthly + upfrontFeesMonthly) * 100) / 100,
   };
 }

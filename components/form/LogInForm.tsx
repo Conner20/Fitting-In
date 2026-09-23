@@ -29,10 +29,12 @@ const LogInForm = ({ defaultCallbackUrl = "/" }: { defaultCallbackUrl?: string }
     const dayPassGymId = callbackUrl.match(/^\/day-pass\/([^/?#]+)/)?.[1] || "";
     const membershipGymId = callbackUrl.match(/^\/membership\/([^/?#]+)/)?.[1] || "";
     const membershipOptionId = membershipGymId ? new URL(callbackUrl, "http://local").searchParams.get("optionId") || "" : "";
+    const dayPassOptionId = dayPassGymId ? new URL(callbackUrl, "http://local").searchParams.get("optionId") || "" : "";
     const gymInviteToken = callbackUrl.match(/^\/gym-invite\/([^/?#]+)/)?.[1] || "";
     const purchaseGymId = dayPassGymId || membershipGymId;
     const purchaseIntent = membershipGymId ? "membership" : "day-pass";
-    const signUpHref = gymInviteToken ? `/sign-up?invite=${encodeURIComponent(decodeURIComponent(gymInviteToken))}` : purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? `&intent=membership${membershipOptionId ? `&optionId=${encodeURIComponent(membershipOptionId)}` : ""}` : ""}` : "/sign-up";
+    const purchaseOptionId = membershipOptionId || dayPassOptionId;
+    const signUpHref = gymInviteToken ? `/sign-up?invite=${encodeURIComponent(decodeURIComponent(gymInviteToken))}` : purchaseGymId ? `/sign-up?gymId=${encodeURIComponent(purchaseGymId)}${membershipGymId ? "&intent=membership" : ""}${purchaseOptionId ? `&optionId=${encodeURIComponent(purchaseOptionId)}` : ""}` : "/sign-up";
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showResendPrompt, setShowResendPrompt] = useState(false);
     const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");

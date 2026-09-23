@@ -121,6 +121,7 @@ model Gym {
   dayPassPrice      Float?
   dayPassDetails    String?
   dayPassUrl        String?
+  dayPassOptions    Json           @default("[]")
   membershipPrice   Float?
   membershipDetails String?
   membershipOptions Json           @default("[]")

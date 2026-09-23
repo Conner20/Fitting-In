@@ -115,6 +115,7 @@ export default async function GymInvitePage({ params }: Props) {
         dayPassPrice: gym.dayPassPrice,
         dayPassDetails: gym.dayPassDetails,
         dayPassUrl: gym.dayPassUrl,
+        dayPassOptions: gym.dayPassOptions,
         membershipPrice: gym.membershipPrice,
         membershipDetails: gym.membershipDetails,
         membershipOptions: gym.membershipOptions,

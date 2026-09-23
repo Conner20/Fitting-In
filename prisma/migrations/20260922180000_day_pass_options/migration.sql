@@ -1,0 +1,2 @@
+ALTER TABLE "Gym"
+ADD COLUMN "dayPassOptions" JSONB NOT NULL DEFAULT '[]';

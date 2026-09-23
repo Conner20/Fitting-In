@@ -1034,6 +1034,39 @@ main>section>aside:first-child .scrollbar-slim>article:first-child{margin-top:2p
   }
 }
 
+/* Option removal controls must stay truly circular even when responsive
+   form-button rules increase touch-target dimensions. */
+html body button.listing-option-delete-button,
+html body button.listing-option-delete-button:hover,
+html body button.listing-option-delete-button:active,
+html body button.listing-option-delete-button:focus,
+html body button.listing-option-delete-button:focus-visible {
+  box-sizing: border-box !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  flex: 0 0 34px !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  place-items: center !important;
+}
+
+html body button.listing-option-delete-button[data-confirming="true"],
+html body button.listing-option-delete-button[data-confirming="true"]:hover,
+html body button.listing-option-delete-button[data-confirming="true"]:active,
+html body button.listing-option-delete-button[data-confirming="true"]:focus,
+html body button.listing-option-delete-button[data-confirming="true"]:focus-visible {
+  border-color: #111411 !important;
+  background: #e66b6b !important;
+  color: #111411 !important;
+  -webkit-text-fill-color: #111411 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 .gym-owner-back-button:hover {
   border-color: #fff !important;
   color: #fff !important;
@@ -3218,6 +3251,13 @@ html body .gym-discovery-page .landing-auth-signup:focus-visible {
     border-color: #fff !important;
     background: #fff !important;
     color: #111411 !important;
+    transform: none !important;
+    translate: none !important;
+  }
+
+  html body button.day-pass-edit-button:hover {
+    border-color: #fff !important;
+    color: #fff !important;
     transform: none !important;
     translate: none !important;
   }

@@ -36,6 +36,12 @@ import {
   lowestMembershipOption,
   membershipMonthlyBreakdown,
 } from "@/lib/memberships";
+import {
+  DayPassOption,
+  cleanDayPassOptions,
+  dayPassDurationLabel,
+  lowestDayPassOption,
+} from "@/lib/day-passes";
 import ProfileMenu from "@/components/ProfileMenu";
 export type LandingGym = {
   id: string;
@@ -58,6 +64,7 @@ export type LandingGym = {
   dayPassPrice?: number | null;
   dayPassDetails?: string | null;
   dayPassUrl?: string | null;
+  dayPassOptions?: DayPassOption[] | unknown;
   membershipPrice?: number | null;
   membershipDetails?: string | null;
   membershipOptions?: MembershipOption[] | unknown;
@@ -115,6 +122,15 @@ const GROUPS = {
 };
 const money = (n: number) =>
     `$${n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`,
+  dayPassOptionsFor = (g: LandingGym) => {
+    const options = cleanDayPassOptions(g.dayPassOptions);
+    return options.length
+      ? options
+      : g.dayPassPrice != null
+        ? [{ id: "legacy-day-pass", price: g.dayPassPrice, durationDays: Math.max(1, Number(g.dayPassDetails) || 1), purchaseUrl: g.dayPassUrl?.trim() || g.site?.trim() || "", access: g.amenities }]
+        : [];
+  },
+  dayPassChoice = (g: LandingGym) => lowestDayPassOption(dayPassOptionsFor(g)),
   membershipOptionsFor = (g: LandingGym) =>
     cleanMembershipOptions(g.membershipOptions),
   membershipChoice = (g: LandingGym) =>
@@ -124,7 +140,7 @@ const money = (n: number) =>
       ? membershipChoice(g)
         ? effectiveMonthlyPrice(membershipChoice(g)!)
         : (g.membershipPrice ?? 0)
-      : (g.dayPassPrice ?? 0),
+      : (dayPassChoice(g)?.price ?? g.dayPassPrice ?? 0),
   costText = (g: LandingGym, mode: PricingMode = "dayPass") =>
     cost(g, mode)
       ? money(cost(g, mode))
@@ -803,8 +819,10 @@ export default function GymDiscoveryLanding({
     setCompare(next);
     setSelected(remove ? (next.at(-1) ?? null) : g.id);
   };
-  const claim = (g: LandingGym) => {
-    const rawDestination = g.dayPassUrl?.trim() || g.site?.trim() || "",
+  const claim = (g: LandingGym, option?: DayPassOption) => {
+    const selectedOption = option ?? (dayPassOptionsFor(g).length === 1 ? dayPassOptionsFor(g)[0] : null);
+    if (dayPassOptionsFor(g).length > 1 && !selectedOption) return;
+    const rawDestination = selectedOption?.purchaseUrl?.trim() || dayPassOptionsFor(g)[0]?.purchaseUrl?.trim() || g.dayPassUrl?.trim() || g.site?.trim() || "",
       destination = rawDestination
         ? /^https?:\/\//i.test(rawDestination)
           ? rawDestination
@@ -813,7 +831,7 @@ export default function GymDiscoveryLanding({
       clickedAt = new Date().toISOString();
     track("DAY_PASS_CLICKED", {
       gymId: g.id,
-      metadata: { price: cost(g, "dayPass"), url: destination, clickedAt },
+      metadata: { optionId: selectedOption?.id, durationDays: selectedOption?.durationDays, price: selectedOption?.price ?? cost(g, "dayPass"), url: destination, clickedAt },
     });
     localStorage.setItem("fittingin_day_pass_clicked_at", clickedAt);
     if (signedIn) {
@@ -835,7 +853,7 @@ export default function GymDiscoveryLanding({
       }
       return;
     }
-    setDayPassPrompt({ gym: g, intent: "dayPass" });
+    setDayPassPrompt({ gym: g, intent: "dayPass", optionId: selectedOption?.id });
   };
   const chosen = gyms.find((g) => g.id === selected);
   const panels = compare.length
@@ -1542,7 +1560,7 @@ export default function GymDiscoveryLanding({
               .
             </p>
             <Link
-              href={`/sign-up?gymId=${encodeURIComponent(dayPassPrompt.gym.id)}${dayPassPrompt.intent === "membership" ? `&intent=membership&optionId=${encodeURIComponent(dayPassPrompt.optionId || "")}` : ""}`}
+              href={`/sign-up?gymId=${encodeURIComponent(dayPassPrompt.gym.id)}${dayPassPrompt.intent === "membership" ? "&intent=membership" : ""}${dayPassPrompt.optionId ? `&optionId=${encodeURIComponent(dayPassPrompt.optionId)}` : ""}`}
               className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#22c55e] px-6 py-3 font-black text-black transition hover:bg-[#19a94e]"
             >
               Sign up
@@ -1551,7 +1569,7 @@ export default function GymDiscoveryLanding({
               Already have an account?{" "}
               <Link
                 className="font-bold text-[#22c55e] hover:underline"
-                href={`/log-in?callbackUrl=${encodeURIComponent(`/${dayPassPrompt.intent === "membership" ? "membership" : "day-pass"}/${dayPassPrompt.gym.id}${dayPassPrompt.intent === "membership" && dayPassPrompt.optionId ? `?optionId=${encodeURIComponent(dayPassPrompt.optionId)}` : ""}`)}`}
+                href={`/log-in?callbackUrl=${encodeURIComponent(`/${dayPassPrompt.intent === "membership" ? "membership" : "day-pass"}/${dayPassPrompt.gym.id}${dayPassPrompt.optionId ? `?optionId=${encodeURIComponent(dayPassPrompt.optionId)}` : ""}`)}`}
               >
                 Log in
               </Link>
@@ -2133,7 +2151,7 @@ function ProfileTray({
   defaultWidth: number;
   resize: (id: string, width: number) => void;
   closeGym: (gym: LandingGym) => void;
-  pass: (gym: LandingGym) => void;
+  pass: (gym: LandingGym, option?: DayPassOption) => void;
   website: (gym: LandingGym) => void;
   directions: (gym: LandingGym) => void;
   favorites: string[];
@@ -2205,7 +2223,7 @@ function ProfileTray({
             gym={gym}
             primary={index === 0}
             close={() => closeGym(gym)}
-            pass={() => pass(gym)}
+            pass={(option) => pass(gym, option)}
             onWebsite={() => website(gym)}
             onDirections={() => directions(gym)}
             favorited={favorites.includes(gym.id)}
@@ -2290,7 +2308,7 @@ export function DetailPanel({
   pricingMode?: PricingMode;
   primary: boolean;
   close: () => void;
-  pass: () => void;
+  pass: (option?: DayPassOption) => void;
   hideActions?: boolean;
   onWebsite?: () => void;
   onDirections?: () => void;
@@ -2301,6 +2319,10 @@ export function DetailPanel({
   const [photo, setPhoto] = useState(0),
     [expanded, setExpanded] = useState(false),
     [mobileImageControls, setMobileImageControls] = useState(true),
+    [selectedDayPassId, setSelectedDayPassId] = useState<string | null>(() => {
+      const options = dayPassOptionsFor(g);
+      return options.length === 1 ? options[0].id : null;
+    }),
     [selectedMembershipId, setSelectedMembershipId] = useState<string | null>(
       () => {
         const options = membershipOptionsFor(g);
@@ -2315,7 +2337,10 @@ export function DetailPanel({
       Boolean(value) && array.indexOf(value) === index,
   );
   const equipmentItems = equipment(g.equipment);
-  const membershipOptions = membershipOptionsFor(g),
+  const dayPassOptions = dayPassOptionsFor(g),
+    selectedDayPass = dayPassOptions.find((option) => option.id === selectedDayPassId) ?? null,
+    displayedDayPass = selectedDayPass ?? dayPassChoice(g),
+    membershipOptions = membershipOptionsFor(g),
     selectedMembership =
       membershipOptions.find((option) => option.id === selectedMembershipId) ??
       null;
@@ -2472,8 +2497,14 @@ export function DetailPanel({
             </div>
             <div className="mt-1 flex items-baseline justify-between gap-3">
               <p>
-                <b className="text-xl">{costText(g, pricingMode)}</b>
-                {cost(g, pricingMode) > 0 && (
+                <b className="text-xl">
+                  {pricingMode === "dayPass" && displayedDayPass
+                    ? displayedDayPass.price > 0
+                      ? money(displayedDayPass.price)
+                      : "Free"
+                    : costText(g, pricingMode)}
+                </b>
+                {(pricingMode === "dayPass" ? (displayedDayPass?.price ?? cost(g, pricingMode)) : cost(g, pricingMode)) > 0 && (
                   <span className="text-sm text-white/50">
                     {" "}
                     {pricingMode === "membership" ? "/ month" : "/ day pass"}
@@ -2483,7 +2514,9 @@ export function DetailPanel({
               <span className="shrink-0 text-right text-sm font-semibold text-white/50">
                 {pricingMode === "membership"
                   ? "Monthly membership"
-                  : dayPassAccess(g.dayPassDetails)}
+                  : displayedDayPass
+                    ? dayPassDurationLabel(displayedDayPass.durationDays)
+                    : dayPassAccess(g.dayPassDetails)}
               </span>
             </div>
           </div>
@@ -2537,6 +2570,34 @@ export function DetailPanel({
               </a>
             )}
           </div>
+          {pricingMode === "dayPass" && dayPassOptions.length > 0 && (
+            <section>
+              <h4 className="font-black">Choose a day pass</h4>
+              <div className="mt-3 space-y-2">
+                {dayPassOptions.map((option) => {
+                  const selected = selectedDayPass?.id === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSelectedDayPassId(current => current === option.id ? null : option.id)}
+                      className={`block w-full rounded-lg border px-3 py-3 text-left transition ${selected ? "border-white ring-1 ring-white" : "border-white/[.08] hover:border-white/15"}`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${selected ? "border-[#22c55e] bg-[#22c55e] text-black" : "border-white/30"}`}>
+                          {selected && (
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1 font-black">{dayPassDurationLabel(option.durationDays)}</span>
+                        <b className="shrink-0 text-[#22c55e]">{money(option.price)}</b>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           {pricingMode === "membership" && (
             <section>
               <div className="flex items-center justify-between gap-3">
@@ -2548,6 +2609,11 @@ export function DetailPanel({
                     const selected = selectedMembership?.id === option.id,
                       open = expandedMembershipIds.has(option.id),
                       breakdown = membershipMonthlyBreakdown(option),
+                      monthlyTerms = [
+                        breakdown.recurringMonthly,
+                        breakdown.annualFeeMonthly,
+                        breakdown.upfrontFeesMonthly,
+                      ].filter((value) => Number(value.toFixed(2)) > 0),
                       upfrontFormula = [
                         option.enrollmentFee,
                         option.additionalFees,
@@ -2681,22 +2747,24 @@ export function DetailPanel({
                                 <ChevronDown className="h-3.5 w-3.5 transition group-open/breakdown:rotate-180" />
                               </summary>
                               <div className="mt-2 space-y-3 px-1 py-2 [font-family:var(--font-anonymous-pro)] text-xs leading-6 tracking-wide text-white/75">
-                                <div>
-                                  <span className="text-white/40">
-                                    Recurring price
-                                  </span>
-                                  <p>
-                                    {breakdown.recurringFormula} = $
-                                    {breakdown.recurringMonthly.toFixed(2)}/mo
-                                  </p>
-                                </div>
+                                {breakdown.recurringMonthly > 0 && (
+                                  <div>
+                                    <span className="text-white/40">
+                                      Recurring price
+                                    </span>
+                                    <p>
+                                      {breakdown.recurringFormula} = $
+                                      {breakdown.recurringMonthly.toFixed(2)}/mo
+                                    </p>
+                                  </div>
+                                )}
                                 {option.annualFee > 0 && (
                                   <div>
                                     <span className="text-white/40">
                                       Annual fee
                                     </span>
                                     <p>
-                                      ${option.annualFee.toFixed(2)} ÷ 12 = $
+                                      ${option.annualFee.toFixed(2)} ÷ 12 months = $
                                       {breakdown.annualFeeMonthly.toFixed(2)}/mo
                                     </p>
                                   </div>
@@ -2704,29 +2772,26 @@ export function DetailPanel({
                                 {breakdown.upfrontFees > 0 && (
                                   <div>
                                     <span className="text-white/40">
-                                      Upfront fees
+                                      One-time fees
                                     </span>
                                     <p>
                                       {upfrontFormula} ÷{" "}
-                                      {Math.max(
-                                        1,
-                                        Math.round(breakdown.contractMonths),
-                                      )}{" "}
-                                      months = $
+                                      {breakdown.contractMonthsFormula} = $
                                       {breakdown.upfrontFeesMonthly.toFixed(2)}
                                       /mo
                                     </p>
                                   </div>
                                 )}
-                                <div className="border-t border-white/10 pt-2 font-bold text-white">
-                                  <p>
-                                    ${breakdown.recurringMonthly.toFixed(2)} + $
-                                    {breakdown.annualFeeMonthly.toFixed(2)} + $
-                                    {breakdown.upfrontFeesMonthly.toFixed(2)} =
-                                    ${breakdown.averageMonthly.toFixed(2)}/mo
-                                    avg
-                                  </p>
-                                </div>
+                                {monthlyTerms.length > 0 && (
+                                  <div className="border-t border-white/10 pt-2 font-bold text-white">
+                                    <p>
+                                      {monthlyTerms
+                                        .map((value) => `$${value.toFixed(2)}`)
+                                        .join(" + ")} = $
+                                      {breakdown.averageMonthly.toFixed(2)}/mo avg
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </details>
                           </div>
@@ -2752,7 +2817,11 @@ export function DetailPanel({
             <Disclosure title="Amenities">
               <Grid
                 items={g.amenities}
-                highlightedItems={selectedMembership?.access ?? []}
+                highlightedItems={
+                  pricingMode === "membership"
+                    ? (selectedMembership?.access ?? [])
+                    : (selectedDayPass?.access ?? [])
+                }
               />
             </Disclosure>
           )}
@@ -2773,10 +2842,11 @@ export function DetailPanel({
           <button
             type="button"
             disabled={
-              pricingMode === "membership" &&
-              (!selectedMembership || !membershipDestination)
+              pricingMode === "membership"
+                ? !selectedMembership || !membershipDestination
+                : !selectedDayPass || !(selectedDayPass.purchaseUrl || dayPassOptions[0]?.purchaseUrl || g.dayPassUrl || g.site)
             }
-            onClick={pricingMode === "membership" ? openMembership : pass}
+            onClick={pricingMode === "membership" ? openMembership : () => pass(selectedDayPass ?? undefined)}
             className="mobile-claim-button flex-1 rounded-full bg-[#22c55e] px-3 py-3 text-xs font-black text-black transition hover:bg-[#19a94e] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pricingMode === "membership"
