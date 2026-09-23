@@ -20,7 +20,7 @@ const empty: FormState = { name: "", address: "", city: "", state: "", country: 
 type AddressSuggestion = { id: string; label: string; lat: number; lng: number; city?: string; state?: string; country?: string };
 const lines = (value: string) => value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
 const AMENITY_OPTIONS = ["Sauna", "Steam room", "Pool", "Showers", "Locker rooms", "Basketball court", "Turf area", "Group classes", "Personal training", "Childcare", "Parking", "24/7 access", "Women's-only area"];
-const EQUIPMENT_OPTIONS = ["Squat rack", "Power rack", "Smith machine", "Bench press", "Deadlift platform", "Olympic lifting platform", "Hack squat", "Pendulum squat", "Belt squat", "Leg press", "Cable station", "Pec deck", "Hip thrust machine", "Dumbbells 100+ lb", "Dumbbells 120+ lb", "Dumbbells 150+ lb"];
+const EQUIPMENT_OPTIONS = ["Squat rack", "Power rack", "Smith machine", "Bench press", "Deadlift platform", "Olympic lifting platform", "Hack squat", "Pendulum squat", "Belt squat", "Leg press", "Cable station", "Pec deck", "Hip thrust machine", "Dumbbells 120+ lb"];
 const GYM_TYPE_OPTIONS = ["Open", "Personal training gym", "Group training gym", "Specialty gym/studio"];
 const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 10);

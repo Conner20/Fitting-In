@@ -100,9 +100,7 @@ const GROUPS = {
     "Cable station",
     "Pec deck",
     "Hip thrust machine",
-    "Dumbbells 100+ lb",
     "Dumbbells 120+ lb",
-    "Dumbbells 150+ lb",
   ],
   Amenities: [
     "Sauna",
@@ -180,6 +178,16 @@ const dayPassAccess = (value?: string | null) => {
   const labels = ["", "Single", "Two", "Three", "Four", "Five", "Six", "Seven"];
   return `${labels[days] || days}-day access`;
 };
+const gymHoursForDisplay = (value: string) =>
+  value.replace(
+    /\b([01]?\d|2[0-3]):([0-5]\d)\b(?!\s*(?:AM|PM))/gi,
+    (_, hourText: string, minute: string) => {
+      const hour = Number(hourText);
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minute} ${suffix}`;
+    },
+  );
 const blockMobileGhostTap = () => {
   const previous = document.getElementById("landing-location-touch-shield");
   previous?.remove();
@@ -2531,7 +2539,7 @@ export function DetailPanel({
             </p>
             <p className="flex gap-3">
               <Clock3 className="h-5 w-5 shrink-0 text-[#22c55e]" />
-              <span className="whitespace-pre-line">{g.hours}</span>
+              <span className="whitespace-pre-line">{gymHoursForDisplay(g.hours)}</span>
             </p>
             {g.phone && (
               <a
