@@ -311,6 +311,35 @@ export default function GymDiscoveryLanding({
     return () => media.removeEventListener("change", update);
   }, []);
   useEffect(() => {
+    if (!filterOpen) return;
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const root = document.documentElement;
+    const previous = {
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      rootOverflow: root.style.overflow,
+    };
+
+    root.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+
+    return () => {
+      root.style.overflow = previous.rootOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [filterOpen]);
+  useEffect(() => {
     let cancelled = false,
       recorded = false;
     if (
@@ -1062,13 +1091,12 @@ export default function GymDiscoveryLanding({
               setFilterOpen(true);
               track("FILTER_OPENED");
             }}
-            className="filter-pill landing-toolbar-button landing-action-filters"
+            className={`filter-pill landing-toolbar-button landing-action-filters ${filters.length > 0 || radius < maxDistance || limit < maxPrice ? "!border-[#22c55e] !bg-[#22c55e] !text-black" : ""}`}
           >
             <SlidersHorizontal />
             <span className="landing-action-label landing-filters-label">
               Filters
             </span>
-            {filters.length > 0 && <b>{filters.length}</b>}
           </button>
           <span className="landing-toolbar-description whitespace-nowrap text-xs text-zinc-500">
             Distance · Price · Gym type · Equipment · Amenities
@@ -1458,6 +1486,7 @@ export default function GymDiscoveryLanding({
           limit={limit}
           maxRadius={maxDistance}
           maxLimit={maxPrice}
+          resultCount={gyms.length}
           setRadius={(n) => {
             setRadius(n);
             track("FILTER_CHANGED", {
@@ -2861,6 +2890,7 @@ function Filters({
   limit,
   maxRadius,
   maxLimit,
+  resultCount,
   setRadius,
   setLimit,
   filters,
@@ -2873,6 +2903,7 @@ function Filters({
   limit: number;
   maxRadius: number;
   maxLimit: number;
+  resultCount: number;
   setRadius: (n: number) => void;
   setLimit: (n: number) => void;
   filters: string[];
@@ -2921,7 +2952,7 @@ function Filters({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => toggle(f)}
-                    className={`landing-filter-option box-border inline-flex min-h-9 items-center rounded-full border px-3 py-2 text-sm font-medium leading-none ${selected ? "border-[#22c55e] bg-[#22c55e] text-black" : "border-white/15 bg-transparent text-white"}`}
+                    className={`landing-filter-option box-border inline-flex h-9 min-h-9 shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-2 text-sm font-medium leading-none ${selected ? "border-[#22c55e] bg-[#22c55e] text-black" : "border-white/15 bg-transparent text-white"}`}
                   >
                     {f}
                   </button>
@@ -2931,13 +2962,20 @@ function Filters({
           </section>
         ))}
       </div>
-      <div className="flex justify-between border-t border-white/10 p-4 text-white">
-        <button onClick={clear}>Clear all</button>
+      <div className="sticky bottom-0 z-20 flex items-center justify-between border-t border-white/10 bg-[#111411] p-4 text-white">
         <button
-          onClick={close}
-          className="filter-show-results rounded-full bg-[#22c55e] px-6 py-3 font-black text-black"
+          type="button"
+          onClick={clear}
+          className="filter-clear-all inline-flex h-11 items-center justify-center rounded-full border border-white px-6 py-0 font-black text-white transition-colors"
         >
-          Show results
+          Clear all
+        </button>
+        <button
+          type="button"
+          onClick={close}
+          className="filter-show-results h-11 rounded-full bg-[#22c55e] px-6 py-0 font-black text-black"
+        >
+          Show {resultCount} {resultCount === 1 ? "result" : "results"}
         </button>
       </div>
     </Shell>

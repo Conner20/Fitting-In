@@ -1456,16 +1456,15 @@ main > header form button[type="button"][class*="bg-[#22c55e]"]:hover {
     opacity: 1 !important;
   }
 
+  .filter-show-results,
   .filter-show-results:where(:not(:only-child)) {
-    display: none !important;
-  }
-
-  div:has(> .filter-show-results) {
+    display: inline-flex !important;
+    align-items: center !important;
     justify-content: center !important;
   }
 
-  .filter-show-results {
-    display: none !important;
+  div:has(> .filter-show-results) {
+    justify-content: space-between !important;
   }
 
   .mobile-signup-overlay {
@@ -3214,6 +3213,33 @@ html body .gym-discovery-page .landing-auth-signup:focus-visible {
 
 /* Invitation status screens: desktop gets the standard inverse hover while
    phones and touch devices retain the green action through every tap state. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  html body .filter-clear-all:hover {
+    border-color: #fff !important;
+    background: #fff !important;
+    color: #111411 !important;
+    transform: none !important;
+    translate: none !important;
+  }
+}
+
+/* Filter choices keep identical typography and dimensions in both states. */
+html body .gym-discovery-page button.landing-filter-option,
+html body .gym-discovery-page button.landing-filter-option[aria-pressed="true"],
+html body .gym-discovery-page button.landing-filter-option[aria-pressed="false"] {
+  box-sizing: border-box !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  flex: 0 0 auto !important;
+  border-width: 1px !important;
+  padding: .5rem .75rem !important;
+  font-size: .875rem !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: normal !important;
+  white-space: nowrap !important;
+}
+
 @media (hover: hover) and (pointer: fine) {
   html body a.gym-invite-explore-action:hover {
     background: #111411 !important;
