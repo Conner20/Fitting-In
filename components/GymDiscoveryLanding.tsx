@@ -2288,7 +2288,7 @@ function ProfileResizeHandle({
   );
 }
 const equipment = (items: string[]) => {
-  const clean = items.filter((x) => x && !/^not listed$/i.test(x)),
+  const clean = items.filter((x) => x && !/^(?:not listed|other)$/i.test(x)),
     db = clean.filter((x) => /dumbbell/i.test(x) && /\d+/.test(x)),
     weights = db.map((x) => Number(x.match(/\d+/)?.[0] || 0));
   return [
@@ -2345,6 +2345,9 @@ export function DetailPanel({
       Boolean(value) && array.indexOf(value) === index,
   );
   const equipmentItems = equipment(g.equipment);
+  const amenityItems = g.amenities.filter(
+    (item) => item && !/^(?:not listed|other)$/i.test(item),
+  );
   const dayPassOptions = dayPassOptionsFor(g),
     selectedDayPass = dayPassOptions.find((option) => option.id === selectedDayPassId) ?? null,
     displayedDayPass = selectedDayPass ?? dayPassChoice(g),
@@ -2733,7 +2736,7 @@ export function DetailPanel({
                             <div className="mt-3 text-xs">
                               <p className="text-white/45">Included access</p>
                               <p className="mt-1 text-white">
-                                {option.access.join(", ")}
+                                {option.access.filter((item) => !/^other$/i.test(item)).join(", ")}
                               </p>
                             </div>
                             {option.notes && (
@@ -2820,11 +2823,10 @@ export function DetailPanel({
               <Grid items={equipmentItems} />
             </Disclosure>
           )}
-          {g.amenities.filter((item) => item && !/^not listed$/i.test(item))
-            .length > 0 && (
+          {amenityItems.length > 0 && (
             <Disclosure title="Amenities">
               <Grid
-                items={g.amenities}
+                items={amenityItems}
                 highlightedItems={
                   pricingMode === "membership"
                     ? (selectedMembership?.access ?? [])
