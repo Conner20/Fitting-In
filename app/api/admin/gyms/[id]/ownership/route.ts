@@ -57,7 +57,7 @@ export async function PATCH(req: Request, { params }: Context) {
         await tx.gymInvite.deleteMany({ where: { gymId, id: { not: latestInvite.id } } });
         await tx.gymInvite.update({ where: { id: latestInvite.id }, data: { usedAt: null, proposedData: Prisma.JsonNull, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14) } });
       }
-      await tx.gym.update({ where: { id: gymId }, data: { isVerified: false, verifiedAt: null, verifiedByEmail: null } });
+      await tx.gym.update({ where: { id: gymId }, data: { isVerified: false, verifiedAt: null, verifiedByEmail: null, verificationRequired: false, verificationSections: [], verificationBaseline: Prisma.JsonNull } });
       for (const owner of owners) await demoteIfUnassigned(tx, owner.userId);
     });
     return NextResponse.json({ message: "Gym claim removed. The listing can now be claimed and verified again." });
@@ -80,7 +80,7 @@ export async function PATCH(req: Request, { params }: Context) {
       for (const owner of oldOwners) if (owner.userId !== userId) await demoteIfUnassigned(tx, owner.userId);
       await tx.user.update({ where: { id: userId }, data: { role: "GYM" } });
       await tx.gymAccess.create({ data: { gymId, userId, assignedByEmail: assigningAdminEmail } });
-      await tx.gym.update({ where: { id: gymId }, data: { isVerified: true, verifiedAt: new Date(), verifiedByEmail: user.email } });
+      await tx.gym.update({ where: { id: gymId }, data: { isVerified: true, verifiedAt: new Date(), verifiedByEmail: user.email, verificationRequired: false, verificationSections: [], verificationBaseline: Prisma.JsonNull } });
       await tx.gymClaim.upsert({
         where: { gymId_claimantId: { gymId, claimantId: userId } },
         create: { gymId, claimantId: userId, status: "APPROVED", businessRole: "Gym representative", evidence: "Assigned by an administrator." },

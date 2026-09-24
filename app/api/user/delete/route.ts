@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { getUserAdminStatus, hasAdminAccessByEmail, hasSuperAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
 import { compare } from "bcrypt";
+import { Prisma } from "@prisma/client";
 
 async function deleteUserAndRelations(userId: string) {
     await db.$transaction(async (tx) => {
@@ -19,7 +20,7 @@ async function deleteUserAndRelations(userId: string) {
         for (const { gymId } of ownedGyms) {
             const remainingOwners = await tx.gymAccess.count({ where: { gymId } });
             if (remainingOwners > 0) continue;
-            await tx.gym.update({ where: { id: gymId }, data: { isVerified: false, verifiedAt: null, verifiedByEmail: null } });
+            await tx.gym.update({ where: { id: gymId }, data: { isVerified: false, verifiedAt: null, verifiedByEmail: null, verificationRequired: false, verificationSections: [], verificationBaseline: Prisma.JsonNull } });
             await tx.gymClaim.deleteMany({ where: { gymId } });
             await tx.gymInvite.deleteMany({ where: { gymId } });
         }

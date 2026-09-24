@@ -109,6 +109,9 @@ model Gym {
   isVerified        Boolean        @default(false)
   verifiedAt        DateTime?
   verifiedByEmail   String?
+  verificationRequired Boolean      @default(false)
+  verificationSections String[]     @default([])
+  verificationBaseline Json?
   isPublished       Boolean        @default(true)
   gymType           String?
   city              String?

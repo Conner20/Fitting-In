@@ -17,9 +17,9 @@ export function gymSlug(name: string) {
 export async function userCanEditGym(userId: string, gymId: string) {
     const access = await db.gymAccess.findUnique({
         where: { gymId_userId: { gymId, userId } },
-        select: { id: true, gym: { select: { isVerified: true } }, user: { select: { role: true } } },
+        select: { id: true, user: { select: { role: true } } },
     });
-    return Boolean(access?.gym.isVerified && access.user.role === "GYM");
+    return Boolean(access && access.user.role === "GYM");
 }
 
 export function cleanGymInput(body: Record<string, unknown>) {

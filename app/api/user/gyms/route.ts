@@ -8,7 +8,7 @@ export async function GET() {
     if (!session?.user?.email) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     const user = await db.user.findUnique({
         where: { email: session.user.email.toLowerCase() },
-        select: { gymAccesses: { where: { gym: { isVerified: true } }, include: { gym: true }, orderBy: { createdAt: "asc" } } },
+        select: { gymAccesses: { include: { gym: true }, orderBy: { createdAt: "asc" } } },
     });
     if (!user) return NextResponse.json({ message: "User not found." }, { status: 404 });
     return NextResponse.json({ gyms: user.gymAccesses.map(({ gym }) => gym) });

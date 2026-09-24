@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { cleanGymInput, validateCompleteGymInput } from "@/lib/gyms";
 
 type Context = { params: Promise<{ id: string }> };
@@ -41,7 +41,7 @@ export async function PATCH(req: Request, { params }: Context) {
             });
             const proposedData = reviewedGymData ?? (claim.proposedData && typeof claim.proposedData === "object" && !Array.isArray(claim.proposedData) ? claim.proposedData as Prisma.GymUpdateInput : {});
             await tx.user.update({ where: { id: claim.claimantId }, data: { role: "GYM" } });
-            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true, verifiedAt: new Date(), verifiedByEmail: claim.claimant.email } });
+            await tx.gym.update({ where: { id: claim.gymId }, data: { ...proposedData, isVerified: true, verifiedAt: new Date(), verifiedByEmail: claim.claimant.email, verificationRequired: false, verificationSections: [], verificationBaseline: Prisma.JsonNull } });
         }
         return tx.gymClaim.update({
             where: { id },

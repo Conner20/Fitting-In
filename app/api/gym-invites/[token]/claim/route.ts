@@ -5,6 +5,7 @@ import { cleanGymInput, validateCompleteGymInput } from "@/lib/gyms";
 import { PENDING_GYM_INVITE_COOKIE } from "@/lib/pending-gym-invite";
 import { sha256Hex } from "@/lib/token";
 import { db } from "@/prisma/client";
+import { Prisma } from "@prisma/client";
 
 type Context = { params: Promise<{ token: string }> };
 
@@ -36,7 +37,7 @@ export async function PATCH(req: Request, { params }: Context) {
             const otherOwner = await tx.gymAccess.findFirst({ where: { gymId: invite.gymId, userId: { not: user.id } }, select: { id: true } });
             if (otherOwner) throw new Error("GYM_ALREADY_CLAIMED");
 
-            await tx.gym.update({ where: { id: invite.gymId }, data: { ...editable, isVerified: true, verifiedAt: claimedAt, verifiedByEmail: accountEmail } });
+            await tx.gym.update({ where: { id: invite.gymId }, data: { ...editable, isVerified: true, verifiedAt: claimedAt, verifiedByEmail: accountEmail, verificationRequired: false, verificationSections: [], verificationBaseline: Prisma.JsonNull } });
             await tx.user.update({ where: { id: user.id }, data: { role: "GYM" } });
             await tx.gymAccess.upsert({ where: { gymId_userId: { gymId: invite.gymId, userId: user.id } }, create: { gymId: invite.gymId, userId: user.id }, update: {} });
             await tx.gymClaim.upsert({
