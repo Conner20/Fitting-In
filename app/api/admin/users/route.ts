@@ -9,13 +9,14 @@ import { db } from "@/prisma/client";
 export async function GET(request:Request){
   const session=await getServerSession(authOptions);
   if(!session?.user?.email||!(await hasAdminAccessByEmail(session.user.email)))return NextResponse.json({error:"Unauthorized"},{status:401});
-  const query=new URL(request.url).searchParams.get("q")?.trim()||"";
+  const searchParams=new URL(request.url).searchParams;
+  const query=searchParams.get("q")?.trim()||"";
   const where: Prisma.UserWhereInput = {
     emailVerified: { not: null },
     ...(query ? { email: { contains: query, mode: Prisma.QueryMode.insensitive } } : {}),
   };
   const [users,events]=await Promise.all([
-    db.user.findMany({where,take:500,orderBy:{createdAt:"desc"},select:{id:true,email:true,role:true,isAdmin:true,lastLoginAt:true,landingEvents:{select:{createdAt:true},orderBy:{createdAt:"desc"},take:1},gymAccesses:{select:{id:true,gym:{select:{id:true,name:true}}}}}}),
+    db.user.findMany({where,take:500,orderBy:{createdAt:"desc"},select:{id:true,email:true,role:true,isAdmin:true,lastLoginAt:true,deletedAt:true,landingEvents:{select:{createdAt:true},orderBy:{createdAt:"desc"},take:1},gymAccesses:{select:{id:true,gym:{select:{id:true,name:true}}}}}}),
     db.landingEvent.findMany({where:{eventType:{in:["DAY_PASS_CLICKED","DAY_PASS_CLAIM_CONFIRMED","DAY_PASS_GYM_CONFIRMED","DAY_PASS_SIGNUP","MEMBERSHIP_CLICKED","MEMBERSHIP_CLAIM_CONFIRMED","MEMBERSHIP_GYM_CONFIRMED","MEMBERSHIP_SIGNUP"]}},select:{id:true,eventType:true,userId:true,visitorId:true,visitId:true,gymId:true,metadata:true,createdAt:true,gym:{select:{name:true}}},take:100_000}),
   ]);
   const visitorUsers=new Map(events.filter(event=>event.userId).map(event=>[event.visitorId,event.userId!]));
@@ -26,12 +27,27 @@ export async function GET(request:Request){
   for(const event of events){const userId=event.userId||visitorUsers.get(event.visitorId);if(!userId)continue;const totals=activity.get(userId)||{dayPassClicks:0,confirmedDayPasses:0,membershipClicks:0,confirmedMemberships:0};if(event.eventType==="DAY_PASS_CLICKED")totals.dayPassClicks++;if(event.eventType==="MEMBERSHIP_CLICKED")totals.membershipClicks++;activity.set(userId,totals);if(event.gymId&&(event.eventType==="DAY_PASS_CLICKED"||event.eventType==="MEMBERSHIP_CLICKED")){const claimType=event.eventType==="DAY_PASS_CLICKED"?"day-pass":"membership",key=`${claimType}:${event.gymId}`,byUser=claimConfirmations.get(userId)||new Map<string,ClaimConfirmation>();if(!byUser.has(key))byUser.set(key,{gymId:event.gymId,gymName:event.gym?.name||"Deleted gym",claimType,gymConfirmed:false});claimConfirmations.set(userId,byUser)}}
   for(const event of events){const userId=event.userId||visitorUsers.get(event.visitorId);if(!userId)continue;const clickType=event.eventType.startsWith("MEMBERSHIP_")?"MEMBERSHIP_CLICKED":"DAY_PASS_CLICKED",metadata=event.metadata as Record<string,unknown>|null,claimKey=event.eventType.endsWith("_GYM_CONFIRMED")&&typeof metadata?.claimClickId==="string"?metadata.claimClickId:events.filter(click=>click.eventType===clickType&&click.gymId===event.gymId&&(click.userId||visitorUsers.get(click.visitorId))===userId&&click.createdAt<=event.createdAt).sort((a,b)=>b.createdAt.getTime()-a.createdAt.getTime())[0]?.id||event.id;if(["DAY_PASS_CLAIM_CONFIRMED","DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)){const values=confirmedDayPasses.get(userId)||new Set<string>();values.add(claimKey);confirmedDayPasses.set(userId,values)}if(["MEMBERSHIP_CLAIM_CONFIRMED","MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)){const values=confirmedMemberships.get(userId)||new Set<string>();values.add(claimKey);confirmedMemberships.set(userId,values)}if(event.gymId&&(event.eventType==="DAY_PASS_GYM_CONFIRMED"||event.eventType==="MEMBERSHIP_GYM_CONFIRMED")){const claimType=event.eventType==="DAY_PASS_GYM_CONFIRMED"?"day-pass":"membership",confirmation=claimConfirmations.get(userId)?.get(`${claimType}:${event.gymId}`);if(confirmation)confirmation.gymConfirmed=true}}
   for(const [userId,totals] of activity){totals.confirmedDayPasses=confirmedDayPasses.get(userId)?.size||0;totals.confirmedMemberships=confirmedMemberships.get(userId)?.size||0}
-  return NextResponse.json({canManageUsers:await hasSuperAdminAccessByEmail(session.user.email),users:users.filter(user=>user.email?.toLowerCase()!==session.user.email?.toLowerCase()).map(user=>{const latestEvent=user.landingEvents[0]?.createdAt;const lastActiveAt=latestEvent&&(!user.lastLoginAt||latestEvent>user.lastLoginAt)?latestEvent:user.lastLoginAt;return {id:user.id,email:user.email,role:user.role,hasAdminAccess:getUserAdminStatus(user),isConfiguredAdmin:isConfiguredAdminEmail(user.email),gymAccessCount:user.gymAccesses.length,gyms:user.gymAccesses.map(access=>access.gym),claimConfirmations:[...(claimConfirmations.get(user.id)?.values()||[])].sort((a,b)=>a.gymName.localeCompare(b.gymName)||a.claimType.localeCompare(b.claimType)),lastActiveAt:lastActiveAt?.toISOString()||null,...(activity.get(user.id)||{dayPassClicks:0,confirmedDayPasses:0,membershipClicks:0,confirmedMemberships:0})}})});
+  return NextResponse.json({canManageUsers:await hasSuperAdminAccessByEmail(session.user.email),users:users.filter(user=>user.email?.toLowerCase()!==session.user.email?.toLowerCase()).map(user=>{const latestEvent=user.landingEvents[0]?.createdAt;const lastActiveAt=latestEvent&&(!user.lastLoginAt||latestEvent>user.lastLoginAt)?latestEvent:user.lastLoginAt;return {id:user.id,email:user.email,role:user.role,deletedAt:user.deletedAt?.toISOString()||null,hasAdminAccess:!user.deletedAt&&getUserAdminStatus(user),isConfiguredAdmin:isConfiguredAdminEmail(user.email),gymAccessCount:user.gymAccesses.length,gyms:user.gymAccesses.map(access=>access.gym),claimConfirmations:[...(claimConfirmations.get(user.id)?.values()||[])].sort((a,b)=>a.gymName.localeCompare(b.gymName)||a.claimType.localeCompare(b.claimType)),lastActiveAt:lastActiveAt?.toISOString()||null,...(activity.get(user.id)||{dayPassClicks:0,confirmedDayPasses:0,membershipClicks:0,confirmedMemberships:0})}})});
 }
 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   const body = await request.json().catch(() => ({}));
+  if (body.action === "recoverUsers") {
+    if (!session?.user?.email || !(await hasSuperAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Only the superadmin can recover accounts." }, { status: 403 });
+    const userIds: string[] = Array.isArray(body.userIds)
+      ? Array.from(new Set<string>(body.userIds.filter((value: unknown): value is string => typeof value === "string" && value.length > 0))).slice(0, 500)
+      : [];
+    const password = typeof body.password === "string" ? body.password : "";
+    if (!userIds.length || !password) return NextResponse.json({ error: "Select at least one deleted account and enter your admin password." }, { status: 400 });
+    const currentAdmin = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { password: true } });
+    if (!currentAdmin?.password || !(await compare(password, currentAdmin.password))) return NextResponse.json({ error: "The admin password is incorrect." }, { status: 401 });
+    const targets = await db.user.findMany({ where: { id: { in: userIds }, deletedAt: { not: null } }, select: { id: true, password: true } });
+    if (targets.length !== userIds.length) return NextResponse.json({ error: "Only deleted accounts can be recovered." }, { status: 409 });
+    if (targets.some(target => !target.password)) return NextResponse.json({ error: "One or more legacy deleted accounts no longer have a saved password and cannot be recovered automatically." }, { status: 409 });
+    const result = await db.user.updateMany({ where: { id: { in: userIds }, deletedAt: { not: null } }, data: { deletedAt: null, role: "TRAINEE", isAdmin: false } });
+    return NextResponse.json({ ok: true, count: result.count });
+  }
   if (body.action === "setGymClaimConfirmation") {
     if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const userId=typeof body.userId==="string"?body.userId:"",gymId=typeof body.gymId==="string"?body.gymId:"",claimType=body.claimType==="membership"?"membership":body.claimType==="day-pass"?"day-pass":null,confirmed=typeof body.confirmed==="boolean"?body.confirmed:null;
@@ -67,7 +83,7 @@ export async function PATCH(request: Request) {
     if (!password || !currentAdmin?.password || !(await compare(password, currentAdmin.password))) return NextResponse.json({ error: "The admin password is incorrect." }, { status: 401 });
     const targets = await db.user.findMany({ where: { id: { in: userIds } }, select: { email: true } });
     if (!isAdmin && targets.some(target => isConfiguredAdminEmail(target.email))) return NextResponse.json({ error: "Configured superadmins cannot be demoted here." }, { status: 409 });
-    const result = await db.user.updateMany({ where: { id: { in: userIds } }, data: { isAdmin } });
+    const result = await db.user.updateMany({ where: { id: { in: userIds }, deletedAt: null }, data: { isAdmin } });
     return NextResponse.json({ ok: true, count: result.count });
   }
   const userId = typeof body.userId === "string" ? body.userId : "";

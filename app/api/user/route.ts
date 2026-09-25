@@ -23,8 +23,8 @@ export async function POST(request: Request) {
   try {
     const input = schema.parse(await request.json());
     const email = input.email.trim().toLowerCase();
-    const existing = await db.user.findUnique({ where: { email }, select: { id: true, emailVerified: true } });
-    if (existing?.emailVerified) return NextResponse.json({ message: "An account with this email already exists." }, { status: 409 });
+    const existing = await db.user.findUnique({ where: { email }, select: { id: true, emailVerified: true, deletedAt: true } });
+    if (existing?.emailVerified && !existing.deletedAt) return NextResponse.json({ message: "An account with this email already exists." }, { status: 409 });
     const existingPending = await db.pendingSignup.findUnique({ where: { email }, select: { email: true } });
     const code = String(randomInt(100000, 1000000));
     const passwordHash = await hash(input.password, 10);
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       await tx.pendingSignup.deleteMany({ where: { expires: { lt: new Date() } } });
       // Remove only legacy, incomplete accounts created by the previous signup
       // flow. Verified accounts are rejected above and are never touched.
-      if (existing) await tx.user.delete({ where: { id: existing.id } });
+      if (existing && !existing.deletedAt) await tx.user.delete({ where: { id: existing.id } });
       await tx.pendingSignup.upsert({
         where: { email },
         create: {

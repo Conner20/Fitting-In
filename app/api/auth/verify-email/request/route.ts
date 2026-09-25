@@ -13,10 +13,10 @@ export async function POST(req: Request) {
         }
 
         const [user, pendingSignup] = await Promise.all([
-            db.user.findUnique({ where: { email: normalized }, select: { emailVerified: true } }),
+            db.user.findUnique({ where: { email: normalized }, select: { emailVerified: true, deletedAt: true } }),
             db.pendingSignup.findUnique({ where: { email: normalized }, select: { expires: true } }),
         ]);
-        if (user?.emailVerified || !pendingSignup) {
+        if ((user?.emailVerified && !user.deletedAt) || !pendingSignup) {
             return NextResponse.json({ ok: true });
         }
 

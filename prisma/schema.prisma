@@ -64,6 +64,7 @@ model User {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @default(now()) @updatedAt
   lastLoginAt          DateTime?
+  deletedAt            DateTime?
   termsAcceptedAt      DateTime?
   privacyAcceptedAt    DateTime?
   accounts             Account[]
@@ -78,6 +79,8 @@ model User {
   nutritionEntries     NutritionEntry[]
   bodyweightEntries    BodyweightEntry[]
   nutritionSettings    NutritionSettings?
+
+  @@index([deletedAt])
 }
 
 model LegalDocumentVersion {

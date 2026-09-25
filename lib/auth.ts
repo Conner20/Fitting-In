@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
                 if(!existingUser) {
                     return null;
                 }
+                if (existingUser.deletedAt) return null;
                 if (!existingUser.password) return null;
                 const passwordMatch = await compare(credentials.password, existingUser.password);
                 if (!passwordMatch) return null;
@@ -64,9 +65,16 @@ export const authOptions: NextAuthOptions = {
             if (!user && typeof token.email === "string") {
                 const existingUser = await db.user.findUnique({
                     where: { email: token.email },
-                    select: { role: true },
+                    select: { role: true, deletedAt: true },
                 });
-                token.role = existingUser?.role ?? undefined;
+                if (!existingUser || existingUser.deletedAt) {
+                    token.sub = undefined;
+                    token.email = undefined;
+                    token.role = undefined;
+                    token.isAdmin = false;
+                    return token;
+                }
+                token.role = existingUser.role ?? undefined;
             }
 
             if(user) {

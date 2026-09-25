@@ -45,10 +45,10 @@ export async function hasAdminAccessByEmail(email: string | null | undefined) {
     try {
         const user = await db.user.findUnique({
             where: { email: email.toLowerCase() },
-            select: { isAdmin: true },
+            select: { isAdmin: true, deletedAt: true },
         });
 
-        return Boolean(user?.isAdmin);
+        return Boolean(user?.isAdmin && !user.deletedAt);
     } catch (error) {
         if (isMissingIsAdminColumnError(error)) {
             return false;

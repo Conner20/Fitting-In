@@ -20,8 +20,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const since = rangeDays ? new Date(Date.now() - rangeDays * 86_400_000) : null;
   const createdAt = since ? { createdAt: { gte: since } } : {};
   const [users, gymUsers, dayPassClicks, dayPassConfirmationEvents, membershipClicks, membershipConfirmationEvents, demandEvents] = await Promise.all([
-    db.user.count({ where: { emailVerified: { not: null }, ...createdAt } }),
-    db.user.count({ where: { emailVerified: { not: null }, role: "GYM", ...createdAt } }),
+    db.user.count({ where: { emailVerified: { not: null }, deletedAt: null, ...createdAt } }),
+    db.user.count({ where: { emailVerified: { not: null }, deletedAt: null, role: "GYM", ...createdAt } }),
     db.landingEvent.count({ where: { eventType: "DAY_PASS_CLICKED", ...createdAt } }),
     db.landingEvent.findMany({ where: { eventType: { in: ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"] }, ...createdAt }, select: { id: true, eventType: true, userId: true, visitorId: true, gymId: true, metadata: true, createdAt: true } }),
     db.landingEvent.count({ where: { eventType: "MEMBERSHIP_CLICKED", ...createdAt } }),

@@ -8,11 +8,36 @@ import { Prisma } from "@prisma/client";
 
 async function deleteUserAndRelations(userId: string) {
     await db.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true } });
+        if (!user) throw new Error("USER_NOT_FOUND");
         const ownedGyms = await tx.gymAccess.findMany({
             where: { userId },
             select: { gymId: true },
         });
-        await tx.user.delete({ where: { id: userId } });
+
+        // Keep the user record and LandingEvent relationship for accurate
+        // historical analytics, while removing access and personal app data.
+        await tx.session.deleteMany({ where: { userId } });
+        await tx.account.deleteMany({ where: { userId } });
+        await tx.gymFavorite.deleteMany({ where: { userId } });
+        await tx.gymClaim.deleteMany({ where: { claimantId: userId } });
+        await tx.gymClaim.updateMany({ where: { reviewedById: userId }, data: { reviewedById: null } });
+        await tx.gymInvite.deleteMany({ where: { createdById: userId } });
+        await tx.gymAccess.deleteMany({ where: { userId } });
+        await tx.nutritionEntry.deleteMany({ where: { userId } });
+        await tx.nutritionCustomFood.deleteMany({ where: { userId } });
+        await tx.bodyweightEntry.deleteMany({ where: { userId } });
+        await tx.nutritionSettings.deleteMany({ where: { userId } });
+        if (user.email) {
+            await tx.verificationToken.deleteMany({ where: { identifier: user.email } });
+            await tx.pendingSignup.deleteMany({ where: { email: user.email } });
+        }
+        await tx.user.update({
+            where: { id: userId },
+            // Retain the password hash so a superadmin can recover the same
+            // account without requiring an email or password-reset flow.
+            data: { role: "TRAINEE", isAdmin: false, deletedAt: new Date() },
+        });
 
         // A verified listing remains claimed only while at least one gym user
         // has access. When its final owner is deleted, return the listing to a

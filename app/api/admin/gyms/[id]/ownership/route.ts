@@ -30,7 +30,7 @@ export async function GET(req: Request, { params }: Context) {
       },
     }),
     db.user.findMany({
-      where: { role: "TRAINEE", email: { not: null, ...(q ? { contains: q, mode: "insensitive" as const } : {}) } },
+      where: { role: "TRAINEE", deletedAt: null, email: { not: null, ...(q ? { contains: q, mode: "insensitive" as const } : {}) } },
       orderBy: { email: "asc" },
       take: 20,
       select: { id: true, email: true },

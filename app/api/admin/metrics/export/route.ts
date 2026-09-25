@@ -24,7 +24,7 @@ export async function GET() {
 
   const [events, users, gyms, latestReset] = await Promise.all([
     db.landingEvent.findMany({ where: { eventType: { not: "METRICS_RESET" } }, select: { id: true, eventType: true, visitorId: true, visitId: true, path: true, gymId: true, userId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "asc" } }),
-    db.user.findMany({ where: { emailVerified: { not: null } }, select: { id: true, email: true, role: true, isAdmin: true, createdAt: true, emailVerified: true, lastLoginAt: true, gymAccesses: { select: { gym: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } }),
+    db.user.findMany({ where: { emailVerified: { not: null } }, select: { id: true, email: true, role: true, isAdmin: true, createdAt: true, emailVerified: true, lastLoginAt: true, deletedAt: true, gymAccesses: { select: { gym: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } }),
     db.gym.findMany({ select: { id: true, name: true, contactEmail: true, createdAt: true, updatedAt: true, access: { orderBy: { createdAt: "asc" }, take: 1, select: { createdAt: true, assignedByEmail: true, user: { select: { email: true } } } } }, orderBy: { name: "asc" } }),
     db.landingEvent.findFirst({ where: { eventType: "METRICS_RESET" }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
   ]);
@@ -38,7 +38,7 @@ export async function GET() {
   const summary = workbook.addWorksheet("Overview");
   summary.columns = [{ header: "Metric", key: "metric" }, { header: "Value", key: "value" }];
   summary.addRows([
-    { metric: "Export generated", value: new Date().toISOString() }, { metric: "Verified users", value: users.length }, { metric: "Gym users", value: users.filter(user => user.role === "GYM").length },
+    { metric: "Export generated", value: new Date().toISOString() }, { metric: "Verified users", value: users.filter(user => !user.deletedAt).length }, { metric: "Deleted users retained", value: users.filter(user => user.deletedAt).length }, { metric: "Gym users", value: users.filter(user => !user.deletedAt && user.role === "GYM").length },
     { metric: "Gyms", value: gyms.length }, { metric: "Claimed gyms", value: gyms.filter(gym => gym.access.length > 0).length }, { metric: "Unique visitors", value: visitors.size }, { metric: "Visits", value: visits.size },
     ...eventTypes.map(type => ({ metric: type, value: events.filter(event => event.eventType === type).length })),
   ]); formatSheet(summary);
@@ -61,7 +61,7 @@ export async function GET() {
   const dailyMap = new Map<string, DailyRow>();
   const getDailyRow = (date: string) => { const existing = dailyMap.get(date); if (existing) return existing; const created = emptyDailyRow(); dailyMap.set(date, created); return created; };
   const resetAt = latestReset?.createdAt ?? null;
-  for (const user of users) { if (resetAt && user.createdAt < resetAt) continue; const row = getDailyRow(day(user.createdAt)); row.users++; if (user.role === "GYM") row.gymUsers++; }
+  for (const user of users.filter(user => !user.deletedAt)) { if (resetAt && user.createdAt < resetAt) continue; const row = getDailyRow(day(user.createdAt)); row.users++; if (user.role === "GYM") row.gymUsers++; }
   for (const gym of gyms) { if (resetAt && gym.createdAt < resetAt) continue; getDailyRow(day(gym.createdAt)).gyms++; }
   for (const event of events) {
     const row = getDailyRow(day(event.createdAt)), eventActor = actor(event);
@@ -114,8 +114,8 @@ export async function GET() {
   const byUser = new Map(users.map(user => [user.id, { dayClicks: 0, dayConfirms: 0, memberClicks: 0, memberConfirms: 0 }]));
   for (const event of events) if (event.userId && byUser.has(event.userId)) { const row = byUser.get(event.userId)!; if (event.eventType === "DAY_PASS_CLICKED") row.dayClicks++; if (["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)) row.dayConfirms++; if (event.eventType === "MEMBERSHIP_CLICKED") row.memberClicks++; if (["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)) row.memberConfirms++; }
   const userSheet = workbook.addWorksheet("Users");
-  userSheet.columns = ["Email", "Role", "Admin", "Gym", "Created", "Email verified", "Last active", "Day-pass clicks", "Day-pass confirms", "Membership clicks", "Membership confirms"].map(header => ({ header, key: header }));
-  for (const user of users) { const metrics = byUser.get(user.id)!; userSheet.addRow({ Email: user.email ?? "", Role: user.role ?? "", Admin: user.isAdmin ? "Yes" : "No", Gym: user.gymAccesses.map(access => access.gym.name).join(", "), Created: user.createdAt.toISOString(), "Email verified": user.emailVerified?.toISOString() ?? "", "Last active": user.lastLoginAt?.toISOString() ?? "", "Day-pass clicks": metrics.dayClicks, "Day-pass confirms": metrics.dayConfirms, "Membership clicks": metrics.memberClicks, "Membership confirms": metrics.memberConfirms }); }
+  userSheet.columns = ["Email", "Status", "Deleted at", "Role", "Admin", "Gym", "Created", "Email verified", "Last active", "Day-pass clicks", "Day-pass confirms", "Membership clicks", "Membership confirms"].map(header => ({ header, key: header }));
+  for (const user of users) { const metrics = byUser.get(user.id)!; userSheet.addRow({ Email: user.email ?? "", Status: user.deletedAt ? "Deleted" : "Active", "Deleted at": user.deletedAt?.toISOString() ?? "", Role: user.role ?? "", Admin: user.isAdmin ? "Yes" : "No", Gym: user.gymAccesses.map(access => access.gym.name).join(", "), Created: user.createdAt.toISOString(), "Email verified": user.emailVerified?.toISOString() ?? "", "Last active": user.lastLoginAt?.toISOString() ?? "", "Day-pass clicks": metrics.dayClicks, "Day-pass confirms": metrics.dayConfirms, "Membership clicks": metrics.memberClicks, "Membership confirms": metrics.memberConfirms }); }
   formatSheet(userSheet);
 
   const gymEventTypes = ["GYM_OPENED", "FAVORITE_ADDED", "COMPARE_ADDED", "DIRECTIONS_CLICKED", "WEBSITE_CLICKED", "DAY_PASS_CLICKED", "DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED", "DAY_PASS_SIGNUP", "MEMBERSHIP_CLICKED", "MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED", "MEMBERSHIP_SIGNUP"];

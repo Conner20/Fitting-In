@@ -13,10 +13,10 @@ async function validateSession() {
 
     const user = await db.user.findUnique({
         where: { email: session.user.email.toLowerCase() },
-        select: { id: true },
+        select: { id: true, deletedAt: true },
     });
 
-    if (!user) {
+    if (!user || user.deletedAt) {
         return NextResponse.json({ valid: false }, { status: 404 });
     }
 

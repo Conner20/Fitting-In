@@ -28,19 +28,26 @@ export async function POST(req: Request) {
 
         const legalDates = await getCurrentLegalDates();
         await db.$transaction(async tx => {
-            const existing = await tx.user.findUnique({ where: { email }, select: { id: true, emailVerified: true } });
-            if (existing?.emailVerified) throw new Error("ACCOUNT_ALREADY_EXISTS");
-            if (existing) await tx.user.delete({ where: { id: existing.id } });
+            const existing = await tx.user.findUnique({ where: { email }, select: { id: true, emailVerified: true, deletedAt: true } });
+            if (existing?.emailVerified && !existing.deletedAt) throw new Error("ACCOUNT_ALREADY_EXISTS");
 
-            const user = await tx.user.create({
-                data: {
+            const accountData = {
                     email,
                     password: pendingSignup.passwordHash,
                     emailVerified: now,
                     role: "TRAINEE",
+                    isAdmin: false,
+                    deletedAt: null,
+                    lastLoginAt: null,
                     termsAcceptedAt: legalDates.terms,
                     privacyAcceptedAt: legalDates.privacy,
-                },
+                } as const;
+            const user = existing?.deletedAt ? await tx.user.update({
+                where: { id: existing.id },
+                data: accountData,
+                select: { id: true },
+            }) : await tx.user.create({
+                data: accountData,
                 select: { id: true },
             });
 
