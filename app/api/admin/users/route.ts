@@ -33,6 +33,40 @@ export async function GET(request:Request){
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   const body = await request.json().catch(() => ({}));
+  if (body.action === "permanentlyDeleteUsers") {
+    if (!session?.user?.email || !(await hasSuperAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Only the superadmin can permanently delete accounts." }, { status: 403 });
+    const userIds: string[] = Array.isArray(body.userIds)
+      ? Array.from(new Set<string>(body.userIds.filter((value: unknown): value is string => typeof value === "string" && value.length > 0))).slice(0, 500)
+      : [];
+    const password = typeof body.password === "string" ? body.password : "";
+    if (!userIds.length || !password) return NextResponse.json({ error: "Select at least one deleted account and enter your admin password." }, { status: 400 });
+    const currentAdmin = await db.user.findUnique({ where: { email: session.user.email.toLowerCase() }, select: { password: true } });
+    if (!currentAdmin?.password || !(await compare(password, currentAdmin.password))) return NextResponse.json({ error: "The admin password is incorrect." }, { status: 401 });
+    const targets = await db.user.findMany({ where: { id: { in: userIds }, deletedAt: { not: null } }, select: { id: true, email: true } });
+    if (targets.length !== userIds.length) return NextResponse.json({ error: "Only deleted accounts can be permanently deleted." }, { status: 409 });
+    if (targets.some(target => isConfiguredAdminEmail(target.email))) return NextResponse.json({ error: "Configured superadmin accounts cannot be permanently deleted here." }, { status: 409 });
+
+    await db.$transaction(async tx => {
+      for (const target of targets) {
+        if (target.email) {
+          await tx.verificationToken.deleteMany({ where: { identifier: target.email } });
+          await tx.pendingSignup.deleteMany({ where: { email: target.email } });
+          await tx.gym.updateMany({ where: { verifiedByEmail: target.email }, data: { verifiedByEmail: null } });
+          await tx.gymAccess.updateMany({ where: { assignedByEmail: target.email }, data: { assignedByEmail: null } });
+          const signupEvents = await tx.landingEvent.findMany({ where: { userId: target.id, eventType: { in: ["DAY_PASS_SIGNUP", "MEMBERSHIP_SIGNUP"] } }, select: { id: true, metadata: true } });
+          for (const event of signupEvents) {
+            const metadata = event.metadata && typeof event.metadata === "object" && !Array.isArray(event.metadata) ? { ...(event.metadata as Record<string, Prisma.JsonValue>) } : null;
+            if (metadata && typeof metadata.email === "string" && metadata.email.toLowerCase() === target.email.toLowerCase()) {
+              delete metadata.email;
+              await tx.landingEvent.update({ where: { id: event.id }, data: { metadata } });
+            }
+          }
+        }
+        await tx.user.delete({ where: { id: target.id } });
+      }
+    });
+    return NextResponse.json({ ok: true, count: targets.length });
+  }
   if (body.action === "recoverUsers") {
     if (!session?.user?.email || !(await hasSuperAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Only the superadmin can recover accounts." }, { status: 403 });
     const userIds: string[] = Array.isArray(body.userIds)
