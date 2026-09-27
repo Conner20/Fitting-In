@@ -39,7 +39,7 @@ export async function middleware(req: NextRequest) {
 
     const isPublic =
         PUBLIC_PATHS.includes(pathname) ||
-        startsWithAny(pathname, ["/verify-email", "/reset-password", "/gym-invite/"]);
+        startsWithAny(pathname, ["/verify-email", "/reset-password", "/gym-invite/", "/referrals/review/"]);
 
     if (isPublic) {
         const response = NextResponse.next();

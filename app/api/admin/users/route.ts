@@ -82,27 +82,6 @@ export async function PATCH(request: Request) {
     const result = await db.user.updateMany({ where: { id: { in: userIds }, deletedAt: { not: null } }, data: { deletedAt: null, role: "TRAINEE", isAdmin: false } });
     return NextResponse.json({ ok: true, count: result.count });
   }
-  if (body.action === "setGymClaimConfirmation") {
-    if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const userId=typeof body.userId==="string"?body.userId:"",gymId=typeof body.gymId==="string"?body.gymId:"",claimType=body.claimType==="membership"?"membership":body.claimType==="day-pass"?"day-pass":null,confirmed=typeof body.confirmed==="boolean"?body.confirmed:null;
-    if(!userId||!gymId||!claimType||confirmed===null)return NextResponse.json({error:"User, gym, claim type, and confirmation state are required."},{status:400});
-    const clickType=claimType==="membership"?"MEMBERSHIP_CLICKED":"DAY_PASS_CLICKED",confirmationType=claimType==="membership"?"MEMBERSHIP_GYM_CONFIRMED":"DAY_PASS_GYM_CONFIRMED";
-    const click=await db.landingEvent.findFirst({where:{eventType:clickType,userId,gymId},orderBy:{createdAt:"desc"},select:{id:true,visitorId:true,visitId:true}});
-    if(!click)return NextResponse.json({error:"No matching claim click was found for this user and gym."},{status:409});
-    await db.$transaction(async tx=>{await tx.landingEvent.deleteMany({where:{eventType:confirmationType,userId,gymId}});if(confirmed)await tx.landingEvent.create({data:{eventType:confirmationType,visitorId:click.visitorId,visitId:`gym-confirm:${click.id}`,path:"/admin",gymId,userId,metadata:{claimClickId:click.id,confirmedBy:session.user!.email!.toLowerCase(),confirmedAt:new Date().toISOString()}}})});
-    const confirmationTypes=claimType==="membership"?["MEMBERSHIP_CLAIM_CONFIRMED","MEMBERSHIP_GYM_CONFIRMED"]:["DAY_PASS_CLAIM_CONFIRMED","DAY_PASS_GYM_CONFIRMED"],[confirmationEvents,claimClicks]=await Promise.all([db.landingEvent.findMany({where:{eventType:{in:confirmationTypes},userId},select:{id:true,eventType:true,gymId:true,metadata:true,createdAt:true}}),db.landingEvent.findMany({where:{eventType:clickType,userId},select:{id:true,gymId:true,createdAt:true}})]),combinedConfirmed=new Set(confirmationEvents.map(event=>{const metadata=event.metadata as Record<string,unknown>|null;if(event.eventType.endsWith("_GYM_CONFIRMED")&&typeof metadata?.claimClickId==="string")return metadata.claimClickId;return claimClicks.filter(item=>item.gymId===event.gymId&&item.createdAt<=event.createdAt).sort((a,b)=>b.createdAt.getTime()-a.createdAt.getTime())[0]?.id||event.id})).size;
-    return NextResponse.json({ok:true,gymConfirmed:confirmed,combinedConfirmed});
-  }
-  if (body.action === "setGymClaimLogConfirmation") {
-    if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const claimClickId=typeof body.claimClickId==="string"?body.claimClickId:"",confirmed=typeof body.confirmed==="boolean"?body.confirmed:null;
-    if(!claimClickId||confirmed===null)return NextResponse.json({error:"Claim click and confirmation state are required."},{status:400});
-    const click=await db.landingEvent.findUnique({where:{id:claimClickId},select:{id:true,eventType:true,visitorId:true,gymId:true,userId:true}});
-    if(!click||!click.gymId||!["DAY_PASS_CLICKED","MEMBERSHIP_CLICKED"].includes(click.eventType))return NextResponse.json({error:"The claim click could not be found."},{status:404});
-    const confirmationType=click.eventType==="MEMBERSHIP_CLICKED"?"MEMBERSHIP_GYM_CONFIRMED":"DAY_PASS_GYM_CONFIRMED",confirmationVisitId=`gym-confirm:${click.id}`;
-    await db.$transaction(async tx=>{await tx.landingEvent.deleteMany({where:{eventType:confirmationType,visitId:confirmationVisitId}});if(confirmed)await tx.landingEvent.create({data:{eventType:confirmationType,visitorId:click.visitorId,visitId:confirmationVisitId,path:"/admin",gymId:click.gymId,userId:click.userId,metadata:{claimClickId:click.id,confirmedBy:session.user!.email!.toLowerCase(),confirmedAt:new Date().toISOString()}}})});
-    return NextResponse.json({ok:true,gymConfirmed:confirmed});
-  }
   if (!session?.user?.email || !(await hasSuperAdminAccessByEmail(session.user.email))) {
     return NextResponse.json({ error: "Only the superadmin can change admin access." }, { status: 403 });
   }

@@ -19,26 +19,26 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const rangeDays = range === "week" ? 7 : range === "month" ? 30 : range === "year" ? 365 : 0;
   const since = rangeDays ? new Date(Date.now() - rangeDays * 86_400_000) : null;
   const createdAt = since ? { createdAt: { gte: since } } : {};
-  const [users, gymUsers, dayPassClicks, dayPassConfirmationEvents, membershipClicks, membershipConfirmationEvents, demandEvents] = await Promise.all([
+  const [users, gymUsers, visitEvents, dayPassClicks, dayPassConfirmationEvents, membershipClicks, membershipConfirmationEvents, dayPassSignups, membershipSignups, attributionClicks] = await Promise.all([
     db.user.count({ where: { emailVerified: { not: null }, deletedAt: null, ...createdAt } }),
     db.user.count({ where: { emailVerified: { not: null }, deletedAt: null, role: "GYM", ...createdAt } }),
+    db.landingEvent.findMany({ where: { eventType: "VISIT", ...createdAt }, select: { userId: true, visitorId: true, visitId: true } }),
     db.landingEvent.count({ where: { eventType: "DAY_PASS_CLICKED", ...createdAt } }),
     db.landingEvent.findMany({ where: { eventType: { in: ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"] }, ...createdAt }, select: { id: true, eventType: true, userId: true, visitorId: true, gymId: true, metadata: true, createdAt: true } }),
     db.landingEvent.count({ where: { eventType: "MEMBERSHIP_CLICKED", ...createdAt } }),
     db.landingEvent.findMany({ where: { eventType: { in: ["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"] }, ...createdAt }, select: { id: true, eventType: true, userId: true, visitorId: true, gymId: true, metadata: true, createdAt: true } }),
-    db.landingEvent.findMany({ where: { eventType: { in: ["GYM_OPENED", "DAY_PASS_CLICKED", "MEMBERSHIP_CLICKED"] }, ...createdAt }, select: { id: true, eventType: true, userId: true, visitorId: true, gymId: true, createdAt: true } }),
+    db.landingEvent.count({ where: { eventType: "DAY_PASS_SIGNUP", ...createdAt } }),
+    db.landingEvent.count({ where: { eventType: "MEMBERSHIP_SIGNUP", ...createdAt } }),
+    db.landingEvent.findMany({ where: { eventType: { in: ["DAY_PASS_CLICKED", "MEMBERSHIP_CLICKED"] } }, select: { id: true, eventType: true, userId: true, visitorId: true, gymId: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 50_000 }),
   ]);
   const actor = (event: { userId: string | null; visitorId: string }) => event.userId ? `user:${event.userId}` : `visitor:${event.visitorId}`;
-  const confirmationKey = (event: typeof dayPassConfirmationEvents[number] | typeof membershipConfirmationEvents[number], clickType: "DAY_PASS_CLICKED" | "MEMBERSHIP_CLICKED") => { const metadata=event.metadata as Record<string,unknown>|null;if(event.eventType.endsWith("_GYM_CONFIRMED")&&typeof metadata?.claimClickId==="string")return metadata.claimClickId;return demandEvents.filter(click=>click.eventType===clickType&&click.gymId===event.gymId&&actor(click)===actor(event)&&click.createdAt<=event.createdAt).sort((a,b)=>b.createdAt.getTime()-a.createdAt.getTime())[0]?.id||event.id };
+  const confirmationKey = (event: typeof dayPassConfirmationEvents[number] | typeof membershipConfirmationEvents[number], clickType: "DAY_PASS_CLICKED" | "MEMBERSHIP_CLICKED") => { const metadata=event.metadata as Record<string,unknown>|null;if(event.eventType.endsWith("_GYM_CONFIRMED")&&typeof metadata?.claimClickId==="string")return metadata.claimClickId;return attributionClicks.find(click=>click.eventType===clickType&&click.gymId===event.gymId&&actor(click)===actor(event)&&click.createdAt<=event.createdAt)?.id||event.id };
   const confirmedDayPasses = new Set(dayPassConfirmationEvents.map(event=>confirmationKey(event,"DAY_PASS_CLICKED"))).size;
   const confirmedDayPassesByGym = new Set(dayPassConfirmationEvents.filter(event => event.eventType === "DAY_PASS_GYM_CONFIRMED").map(event=>confirmationKey(event,"DAY_PASS_CLICKED"))).size;
   const confirmedMemberships = new Set(membershipConfirmationEvents.map(event=>confirmationKey(event,"MEMBERSHIP_CLICKED"))).size;
   const confirmedMembershipsByGym = new Set(membershipConfirmationEvents.filter(event => event.eventType === "MEMBERSHIP_GYM_CONFIRMED").map(event=>confirmationKey(event,"MEMBERSHIP_CLICKED"))).size;
-  const listingViewers = new Set(demandEvents.filter(event => event.eventType === "GYM_OPENED").map(actor));
-  const dayPassClickers = new Set(demandEvents.filter(event => event.eventType === "DAY_PASS_CLICKED").map(actor));
-  const dayPassClickRate = listingViewers.size ? `${(dayPassClickers.size / listingViewers.size * 100).toFixed(1)}%` : "0.0%";
-  const membershipClickers = new Set(demandEvents.filter(event => event.eventType === "MEMBERSHIP_CLICKED").map(actor));
-  const membershipClickRate = listingViewers.size ? `${(membershipClickers.size / listingViewers.size * 100).toFixed(1)}%` : "0.0%";
+  const visitors = new Set(visitEvents.map(actor)).size;
+  const visits = new Set(visitEvents.map(event => event.visitId)).size;
   const verificationLog = await db.gym.findMany({
     orderBy: { updatedAt: "desc" },
     select: {
@@ -52,10 +52,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     return { id: gym.id, name: gym.name, isClaimed: Boolean(claim), claimedBy: claimantEmail ?? "—", claimedAt: claim?.createdAt.toISOString() ?? null, updatedAt: gym.updatedAt.toISOString() };
   });
   const cards: readonly (readonly [string, number | string, string?])[] = [
-    ["Users", users], ["Gym Users", gymUsers], ["Day-pass clicks", dayPassClicks], ["Confirmed day passes", confirmedDayPasses], ["Confirmed day passes by gym", confirmedDayPassesByGym],
-    ["Day-pass click rate", dayPassClickRate, `${dayPassClickers.size.toLocaleString()} unique Claim Day Pass clickers ÷ ${listingViewers.size.toLocaleString()} unique gym-profile viewers × 100 = ${dayPassClickRate}`],
-    ["Membership clicks", membershipClicks], ["Confirmed memberships", confirmedMemberships], ["Confirmed memberships by gym", confirmedMembershipsByGym],
-    ["Membership click rate", membershipClickRate, `${membershipClickers.size.toLocaleString()} unique Claim Membership clickers ÷ ${listingViewers.size.toLocaleString()} unique gym-profile viewers × 100 = ${membershipClickRate}`],
+    ["Total Users / Gym Users", `${users.toLocaleString()} / ${gymUsers.toLocaleString()}`],
+    ["Visitors / Visits", `${visitors.toLocaleString()} / ${visits.toLocaleString()}`],
+    ["Day-pass Clicks / Confirms / Gym Confirms", `${dayPassClicks.toLocaleString()} / ${confirmedDayPasses.toLocaleString()} / ${confirmedDayPassesByGym.toLocaleString()}`],
+    ["Membership Clicks / Confirms / Gym Confirms", `${membershipClicks.toLocaleString()} / ${confirmedMemberships.toLocaleString()} / ${confirmedMembershipsByGym.toLocaleString()}`],
+    ["Day-pass Signups / Membership Signups", `${dayPassSignups.toLocaleString()} / ${membershipSignups.toLocaleString()}`],
   ];
   return <main className="min-h-screen bg-[#f8f8f8] text-black dark:bg-[#050505] dark:text-white">
     <AdminHeader active="overview" />
