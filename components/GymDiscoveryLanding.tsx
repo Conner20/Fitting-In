@@ -27,6 +27,8 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import FacilityLookup from "@/components/FacilityLookup";
+import { AMENITY_OPTIONS, EQUIPMENT_OPTIONS } from "@/lib/facility-options";
 import {
   MembershipOption,
   billingFrequencyLabel,
@@ -86,37 +88,8 @@ const GROUPS = {
     "Group training gym",
     "Specialty gym/studio",
   ],
-  Equipment: [
-    "Squat rack",
-    "Power rack",
-    "Smith machine",
-    "Bench press",
-    "Deadlift platform",
-    "Olympic lifting platform",
-    "Hack squat",
-    "Pendulum squat",
-    "Belt squat",
-    "Leg press",
-    "Cable station",
-    "Pec deck",
-    "Hip thrust machine",
-    "Dumbbells 120+ lb",
-  ],
-  Amenities: [
-    "Sauna",
-    "Steam room",
-    "Pool",
-    "Showers",
-    "Locker rooms",
-    "Basketball court",
-    "Turf area",
-    "Group classes",
-    "Personal training",
-    "Childcare",
-    "Parking",
-    "24/7 access",
-    "Women's-only area",
-  ],
+  Equipment: EQUIPMENT_OPTIONS,
+  Amenities: AMENITY_OPTIONS,
 };
 const money = (n: number) =>
     `$${n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`,
@@ -285,6 +258,8 @@ export default function GymDiscoveryLanding({
     [radius, setRadius] = useState(25),
     [limit, setLimit] = useState(250),
     [filters, setFilters] = useState<string[]>([]),
+    [equipmentFilters, setEquipmentFilters] = useState<string[]>([]),
+    [amenityFilters, setAmenityFilters] = useState<string[]>([]),
     [sort, setSort] = useState<"distance" | "price">("distance"),
     [pricingMode, setPricingMode] = useState<PricingMode>("dayPass"),
     [favorites, setFavorites] = useState<string[]>([]),
@@ -689,13 +664,8 @@ export default function GymDiscoveryLanding({
               filters
                 .filter((f) => GROUPS["Gym type"].includes(f))
                 .some((f) => g.type.toLowerCase() === f.toLowerCase())) &&
-            filters
-              .filter((f) => !GROUPS["Gym type"].includes(f))
-              .every((f) =>
-                [...g.equipment, ...g.amenities].some((v) =>
-                  v.toLowerCase().includes(f.toLowerCase()),
-                ),
-              ),
+            equipmentFilters.every((filter) => g.equipment.some(value => value.toLowerCase().includes(filter.toLowerCase()))) &&
+            amenityFilters.every((filter) => g.amenities.some(value => value.toLowerCase().includes(filter.toLowerCase()))),
         )
         .sort((a, b) =>
           sort === "price"
@@ -707,6 +677,8 @@ export default function GymDiscoveryLanding({
       favorites,
       favoritesOnly,
       filters,
+      equipmentFilters,
+      amenityFilters,
       limit,
       origin,
       pricingMode,
@@ -718,7 +690,7 @@ export default function GymDiscoveryLanding({
   useEffect(() => {
     setVisibleGymCount(9);
     listRef.current?.scrollTo({ top: 0 });
-  }, [favoritesOnly, filters, limit, origin, pricingMode, radius, sort]);
+  }, [amenityFilters, equipmentFilters, favoritesOnly, filters, limit, origin, pricingMode, radius, sort]);
   useEffect(() => {
     const root = listRef.current,
       target = listLoadMoreRef.current;
@@ -1532,6 +1504,8 @@ export default function GymDiscoveryLanding({
             });
           }}
           filters={filters}
+          equipmentFilters={equipmentFilters}
+          amenityFilters={amenityFilters}
           toggle={(f) =>
             setFilters((a) => {
               const on = !a.includes(f);
@@ -1539,9 +1513,21 @@ export default function GymDiscoveryLanding({
               return on ? [...a, f] : a.filter((x) => x !== f);
             })
           }
+          setEquipmentFilters={(items) => {
+            const changed = [...equipmentFilters.filter(item => !items.includes(item)), ...items.filter(item => !equipmentFilters.includes(item))];
+            changed.forEach(filter => track("FILTER_CHANGED", { metadata: { control: "Equipment", filter, enabled: items.includes(filter) } }));
+            setEquipmentFilters(items);
+          }}
+          setAmenityFilters={(items) => {
+            const changed = [...amenityFilters.filter(item => !items.includes(item)), ...items.filter(item => !amenityFilters.includes(item))];
+            changed.forEach(filter => track("FILTER_CHANGED", { metadata: { control: "Amenities", filter, enabled: items.includes(filter) } }));
+            setAmenityFilters(items);
+          }}
           close={() => setFilterOpen(false)}
           clear={() => {
             setFilters([]);
+            setEquipmentFilters([]);
+            setAmenityFilters([]);
             setRadius(maxDistance);
             setLimit(maxPrice);
             track("FILTER_CLEARED");
@@ -2288,9 +2274,9 @@ function ProfileResizeHandle({
   );
 }
 const equipment = (items: string[]) => {
-  const clean = items.filter((x) => x && !/^(?:not listed|other)$/i.test(x)),
-    db = clean.filter((x) => /dumbbell/i.test(x) && /\d+/.test(x)),
-    weights = db.map((x) => Number(x.match(/\d+/)?.[0] || 0));
+  const clean = items.filter((x) => x && !/^(?:not listed|other)$/i.test(x)).map((x) => x.replace(/\s*×\s*(\d+)$/, (_, quantity: string) => quantity === "1" ? "" : ` (${quantity})`)),
+    db = clean.filter((x) => /dumbbell/i.test(x) && /\d+\+?\s*lb/i.test(x)),
+    weights = db.map((x) => Number(x.match(/(\d+)\+?\s*lb/i)?.[1] || 0));
   return [
     ...new Set([
       ...clean.filter((x) => !db.includes(x)),
@@ -2934,11 +2920,13 @@ function Shell({
   close,
   wide = false,
   slideUp = false,
+  fixedFooter = false,
 }: {
   children: React.ReactNode;
   close: () => void;
   wide?: boolean;
   slideUp?: boolean;
+  fixedFooter?: boolean;
 }) {
   return (
     <div
@@ -2947,7 +2935,7 @@ function Shell({
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className={`max-h-[92dvh] w-full overflow-auto rounded-t-3xl bg-[#111411] md:max-h-[94vh] md:rounded-3xl ${wide ? "max-w-6xl" : "max-w-2xl"} ${slideUp ? "mobile-signup-sheet" : ""}`}
+        className={`max-h-[92dvh] w-full rounded-t-3xl bg-[#111411] md:max-h-[94vh] md:rounded-3xl ${fixedFooter ? "flex h-[min(92dvh,40rem)] flex-col overflow-hidden md:h-[min(94vh,40rem)]" : "overflow-auto"} ${wide ? "max-w-6xl" : "max-w-2xl"} ${slideUp ? "mobile-signup-sheet" : ""}`}
       >
         {children}
       </div>
@@ -2974,7 +2962,11 @@ function Filters({
   setRadius,
   setLimit,
   filters,
+  equipmentFilters,
+  amenityFilters,
   toggle,
+  setEquipmentFilters,
+  setAmenityFilters,
   close,
   clear,
 }: {
@@ -2987,14 +2979,18 @@ function Filters({
   setRadius: (n: number) => void;
   setLimit: (n: number) => void;
   filters: string[];
+  equipmentFilters: string[];
+  amenityFilters: string[];
   toggle: (s: string) => void;
+  setEquipmentFilters: (items: string[]) => void;
+  setAmenityFilters: (items: string[]) => void;
   close: () => void;
   clear: () => void;
 }) {
   return (
-    <Shell close={close}>
+    <Shell close={close} fixedFooter>
       <Top title="Filters" close={close} />
-      <div className="space-y-6 p-6 text-white">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6 text-white">
         <label className="block font-black">
           Distance · {Number(radius.toFixed(1))} miles
           <input
@@ -3020,11 +3016,10 @@ function Filters({
             onChange={(e) => setLimit(+e.target.value)}
           />
         </label>
-        {Object.entries(GROUPS).map(([name, items]) => (
-          <section key={name}>
-            <h3 className="mb-3 font-black">{name}</h3>
+        <section>
+            <h3 className="mb-3 font-black">Gym type</h3>
             <div className="flex flex-wrap gap-2">
-              {items.map((f) => {
+              {GROUPS["Gym type"].map((f) => {
                 const selected = filters.includes(f);
                 return (
                   <button
@@ -3039,10 +3034,11 @@ function Filters({
                 );
               })}
             </div>
-          </section>
-        ))}
+        </section>
+        <section><h3 className="font-black">Equipment</h3><FacilityLookup label="Equipment" options={EQUIPMENT_OPTIONS} selected={equipmentFilters} onChange={setEquipmentFilters} dark allowCustom={false}/></section>
+        <section><h3 className="font-black">Amenities</h3><FacilityLookup label="Amenities" options={AMENITY_OPTIONS} selected={amenityFilters} onChange={setAmenityFilters} dark allowCustom={false}/></section>
       </div>
-      <div className="sticky bottom-0 z-20 flex items-center justify-between border-t border-white/10 bg-[#111411] p-4 text-white">
+      <div className="z-20 flex shrink-0 items-center justify-between border-t border-white/10 bg-[#111411] p-4 text-white">
         <button
           type="button"
           onClick={clear}

@@ -3368,3 +3368,8 @@ html body :is(a, button).green-button-ui.green-button-ui:disabled {
     translate: none !important;
   }
 }
+@media (min-width: 768px) {
+  .group:not(:hover):not(:focus-within) > .facility-quantity-controls {
+    pointer-events: none;
+  }
+}
