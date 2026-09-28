@@ -111,6 +111,7 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
         if (!option.billingFrequency) missing.push(`${prefix} billing frequency`);
         if (option.billingFrequency === "custom" && (!Number.isFinite(option.billingInterval) || option.billingInterval < 1)) missing.push(`${prefix} billing interval`);
         if (!Number.isFinite(option.contractLength) || option.contractLength < 1) missing.push(`${prefix} contract length`);
+        if (option.guestPassesEnabled && (!Number.isInteger(option.guestPassCount) || option.guestPassCount < 1)) missing.push(`${prefix} guest pass count`);
         if ([option.enrollmentFee, option.annualFee, option.additionalFees].some(value => !Number.isFinite(value) || value < 0)) missing.push(`${prefix} fees`);
         if (!option.access.length) missing.push(`${prefix} access`);
         const destination = option.purchaseUrl || data.membershipOptions[0]?.purchaseUrl;

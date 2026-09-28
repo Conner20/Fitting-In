@@ -11,6 +11,7 @@ export const BILLING_FREQUENCIES = [
 export type BillingFrequency = typeof BILLING_FREQUENCIES[number]["value"];
 export type BillingIntervalUnit = "days" | "weeks" | "months";
 export type ContractLengthUnit = BillingIntervalUnit | "years";
+export type GuestPassFrequency = "day" | "week" | "month" | "year";
 
 export type MembershipOption = {
   id: string;
@@ -25,6 +26,9 @@ export type MembershipOption = {
   annualFee: number;
   additionalFees: number;
   additionalFeesDetails: string;
+  guestPassesEnabled: boolean;
+  guestPassCount: number;
+  guestPassFrequency: GuestPassFrequency;
   access: string[];
   purchaseUrl: string;
   notes: string;
@@ -45,7 +49,8 @@ export function emptyMembershipOption(): MembershipOption {
     id: createMembershipId(), name: "", price: 0, billingFrequency: "monthly",
     billingInterval: 1, billingIntervalUnit: "months", contractLength: 1, contractLengthUnit: "months",
     enrollmentFee: 0, annualFee: 0, additionalFees: 0,
-    additionalFeesDetails: "", access: [], purchaseUrl: "", notes: "",
+    additionalFeesDetails: "", guestPassesEnabled: false, guestPassCount: 0,
+    guestPassFrequency: "month", access: [], purchaseUrl: "", notes: "",
   };
 }
 
@@ -56,6 +61,7 @@ export function cleanMembershipOptions(value: unknown): MembershipOption[] {
     const billingFrequency = text(raw.billingFrequency);
     const billingIntervalUnit = text(raw.billingIntervalUnit);
     const contractLengthUnit = text(raw.contractLengthUnit);
+    const guestPassFrequency = text(raw.guestPassFrequency);
     return {
       id: text(raw.id) || createMembershipId(),
       name: text(raw.name),
@@ -69,6 +75,9 @@ export function cleanMembershipOptions(value: unknown): MembershipOption[] {
       annualFee: amount(raw.annualFee),
       additionalFees: amount(raw.additionalFees),
       additionalFeesDetails: text(raw.additionalFeesDetails),
+      guestPassesEnabled: raw.guestPassesEnabled === true,
+      guestPassCount: raw.guestPassesEnabled === true ? Math.max(0, Math.floor(amount(raw.guestPassCount))) : 0,
+      guestPassFrequency: (["day", "week", "month", "year"].includes(guestPassFrequency) ? guestPassFrequency : "month") as GuestPassFrequency,
       access: Array.isArray(raw.access)
         ? raw.access.filter((item): item is string => typeof item === "string").map(item => item.trim()).filter(Boolean)
         : text(raw.access).split(/[\n,]/).map(item => item.trim()).filter(Boolean),

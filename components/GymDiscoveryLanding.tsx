@@ -2711,6 +2711,12 @@ export function DetailPanel({
                                   <dd>{money(option.additionalFees)}</dd>
                                 </div>
                               )}
+                              {option.guestPassesEnabled && option.guestPassCount > 0 && (
+                                <div className="col-span-2">
+                                  <dt className="text-white/45">Guest passes</dt>
+                                  <dd className="text-white">{option.guestPassCount} guest {option.guestPassCount === 1 ? "pass" : "passes"} per {option.guestPassFrequency}</dd>
+                                </div>
+                              )}
                             </dl>
                             {option.additionalFees > 0 &&
                               option.additionalFeesDetails && (

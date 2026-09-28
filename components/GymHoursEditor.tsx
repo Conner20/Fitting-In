@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Clock3 } from "lucide-react";
+import UniversalCheckbox from "@/components/UniversalCheckbox";
 
 type DayHours = { day: string; open: boolean; allDay: boolean; opens: string; closes: string };
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -69,8 +70,8 @@ export default function GymHoursEditor({ value, onChange }: { value: string; onC
     return <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10">
         {schedule.map((day, index) => <div key={day.day} className="gym-hours-row grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 border-b border-zinc-200 p-3 last:border-b-0 dark:border-white/10 md:grid-cols-[90px_70px_70px_1fr]">
             <span className="text-sm font-semibold">{day.day.slice(0, 3)}</span>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={day.open} onChange={(event) => change(index, { open: event.target.checked })} className="h-4 w-4 accent-emerald-700"/>Open</label>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={day.allDay} disabled={!day.open} onChange={(event) => change(index, { allDay: event.target.checked })} className="h-4 w-4 accent-emerald-700"/>24 hrs</label>
+            <label className="flex items-center gap-2 text-xs"><UniversalCheckbox checked={day.open} onChange={(event) => change(index, { open: event.target.checked })}/>Open</label>
+            <label className="flex items-center gap-2 text-xs"><UniversalCheckbox checked={day.allDay} disabled={!day.open} onChange={(event) => change(index, { allDay: event.target.checked })}/>24 hrs</label>
             {day.open && !day.allDay ? <div className="col-span-3 flex min-w-0 items-center gap-2 md:col-span-1"><TimeInput label={`${day.day} opening time`} value={day.opens} onChange={opens=>change(index,{opens})}/><span className="shrink-0 text-zinc-400">–</span><TimeInput label={`${day.day} closing time`} value={day.closes} onChange={closes=>change(index,{closes})}/></div> : <span className="col-span-3 text-xs text-zinc-500 md:col-span-1">{day.open ? "Open all day" : "Closed"}</span>}
         </div>)}
     </div>;

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Minus, Plus, Search, X } from "lucide-react";
+import { ChevronDown, Minus, Plus, Search, X } from "lucide-react";
+import { UniversalCheckboxMark } from "@/components/UniversalCheckbox";
 
 const quantityPattern = /\s*×\s*(\d+)$/;
 const itemName = (item: string) => item.replace(quantityPattern, "").trim();
@@ -62,11 +63,11 @@ export default function FacilityLookup({ label, options, selected, onChange, don
           const quantity = quantityFor(item), checked = quantity > 0;
           return trackQuantities ? <div key={item} className="group relative flex min-h-11 items-center gap-2 rounded-lg px-3 py-1.5 hover:bg-[#22c55e]/10">
             <button type="button" aria-label={`${checked ? "Deselect" : "Select"} ${item}`} onClick={() => toggle(item)} className="absolute inset-0 z-0 rounded-lg"/>
-            <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center gap-2 text-left text-sm"><span className="truncate">{item}</span>{checked && <Check className="h-4 w-4 shrink-0 text-[#22c55e]"/>}</div>
+            <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center gap-2 text-left text-sm"><span className="truncate">{item}</span>{checked && <UniversalCheckboxMark checked/>}</div>
             <div className="facility-quantity-controls relative z-10 flex shrink-0 items-center gap-1 opacity-100 transition md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"><button type="button" aria-label={`Subtract ${item}`} disabled={!quantity} onClick={() => setQuantity(item, Math.max(0, quantity - 1))} className="grid h-7 w-7 place-items-center rounded-full border border-current/20 disabled:opacity-30"><Minus className="h-3.5 w-3.5"/></button><span className="w-6 text-center text-xs font-black">{quantity}</span><button type="button" aria-label={`Add ${item}`} onClick={() => setQuantity(item, quantity + 1)} className="grid h-7 w-7 place-items-center rounded-full border border-current/20"><Plus className="h-3.5 w-3.5"/></button></div>
           </div> : <div key={item} className="group relative flex min-h-11 items-center gap-2 rounded-lg px-3 py-1.5 hover:bg-[#22c55e]/10">
             <button type="button" aria-label={`${checked ? "Deselect" : "Select"} ${item}`} onClick={() => toggle(item)} className="absolute inset-0 z-0 rounded-lg"/>
-            <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center gap-2 text-left text-sm"><span className="truncate">{item}</span>{checked && <Check className="h-4 w-4 shrink-0 text-[#22c55e]"/>}</div>
+            <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 items-center gap-2 text-left text-sm"><span className="truncate">{item}</span>{checked && <UniversalCheckboxMark checked/>}</div>
           </div>;
         })}
         {allowCustom && !results.length && query.trim() && !exactMatch && <div className="group relative flex min-h-11 items-center gap-2 rounded-lg px-3 py-1.5 text-[#22c55e] hover:bg-[#22c55e]/10">

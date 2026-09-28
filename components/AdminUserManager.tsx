@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RefreshCw, RotateCcw, ShieldPlus, ShieldX, Trash2 } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
+import UniversalCheckbox from "@/components/UniversalCheckbox";
 
 type User={id:string;email:string|null;role:string|null;deletedAt:string|null;hasAdminAccess:boolean;isConfiguredAdmin:boolean;lastActiveAt:string|null;gymAccessCount:number;gyms:{id:string;name:string}[];dayPassClicks:number;confirmedDayPasses:number;membershipClicks:number;confirmedMemberships:number};
 type SortKey="role"|"deleted"|"dayPassClicks"|"confirmedDayPasses"|"membershipClicks"|"confirmedMemberships"|"lastActiveAt";
@@ -46,7 +47,7 @@ export default function AdminUserManager(){
 <tbody className="[&_td]:px-4 [&_td]:py-3">{visibleUsers.map(user=>
 <tr key={user.id} onClick={()=>toggleUser(user)} className={`border-b border-black/5 last:border-0 dark:border-white/10 ${user.isConfiguredAdmin?"opacity-65":"cursor-pointer"} ${selected.includes(user.id)?"bg-[#22c55e]/10":"hover:bg-black/[.02] dark:hover:bg-white/[.025]"}`}>
 <td className="px-4 py-3">
-<input type="checkbox" disabled={user.isConfiguredAdmin} checked={selected.includes(user.id)} onChange={()=>toggleUser(user)} onClick={event=>event.stopPropagation()} className="h-4 w-4 accent-[#22c55e]"/>
+<UniversalCheckbox disabled={user.isConfiguredAdmin} checked={selected.includes(user.id)} onChange={()=>toggleUser(user)} onClick={event=>event.stopPropagation()}/>
 </td>
 <td>
 <b>{user.email||"Email unavailable"}</b>
