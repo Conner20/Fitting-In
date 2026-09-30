@@ -12,6 +12,8 @@ export type BillingFrequency = typeof BILLING_FREQUENCIES[number]["value"];
 export type BillingIntervalUnit = "days" | "weeks" | "months";
 export type ContractLengthUnit = BillingIntervalUnit | "years";
 export type GuestPassFrequency = "day" | "week" | "month" | "year";
+export type AnnualFeeTiming = "anniversary" | "after_joining" | "fixed_date";
+export type AnnualFeeOffsetUnit = "days" | "weeks" | "months";
 
 export type MembershipOption = {
   id: string;
@@ -24,6 +26,11 @@ export type MembershipOption = {
   contractLengthUnit: ContractLengthUnit;
   enrollmentFee: number;
   annualFee: number;
+  annualFeeTiming: AnnualFeeTiming;
+  annualFeeOffset: number;
+  annualFeeOffsetUnit: AnnualFeeOffsetUnit;
+  annualFeeMonth: number;
+  annualFeeDay: number;
   additionalFees: number;
   additionalFeesDetails: string;
   guestPassesEnabled: boolean;
@@ -48,7 +55,8 @@ export function emptyMembershipOption(): MembershipOption {
   return {
     id: createMembershipId(), name: "", price: 0, billingFrequency: "monthly",
     billingInterval: 1, billingIntervalUnit: "months", contractLength: 1, contractLengthUnit: "months",
-    enrollmentFee: 0, annualFee: 0, additionalFees: 0,
+    enrollmentFee: 0, annualFee: 0, annualFeeTiming: "anniversary",
+    annualFeeOffset: 1, annualFeeOffsetUnit: "months", annualFeeMonth: 1, annualFeeDay: 1, additionalFees: 0,
     additionalFeesDetails: "", guestPassesEnabled: false, guestPassCount: 0,
     guestPassFrequency: "month", access: [], purchaseUrl: "", notes: "",
   };
@@ -62,6 +70,10 @@ export function cleanMembershipOptions(value: unknown): MembershipOption[] {
     const billingIntervalUnit = text(raw.billingIntervalUnit);
     const contractLengthUnit = text(raw.contractLengthUnit);
     const guestPassFrequency = text(raw.guestPassFrequency);
+    const annualFeeTiming = text(raw.annualFeeTiming);
+    const annualFeeOffsetUnit = text(raw.annualFeeOffsetUnit);
+    const annualFeeMonth = Math.min(12, Math.max(1, Math.floor(amount(raw.annualFeeMonth) || 1)));
+    const annualFeeDay = Math.min(new Date(2025, annualFeeMonth, 0).getDate(), Math.max(1, Math.floor(amount(raw.annualFeeDay) || 1)));
     return {
       id: text(raw.id) || createMembershipId(),
       name: text(raw.name),
@@ -73,6 +85,11 @@ export function cleanMembershipOptions(value: unknown): MembershipOption[] {
       contractLengthUnit: (["days", "weeks", "months", "years"].includes(contractLengthUnit) ? contractLengthUnit : "months") as ContractLengthUnit,
       enrollmentFee: amount(raw.enrollmentFee),
       annualFee: amount(raw.annualFee),
+      annualFeeTiming: (["anniversary", "after_joining", "fixed_date"].includes(annualFeeTiming) ? annualFeeTiming : "anniversary") as AnnualFeeTiming,
+      annualFeeOffset: Math.max(1, Math.floor(amount(raw.annualFeeOffset) || 1)),
+      annualFeeOffsetUnit: (["days", "weeks", "months"].includes(annualFeeOffsetUnit) ? annualFeeOffsetUnit : "months") as AnnualFeeOffsetUnit,
+      annualFeeMonth,
+      annualFeeDay,
       additionalFees: amount(raw.additionalFees),
       additionalFeesDetails: text(raw.additionalFeesDetails),
       guestPassesEnabled: raw.guestPassesEnabled === true,
@@ -171,4 +188,15 @@ export function contractLengthLabel(option: MembershipOption) {
   return option.contractLength === 1 && option.contractLengthUnit === "months"
     ? "Month-to-month"
     : quantityLabel(option.contractLength, option.contractLengthUnit);
+}
+
+export function annualFeeTimingLabel(option: MembershipOption) {
+  if (option.annualFeeTiming === "after_joining") {
+    return `${quantityLabel(option.annualFeeOffset, option.annualFeeOffsetUnit)} after joining, then annually`;
+  }
+  if (option.annualFeeTiming === "fixed_date") {
+    const date = new Date(2025, option.annualFeeMonth - 1, option.annualFeeDay);
+    return `Every ${date.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" })}`;
+  }
+  return "On the anniversary of the signup date";
 }

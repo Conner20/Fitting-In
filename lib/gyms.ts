@@ -111,6 +111,8 @@ export function validateCompleteGymInput(body: Record<string, unknown>, data: Re
         if (!option.billingFrequency) missing.push(`${prefix} billing frequency`);
         if (option.billingFrequency === "custom" && (!Number.isFinite(option.billingInterval) || option.billingInterval < 1)) missing.push(`${prefix} billing interval`);
         if (!Number.isFinite(option.contractLength) || option.contractLength < 1) missing.push(`${prefix} contract length`);
+        if (option.annualFee > 0 && option.annualFeeTiming === "after_joining" && (!Number.isInteger(option.annualFeeOffset) || option.annualFeeOffset < 1)) missing.push(`${prefix} annual fee timing`);
+        if (option.annualFee > 0 && option.annualFeeTiming === "fixed_date" && (!Number.isInteger(option.annualFeeMonth) || option.annualFeeMonth < 1 || option.annualFeeMonth > 12 || !Number.isInteger(option.annualFeeDay) || option.annualFeeDay < 1 || option.annualFeeDay > new Date(2025, option.annualFeeMonth, 0).getDate())) missing.push(`${prefix} annual fee date`);
         if (option.guestPassesEnabled && (!Number.isInteger(option.guestPassCount) || option.guestPassCount < 1)) missing.push(`${prefix} guest pass count`);
         if ([option.enrollmentFee, option.annualFee, option.additionalFees].some(value => !Number.isFinite(value) || value < 0)) missing.push(`${prefix} fees`);
         if (!option.access.length) missing.push(`${prefix} access`);

@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Copy } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 type TrendMetric =
   | "users"
@@ -231,18 +231,15 @@ function UserGrowthChart({ points }: { points: Point[] }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-black/5 bg-white dark:border-white/10 dark:bg-white/[.04]">
       <div className="border-b border-black/5 p-5 dark:border-white/10">
-        <h3 className="font-black">{metricLabel} over time</h3>
-        <div className="admin-trend-controls scrollbar-slim mt-3 flex flex-wrap gap-2">
-          {trendMetrics.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setMetric(item.key)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${metric === item.key ? "border-[#22c55e] bg-[#22c55e] text-black" : "border-black/10 text-zinc-500 hover:border-[#22c55e] hover:text-[#22c55e] dark:border-white/15"}`}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-black">{metricLabel} over time</h3>
+          <label className="relative inline-flex items-center">
+            <span className="sr-only">Metric</span>
+            <select value={metric} onChange={(event) => setMetric(event.target.value as TrendMetric)} className="min-w-56 appearance-none rounded-lg border border-black/10 bg-transparent py-2 pl-3 pr-9 text-left text-sm font-semibold text-black outline-none transition hover:border-[#22c55e] focus:border-[#22c55e] dark:border-white/15 dark:text-white">
+              {trendMetrics.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+            </select>
+            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+          </label>
         </div>
       </div>
       {!visiblePoints.length ? (
@@ -805,7 +802,6 @@ function ClaimClickLogTable({
     [selectedGymId, setSelectedGymId] = useState<string | null>(null),
     [selectedGymPage, setSelectedGymPage] = useState(1),
     [gymDetailSort, setGymDetailSort] = useState<{ key: GymDetailSort; direction: "asc" | "desc" } | null>(null),
-    [copiedGymActivity, setCopiedGymActivity] = useState(false),
     matchingLogs = emailLookup.trim()
       ? logs.filter((log) =>
           log.email?.toLowerCase().includes(emailLookup.trim().toLowerCase()),
@@ -870,21 +866,9 @@ function ClaimClickLogTable({
           return (gymDetailSort.direction === "asc" ? raw : -raw) || Date.parse(b.clickedAt) - Date.parse(a.clickedAt);
         })
       : selectedGymLogs,
-    selectedGymTotalPages = Math.max(1, Math.ceil(orderedSelectedGymLogs.length / 5)),
-    shownSelectedGymLogs = orderedSelectedGymLogs.slice((selectedGymPage - 1) * 5, selectedGymPage * 5);
-  const copyGymActivity = async () => {
-    const lines = [
-      selectedGymName,
-      "User email\tOffer\tClicked\tPurchased?\tGym confirmed at",
-      ...orderedSelectedGymLogs.map(
-        (log) =>
-          `${log.email || "Email unavailable"}\t${log.offer}\t${new Date(log.clickedAt).toLocaleString()}\t${log.gymResponse}\t${log.gymConfirmedAt ? new Date(log.gymConfirmedAt).toLocaleString() : "—"}`,
-      ),
-    ];
-    await navigator.clipboard.writeText(lines.join("\n"));
-    setCopiedGymActivity(true);
-    window.setTimeout(() => setCopiedGymActivity(false), 1000);
-  };
+    selectedGymPageSize = 10,
+    selectedGymTotalPages = Math.max(1, Math.ceil(orderedSelectedGymLogs.length / selectedGymPageSize)),
+    shownSelectedGymLogs = orderedSelectedGymLogs.slice((selectedGymPage - 1) * selectedGymPageSize, selectedGymPage * selectedGymPageSize);
   useEffect(() => setPage(1), [logs]);
   useEffect(() => setPage(1), [emailLookup]);
   useEffect(() => {
@@ -1096,19 +1080,6 @@ function ClaimClickLogTable({
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={copyGymActivity}
-                  aria-label={
-                    copiedGymActivity
-                      ? "Gym claim activity copied"
-                      : "Copy gym claim activity"
-                  }
-                  title={copiedGymActivity ? "Copied!" : "Copy"}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border p-0 transition ${copiedGymActivity ? "border-[#22c55e] text-[#22c55e]" : "border-white/15 text-white hover:border-white"}`}
-                >
-                  <Copy className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
                   onClick={() => setSelectedGymId(null)}
                   aria-label="Close"
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 p-0 text-xl leading-none transition hover:border-white"
@@ -1150,7 +1121,7 @@ function ClaimClickLogTable({
                 </tbody>
               </table>
             </div>
-            {orderedSelectedGymLogs.length > 5 && <div className="flex items-center justify-center gap-3 border-t border-white/10 px-4 py-3"><button type="button" disabled={selectedGymPage === 1} onClick={() => setSelectedGymPage(current => Math.max(1, current - 1))} className="rounded-full border border-white/15 px-4 py-2 text-xs font-bold transition hover:border-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40">Previous</button><span className="text-xs text-white/50">Page {selectedGymPage} of {selectedGymTotalPages}</span><button type="button" disabled={selectedGymPage === selectedGymTotalPages} onClick={() => setSelectedGymPage(current => Math.min(selectedGymTotalPages, current + 1))} className="rounded-full border border-white/15 px-4 py-2 text-xs font-bold transition hover:border-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40">Next</button></div>}
+            {orderedSelectedGymLogs.length > selectedGymPageSize && <div className="flex items-center justify-center gap-3 border-t border-white/10 px-4 py-3"><button type="button" disabled={selectedGymPage === 1} onClick={() => setSelectedGymPage(current => Math.max(1, current - 1))} className="rounded-full border border-white/15 px-4 py-2 text-xs font-bold transition hover:border-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40">Previous</button><span className="text-xs text-white/50">Page {selectedGymPage} of {selectedGymTotalPages}</span><button type="button" disabled={selectedGymPage === selectedGymTotalPages} onClick={() => setSelectedGymPage(current => Math.min(selectedGymTotalPages, current + 1))} className="rounded-full border border-white/15 px-4 py-2 text-xs font-bold transition hover:border-[#22c55e] disabled:cursor-not-allowed disabled:opacity-40">Next</button></div>}
           </div>
         </div>
       )}
@@ -1461,6 +1432,7 @@ export default function AdminBehaviorDashboard({
               router.refresh();
             }}
           />
+          <div className="grid items-start gap-6 lg:grid-cols-2">
           <PopularCitiesTable cities={data.cities ?? []} />
           <section className="rounded-2xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-white/[.04]">
             <div className="flex items-baseline justify-between gap-3">
@@ -1471,7 +1443,7 @@ export default function AdminBehaviorDashboard({
                 </p>
               </div>
             </div>
-            <div className="scrollbar-slim mt-3 grid grid-flow-col auto-cols-[minmax(140px,1fr)] gap-2 overflow-x-auto pb-1 lg:grid-flow-row lg:grid-cols-6 lg:overflow-visible lg:pb-0">
+            <div className="scrollbar-slim mt-3 grid grid-flow-col auto-cols-[minmax(140px,1fr)] gap-2 overflow-x-auto pb-1 lg:grid-flow-row lg:grid-cols-2 lg:overflow-visible lg:pb-0 xl:grid-cols-3">
               {data.filters.map((filter) => (
                 <div
                   key={filter.name}
@@ -1483,6 +1455,7 @@ export default function AdminBehaviorDashboard({
               ))}
             </div>
           </section>
+          </div>
         </>
       )}
     </div>

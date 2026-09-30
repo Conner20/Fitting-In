@@ -31,6 +31,7 @@ import FacilityLookup from "@/components/FacilityLookup";
 import { AMENITY_OPTIONS, EQUIPMENT_OPTIONS } from "@/lib/facility-options";
 import {
   MembershipOption,
+  annualFeeTimingLabel,
   billingFrequencyLabel,
   cleanMembershipOptions,
   contractLengthLabel,
@@ -2698,9 +2699,9 @@ export function DetailPanel({
                                 </div>
                               )}
                               {option.annualFee > 0 && (
-                                <div>
+                                <div className="col-span-2">
                                   <dt className="text-white/45">Annual fee</dt>
-                                  <dd>{money(option.annualFee)}</dd>
+                                  <dd>{money(option.annualFee)} · {annualFeeTimingLabel(option)}</dd>
                                 </div>
                               )}
                               {option.additionalFees > 0 && (
@@ -2770,6 +2771,7 @@ export function DetailPanel({
                                       ${option.annualFee.toFixed(2)} ÷ 12 months = $
                                       {breakdown.annualFeeMonthly.toFixed(2)}/mo
                                     </p>
+                                    <p>{annualFeeTimingLabel(option)}</p>
                                   </div>
                                 )}
                                 {breakdown.upfrontFees > 0 && (

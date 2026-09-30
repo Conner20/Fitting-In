@@ -4,6 +4,8 @@ import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { sha256Hex } from "@/lib/token";
 import { db } from "@/prisma/client";
+import { cleanMembershipOptions } from "@/lib/memberships";
+import { cleanDayPassOptions } from "@/lib/day-passes";
 
 const ALLOWED = new Set(["VISIT", "TIME_SPENT", "GYM_OPENED", "WEBSITE_CLICKED", "DIRECTIONS_CLICKED", "FAVORITE_ADDED", "FAVORITE_REMOVED", "COMPARE_ADDED", "COMPARE_REMOVED", "COMPARE_OPENED", "DAY_PASS_CLICKED", "DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_CLAIM_DECLINED", "MEMBERSHIP_CLICKED", "MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_CLAIM_DECLINED", "FILTER_OPENED", "FILTER_CHANGED", "FILTER_CLEARED", "LOCATION_SEARCHED", "LOCATION_USED", "SORT_CHANGED", "MAP_VIEWED", "LIST_VIEWED"]);
 
@@ -22,6 +24,18 @@ export async function POST(request: Request) {
     let dedupeKey: string | undefined;
     if (gymId && ["DAY_PASS_CLICKED", "MEMBERSHIP_CLICKED"].includes(eventType)) {
       const optionId = typeof metadata?.optionId === "string" && metadata.optionId ? metadata.optionId : null;
+      if (eventType === "MEMBERSHIP_CLICKED" && optionId) {
+        const gym = await db.gym.findUnique({ where: { id: gymId }, select: { membershipOptions: true } });
+        const option = cleanMembershipOptions(gym?.membershipOptions).find(item => item.id === optionId);
+        if (!option) return NextResponse.json({ error: "Membership option not found" }, { status: 400 });
+        metadata = { ...metadata, optionName: option.name, membershipTerms: JSON.parse(JSON.stringify(option)) as Prisma.InputJsonObject };
+      }
+      if (eventType === "DAY_PASS_CLICKED" && optionId) {
+        const gym = await db.gym.findUnique({ where: { id: gymId }, select: { dayPassOptions: true } });
+        const option = cleanDayPassOptions(gym?.dayPassOptions).find(item => item.id === optionId);
+        if (!option) return NextResponse.json({ error: "Day-pass option not found" }, { status: 400 });
+        metadata = { ...metadata, durationDays: option.durationDays, price: option.price };
+      }
       const optionFallback = eventType === "MEMBERSHIP_CLICKED"
         ? typeof metadata?.optionName === "string" && metadata.optionName ? metadata.optionName : metadata?.url
         : typeof metadata?.durationDays === "number" ? String(metadata.durationDays) : metadata?.url;

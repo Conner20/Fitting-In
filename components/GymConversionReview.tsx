@@ -19,6 +19,7 @@ export default function GymConversionReview({ token, gymName, expiresAt, initial
   const pendingRows = useMemo(() => rows.filter(row => row.status === "check_later"), [rows]);
   const confirmedRows = useMemo(() => rows.filter(row => row.status === "purchased"), [rows]);
   const unanswered = pendingRows.filter(row => !decisions[row.id]).length;
+  const canSubmit = unanswered === 0 && !saving;
   const pageCount = Math.max(1, Math.ceil(confirmedRows.length / PAGE_SIZE));
   const visibleConfirmedRows = confirmedRows.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE);
 
@@ -50,12 +51,12 @@ export default function GymConversionReview({ token, gymName, expiresAt, initial
       {pendingRows.length ? <>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-white/45"><tr><th className="p-4">User email</th><th>Offer</th><th>Clicked</th><th className="pr-4">Purchased?</th></tr></thead>
-            <tbody>{pendingRows.map(row => <tr key={row.id} className="border-t border-white/10"><td className="p-4 font-semibold">{row.email}</td><td className="font-semibold">{row.offer}</td><td>{new Date(row.clickedAt).toLocaleString()}</td><td className="pr-4"><div className="flex gap-1.5">{choices.map(choice => <button key={choice.value} type="button" onClick={() => update(row.id, choice.value)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${decisions[row.id] === choice.value ? "border-[#22c55e] bg-[#22c55e] text-black" : "border-white/15 text-white/65 hover:border-white/40"}`}>{choice.label}</button>)}</div></td></tr>)}</tbody>
+            <thead className="text-left text-xs uppercase tracking-wide text-white/45"><tr><th className="p-4">User email</th><th>Offer</th><th>Clicked</th><th className="pr-4">Gym response</th></tr></thead>
+            <tbody>{pendingRows.map(row => <tr key={row.id} className="border-t border-white/10"><td className="p-4 font-semibold">{row.email}</td><td className="font-semibold">{row.offer}</td><td>{row.rowKind === "membership_cycle" && row.periodStart ? new Date(`${row.periodStart}T00:00:00`).toLocaleDateString() : new Date(row.clickedAt).toLocaleString()}</td><td className="py-3 pr-4"><p className="mb-2 text-xs font-semibold text-white/60">{row.question}</p><div className="flex gap-1.5">{choices.map(choice => <button key={choice.value} type="button" onClick={() => update(row.id, choice.value)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${decisions[row.id] === choice.value ? "green-button-ui border-[#22c55e]" : "border-white/15 text-white/65 hover:border-white/40"}`}>{row.rowKind === "membership_cycle" ? choice.value === "purchased" ? "Active" : "Inactive" : choice.label}</button>)}</div></td></tr>)}</tbody>
           </table>
         </div>
         <footer className="border-t border-white/10 p-6 sm:p-8">
-          <div className="flex flex-wrap items-center gap-4"><button type="button" disabled={saving || unanswered > 0} onClick={() => void submit()} className="rounded-full bg-[#22c55e] px-6 py-3 text-sm font-black text-black disabled:cursor-not-allowed disabled:opacity-45">{saving ? "Submitting…" : "Submit confirmations"}</button>{unanswered > 0 && <span className="text-sm text-white/50">Answer yes or no for {unanswered} referral{unanswered === 1 ? "" : "s"}.</span>}</div>
+          <div className="flex flex-wrap items-center gap-4"><button type="button" disabled={!canSubmit} onClick={() => void submit()} className={`w-full rounded-full border px-6 py-3 text-sm font-black transition sm:w-auto ${canSubmit ? "green-button-ui border-[#22c55e]" : "cursor-not-allowed border-zinc-600 bg-zinc-700 text-zinc-300"}`}>{saving ? "Submitting…" : "Submit confirmations"}</button></div>
         </footer>
       </> : <div className="border-b border-white/10 p-8 text-center text-white/55">There are no unconfirmed referrals to review.</div>}
 
