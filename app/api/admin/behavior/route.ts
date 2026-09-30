@@ -32,10 +32,10 @@ export async function GET(request: Request) {
     if (event.eventType === "COMPARE_ADDED") row.compares.add(actor);
     if (event.eventType === "DAY_PASS_CLICKED") row.dayPassClicks.add(actor);
     if (event.eventType === "WEBSITE_CLICKED") row.websiteVisits.add(actor);
-    if (["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)) row.confirmedClaims.add(actor);
+    if (event.eventType === "DAY_PASS_GYM_CONFIRMED") row.confirmedClaims.add(actor);
     if (event.eventType === "DAY_PASS_SIGNUP") row.signups.add(actor);
     if (event.eventType === "MEMBERSHIP_CLICKED") row.membershipClicks.add(actor);
-    if (["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)) row.confirmedMemberships.add(actor);
+    if (event.eventType === "MEMBERSHIP_GYM_CONFIRMED") row.confirmedMemberships.add(actor);
     if (event.eventType === "MEMBERSHIP_SIGNUP") row.membershipSignups.add(actor);
     byGym.set(event.gymId, row);
     const email = event.user?.email?.toLowerCase() || visitorAccounts.get(event.visitorId);
@@ -94,9 +94,9 @@ export async function GET(request: Request) {
       trendVisitors.add(event.visitorId);
       if (event.eventType === "GYM_OPENED") trendProfileOpens++;
       if (event.eventType === "DAY_PASS_CLICKED") trendDayPassClickers.add(actorFor(event));
-      if (["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)) { const metadata=event.metadata as Record<string,unknown>|null,claimId=event.eventType==="DAY_PASS_GYM_CONFIRMED"&&typeof metadata?.claimClickId==="string"?metadata.claimClickId:events.find(click=>click.eventType==="DAY_PASS_CLICKED"&&click.gymId===event.gymId&&actorFor(click)===actorFor(event)&&click.createdAt<=event.createdAt)?.id||event.id;trendConfirmedDayPasses.add(claimId); }
+      if (event.eventType==="DAY_PASS_GYM_CONFIRMED") { const metadata=event.metadata as Record<string,unknown>|null,claimId=typeof metadata?.claimClickId==="string"?metadata.claimClickId:event.id;trendConfirmedDayPasses.add(claimId); }
       if (event.eventType === "MEMBERSHIP_CLICKED") trendMembershipClickers.add(actorFor(event));
-      if (["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)) { const metadata=event.metadata as Record<string,unknown>|null,claimId=event.eventType==="MEMBERSHIP_GYM_CONFIRMED"&&typeof metadata?.claimClickId==="string"?metadata.claimClickId:events.find(click=>click.eventType==="MEMBERSHIP_CLICKED"&&click.gymId===event.gymId&&actorFor(click)===actorFor(event)&&click.createdAt<=event.createdAt)?.id||event.id;trendConfirmedMemberships.add(claimId); }
+      if (event.eventType==="MEMBERSHIP_GYM_CONFIRMED") { const metadata=event.metadata as Record<string,unknown>|null,claimId=typeof metadata?.claimClickId==="string"?metadata.claimClickId:event.id;trendConfirmedMemberships.add(claimId); }
     }
     const changed: TrendMetric[] = [];
     if (usersByDay.has(date)) changed.push("users");
@@ -119,7 +119,7 @@ export async function GET(request: Request) {
     const gymConfirmed=Boolean(gymConfirmation);
     const userStatus=outcome?.eventType === "DAY_PASS_CLAIM_CONFIRMED" ? "confirmed" : outcome?.eventType === "DAY_PASS_CLAIM_DECLINED" ? "declined" : "unsure";
     const clickMetadata=click.metadata as Record<string,unknown>|null,offerName=typeof clickMetadata?.durationDays==="number"?`${clickMetadata.durationDays}-day pass`:"Day pass",offerPrice=typeof clickMetadata?.price==="number"?` · $${clickMetadata.price.toFixed(2)}`:"";
-    return { id: click.id, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, offer:`${offerName}${offerPrice}`,gymResponse:gymConfirmed?"Yes":gymDeclined?"No":"Not answered",clickedAt: click.createdAt.toISOString(), gymConfirmed, userConfirmed:Boolean(userConfirmation), userConfirmedAt:userConfirmation?.createdAt.toISOString()||null, gymConfirmedAt:gymConfirmation?.createdAt.toISOString()||null, confirmationAt:gymConfirmation?.createdAt.toISOString()||userConfirmation?.createdAt.toISOString()||null, userStatus, status: gymConfirmed ? "confirmed" : userStatus };
+    return { id: click.id, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, offer:`${offerName}${offerPrice}`,gymResponse:gymConfirmed?"Purchased":gymDeclined?"Not Purchased":null,clickedAt: click.createdAt.toISOString(), gymConfirmed, userConfirmed:Boolean(userConfirmation), userConfirmedAt:userConfirmation?.createdAt.toISOString()||null, gymConfirmedAt:gymConfirmation?.createdAt.toISOString()||null, confirmationAt:gymConfirmation?.createdAt.toISOString()||userConfirmation?.createdAt.toISOString()||null, userStatus, status: gymConfirmed ? "confirmed" : gymDeclined ? "unconfirmed" : userConfirmation ? "user_reported" : "unconfirmed" };
   });
   const membershipClickLogs = events.filter(event => event.eventType === "MEMBERSHIP_CLICKED" && event.gymId && event.gym).map(click => {
     const clickActor = actorFor(click);
@@ -128,16 +128,18 @@ export async function GET(request: Request) {
     const userConfirmation=outcome?.eventType === "MEMBERSHIP_CLAIM_CONFIRMED"?outcome:null;
     const gymConfirmation=events.find(event=>event.eventType==="MEMBERSHIP_GYM_CONFIRMED"&&event.visitId===`gym-confirm:${click.id}`);
     const gymDeclined=events.some(event=>event.eventType==="MEMBERSHIP_GYM_DECLINED"&&event.visitId===`gym-confirm:${click.id}`);
+    const latestCycleResponse=events.find(event=>["MEMBERSHIP_CYCLE_GYM_CONFIRMED","MEMBERSHIP_GYM_ENDED"].includes(event.eventType)&&((event.metadata as Record<string,unknown>|null)?.claimClickId===click.id));
     const gymConfirmed=Boolean(gymConfirmation);
     const userStatus=outcome?.eventType === "MEMBERSHIP_CLAIM_CONFIRMED" ? "confirmed" : outcome?.eventType === "MEMBERSHIP_CLAIM_DECLINED" ? "declined" : "unsure";
     const clickMetadata=click.metadata as Record<string,unknown>|null,offerName=typeof clickMetadata?.optionName==="string"&&clickMetadata.optionName.trim()?clickMetadata.optionName.trim():"Membership",offerPrice=typeof clickMetadata?.price==="number"?` · $${clickMetadata.price.toFixed(2)}`:"";
-    return { id: click.id, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, offer:`${offerName}${offerPrice}`,gymResponse:gymConfirmed?"Yes":gymDeclined?"No":"Not answered",clickedAt: click.createdAt.toISOString(), gymConfirmed, userConfirmed:Boolean(userConfirmation), userConfirmedAt:userConfirmation?.createdAt.toISOString()||null, gymConfirmedAt:gymConfirmation?.createdAt.toISOString()||null, confirmationAt:gymConfirmation?.createdAt.toISOString()||userConfirmation?.createdAt.toISOString()||null, userStatus, status: gymConfirmed ? "confirmed" : userStatus };
+    const gymResponse=latestCycleResponse?.eventType==="MEMBERSHIP_CYCLE_GYM_CONFIRMED"?"Active":latestCycleResponse?.eventType==="MEMBERSHIP_GYM_ENDED"?"Inactive":gymConfirmed?"Purchased":gymDeclined?"Not Purchased":null,latestGymResponse=latestCycleResponse??gymConfirmation;
+    return { id: click.id, email: click.user?.email?.toLowerCase() || visitorAccounts.get(click.visitorId) || null, gymId: click.gymId, gym: click.gym!.name, offer:`${offerName}${offerPrice}`,gymResponse,clickedAt: click.createdAt.toISOString(), gymConfirmed:Boolean(gymConfirmation||latestCycleResponse), userConfirmed:Boolean(userConfirmation), userConfirmedAt:userConfirmation?.createdAt.toISOString()||null, gymConfirmedAt:latestGymResponse?.createdAt.toISOString()||null, confirmationAt:latestGymResponse?.createdAt.toISOString()||userConfirmation?.createdAt.toISOString()||null, userStatus, status: gymConfirmed ? "confirmed" : gymDeclined ? "unconfirmed" : userConfirmation ? "user_reported" : "unconfirmed" };
   });
   const confirmedClickId=(event:typeof events[number],clickType:"DAY_PASS_CLICKED"|"MEMBERSHIP_CLICKED")=>{const metadata=event.metadata as Record<string,unknown>|null;if(event.eventType.endsWith("_GYM_CONFIRMED")&&typeof metadata?.claimClickId==="string")return metadata.claimClickId;return events.find(click=>click.eventType===clickType&&click.gymId===event.gymId&&actorFor(click)===actorFor(event)&&click.createdAt<=event.createdAt)?.id||event.id};
-  const dayPassConfirmationEvents=events.filter(event => ["DAY_PASS_CLAIM_CONFIRMED", "DAY_PASS_GYM_CONFIRMED"].includes(event.eventType)),confirmedClaimUsers=new Set(dayPassConfirmationEvents.map(actorFor)),confirmedDayPassKeys=new Set(claimClickLogs.filter(log=>log.status==="confirmed").map(log=>log.id)),gymConfirmedDayPassKeys=new Set(claimClickLogs.filter(log=>log.gymConfirmed).map(log=>log.id));
+  const dayPassConfirmationEvents=events.filter(event => event.eventType==="DAY_PASS_GYM_CONFIRMED"),confirmedClaimUsers=new Set(dayPassConfirmationEvents.map(actorFor)),confirmedDayPassKeys=new Set(claimClickLogs.filter(log=>log.status==="confirmed").map(log=>log.id)),gymConfirmedDayPassKeys=new Set(claimClickLogs.filter(log=>log.gymConfirmed).map(log=>log.id));
   const uniqueDayPassClickers = new Set(events.filter(event => event.eventType === "DAY_PASS_CLICKED").map(actorFor));
   const uniqueMembershipClickers = new Set(events.filter(event => event.eventType === "MEMBERSHIP_CLICKED").map(actorFor));
-  const membershipConfirmationEvents=events.filter(event => ["MEMBERSHIP_CLAIM_CONFIRMED", "MEMBERSHIP_GYM_CONFIRMED"].includes(event.eventType)),confirmedMembershipUsers=new Set(membershipConfirmationEvents.map(actorFor)),confirmedMembershipKeys=new Set(membershipClickLogs.filter(log=>log.status==="confirmed").map(log=>log.id)),gymConfirmedMembershipKeys=new Set(membershipClickLogs.filter(log=>log.gymConfirmed).map(log=>log.id));
+  const membershipConfirmationEvents=events.filter(event => event.eventType==="MEMBERSHIP_GYM_CONFIRMED"),confirmedMembershipUsers=new Set(membershipConfirmationEvents.map(actorFor)),confirmedMembershipKeys=new Set(membershipClickLogs.filter(log=>log.status==="confirmed").map(log=>log.id)),gymConfirmedMembershipKeys=new Set(membershipClickLogs.filter(log=>log.gymConfirmed).map(log=>log.id));
   const citiesByKey = new Map<string, { city: string; state: string; country: string; users: Set<string> }>();
   for (const event of events.filter(event => ["LOCATION_SEARCHED", "LOCATION_USED"].includes(event.eventType))) {
     const metadata = event.metadata as Record<string, unknown> | null;

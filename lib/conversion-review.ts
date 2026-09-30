@@ -124,7 +124,7 @@ export async function getConversionReview(rawToken: string) {
         status: outcome?.eventType === "MEMBERSHIP_CYCLE_GYM_CONFIRMED" ? "purchased" : ended ? "not_found" : "check_later",
         confirmedAt: outcome?.createdAt.toISOString(),
         rowKind: "membership_cycle",
-        question: "Is this membership active or inactive?",
+        question: "Active?",
         periodIndex,
         periodStart: period.start,
         periodEnd: period.end,

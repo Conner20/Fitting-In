@@ -59,9 +59,9 @@ type ClaimClickLog = {
   gymId: string | null;
   gym: string;
   offer: string;
-  gymResponse: "Yes" | "No" | "Not answered";
+  gymResponse: "Purchased" | "Not Purchased" | "Active" | "Inactive" | null;
   clickedAt: string;
-  status: "confirmed" | "declined" | "unsure";
+  status: "confirmed" | "user_reported" | "unconfirmed";
   userStatus: "confirmed" | "declined" | "unsure";
   gymConfirmed: boolean;
   userConfirmed: boolean;
@@ -616,8 +616,8 @@ function GymDemandFunnel({ gyms, days }: { gyms: GymMetric[]; days: number }) {
                 "Profile opens",
                 "Favorites",
                 "Compared",
-                "Day-pass clicks / confirms",
                 "Website visits",
+                "Day-pass clicks / confirms",
                 "Day-pass signups",
                 "Day-pass rate",
                 "Membership clicks / confirms",
@@ -635,17 +635,19 @@ function GymDemandFunnel({ gyms, days }: { gyms: GymMetric[]; days: number }) {
                 className="border-t border-black/5 dark:border-white/10"
               >
                 <td>
-                  <span className="font-bold">{g.name}</span>
+                  <Link href={`/admin/gyms/${g.gymId}`} className="font-bold transition hover:text-[#22c55e]">
+                    {g.name}
+                  </Link>
                 </td>
                 <td>{g.opens}</td>
                 <td>{g.favorites}</td>
                 <td>{g.compares}</td>
+                <td>{g.websiteVisits}</td>
                 <td>
                   <span className="font-semibold">{g.dayPassClicks}</span>
                   <span className="mx-1.5 text-zinc-400">/</span>
                   <span>{g.confirmedClaims}</span>
                 </td>
-                <td>{g.websiteVisits}</td>
                 <td>{g.signups}</td>
                 <td>
                   {g.opens ? Math.round((g.dayPassClicks / g.opens) * 100) : 0}%
@@ -788,11 +790,10 @@ function ClaimClickLogTable({
 }) {
   type LogSort =
     | "gym"
-    | "claimType"
+    | "offer"
     | "clickedAt"
-    | "confirmationAt"
-    | "status";
-  type GymDetailSort = "offer" | "clickedAt" | "purchased" | "gymConfirmedAt";
+    | "confirmationAt";
+  type GymDetailSort = "offer" | "clickedAt" | "gymResponse" | "gymConfirmedAt";
   const [page, setPage] = useState(1),
     [sort, setSort] = useState<{ key: LogSort; direction: "asc" | "desc" }>({
       key: "clickedAt",
@@ -808,19 +809,16 @@ function ClaimClickLogTable({
         )
       : logs,
     pageSize = 5,
-    statusRank = { confirmed: 2, unsure: 1, declined: 0 } as const,
     sorted = [...matchingLogs].sort((a, b) => {
       const raw =
         sort.key === "gym"
           ? a.gym.localeCompare(b.gym)
-          : sort.key === "claimType"
-            ? (a.claimType || "").localeCompare(b.claimType || "")
+          : sort.key === "offer"
+            ? a.offer.localeCompare(b.offer)
             : sort.key === "clickedAt"
               ? Date.parse(a.clickedAt) - Date.parse(b.clickedAt)
-              : sort.key === "confirmationAt"
-                ? (a.confirmationAt ? Date.parse(a.confirmationAt) : 0) -
-                  (b.confirmationAt ? Date.parse(b.confirmationAt) : 0)
-                : statusRank[a.status] - statusRank[b.status];
+              : (a.confirmationAt ? Date.parse(a.confirmationAt) : 0) -
+                (b.confirmationAt ? Date.parse(b.confirmationAt) : 0);
       return sort.direction === "asc" ? raw : -raw;
     }),
     totalPages = Math.max(1, Math.ceil(sorted.length / pageSize)),
@@ -849,11 +847,11 @@ function ClaimClickLogTable({
     orderedSelectedGymLogs = gymDetailSort
       ? [...selectedGymLogs].sort((a, b) => {
           let raw: number;
-          if (gymDetailSort.key === "purchased") {
+          if (gymDetailSort.key === "gymResponse") {
             const rank = gymDetailSort.direction === "desc"
-              ? { Yes: 0, No: 1, "Not answered": 2 }
-              : { No: 0, Yes: 1, "Not answered": 2 };
-            return rank[a.gymResponse] - rank[b.gymResponse] || Date.parse(b.clickedAt) - Date.parse(a.clickedAt);
+              ? { Purchased: 0, Active: 1, "Not Purchased": 2, Inactive: 3, Unanswered: 4 }
+              : { "Not Purchased": 0, Inactive: 1, Purchased: 2, Active: 3, Unanswered: 4 };
+            return rank[a.gymResponse ?? "Unanswered"] - rank[b.gymResponse ?? "Unanswered"] || Date.parse(b.clickedAt) - Date.parse(a.clickedAt);
           }
           if (gymDetailSort.key === "offer") raw = a.offer.localeCompare(b.offer);
           else if (gymDetailSort.key === "clickedAt") raw = Date.parse(a.clickedAt) - Date.parse(b.clickedAt);
@@ -902,12 +900,6 @@ function ClaimClickLogTable({
         </span>
       </button>
     );
-  const outcome = (status: ClaimClickLog["status"]) =>
-    status === "confirmed"
-      ? { label: "Confirmed", symbol: "✓", className: "text-[#22c55e]" }
-      : status === "declined"
-        ? { label: "Did not claim", symbol: "×", className: "text-red-400" }
-        : { label: "Unconfirmed", symbol: "?", className: "text-amber-400" };
   return (
     <section className="overflow-hidden rounded-2xl border border-black/5 bg-white dark:border-white/10 dark:bg-white/[.04]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 p-5 dark:border-white/10">
@@ -940,22 +932,19 @@ function ClaimClickLogTable({
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1320px] text-sm">
+        <table className="w-full min-w-[980px] text-sm">
           <thead className="text-left text-xs uppercase text-zinc-500">
             <tr>
               <th className="p-4">User email</th>
               <th>{sortHeader("gym", "Gym listing")}</th>
-              <th>{sortHeader("claimType", "Type")}</th>
+              <th>{sortHeader("offer", "Offer")}</th>
               <th>{sortHeader("clickedAt", "Clicked")}</th>
-              <th>Confirmed by gym</th>
-              <th>Confirmed by user</th>
+              <th>Confirmed by</th>
               <th>{sortHeader("confirmationAt", "Confirmed at")}</th>
-              <th>{sortHeader("status", "Claimed?")}</th>
             </tr>
           </thead>
           <tbody>
             {shown.map((log) => {
-              const detail = outcome(log.status);
               return (
                 <tr
                   key={`${log.claimType}-${log.id}`}
@@ -977,49 +966,28 @@ function ClaimClickLogTable({
                       log.gym
                     )}
                   </td>
-                  <td>
-                    <span className="rounded-full border border-black/10 px-2.5 py-1 text-xs font-semibold dark:border-white/15">
-                      {log.claimType}
-                    </span>
-                  </td>
+                  <td>{log.offer}</td>
                   <td>{new Date(log.clickedAt).toLocaleString()}</td>
                   <td
                     className={
-                      log.gymConfirmed
+                      log.gymConfirmed || log.userConfirmed
                         ? "font-bold text-[#22c55e]"
                         : "text-zinc-500"
                     }
                   >
-                    {log.gymConfirmed ? "Yes" : "No"}
-                  </td>
-                  <td
-                    className={
-                      log.userConfirmed
-                        ? "font-bold text-[#22c55e]"
-                        : "text-zinc-500"
-                    }
-                  >
-                    {log.userConfirmed ? "Yes" : "No"}
+                    {log.gymConfirmed ? "Gym" : log.userConfirmed ? "User" : ""}
                   </td>
                   <td>
                     {log.confirmationAt
                       ? new Date(log.confirmationAt).toLocaleString()
                       : "—"}
                   </td>
-                  <td>
-                    <span
-                      className={`inline-flex items-center gap-2 font-bold ${detail.className}`}
-                    >
-                      <span className="text-lg">{detail.symbol}</span>
-                      {detail.label}
-                    </span>
-                  </td>
                 </tr>
               );
             })}
             {!shown.length && (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-zinc-500">
+                <td colSpan={6} className="p-8 text-center text-zinc-500">
                   No claim clicks were recorded during this period.
                 </td>
               </tr>
@@ -1068,7 +1036,7 @@ function ClaimClickLogTable({
             <div className="sticky top-0 flex items-center justify-between gap-4 border-b border-white/10 bg-[#111411] p-5">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="text-xl font-black">{selectedGymName}</h3>
+                  <h3 className="text-xl font-black"><Link href={`/admin/gyms/${selectedGymId}`} className="transition hover:text-[#22c55e]">{selectedGymName}</Link></h3>
                   <span className="rounded-full border border-[#22c55e]/40 bg-[#22c55e]/10 px-3 py-1 text-xs font-black text-[#86efac]">
                     {selectedGymConfirmations.toLocaleString()} confirmation{selectedGymConfirmations === 1 ? "" : "s"}
                   </span>
@@ -1097,7 +1065,7 @@ function ClaimClickLogTable({
                     <th className="p-4">User email</th>
                     <th>{gymDetailSortHeader("offer", "Offer")}</th>
                     <th>{gymDetailSortHeader("clickedAt", "Clicked")}</th>
-                    <th>{gymDetailSortHeader("purchased", "Purchased?")}</th>
+                    <th>{gymDetailSortHeader("gymResponse", "Gym response")}</th>
                     <th>{gymDetailSortHeader("gymConfirmedAt", "Gym confirmed at")}</th>
                   </tr>
                 </thead>
@@ -1107,7 +1075,7 @@ function ClaimClickLogTable({
                       <td className="p-4 font-semibold">{log.email || "Email unavailable"}</td>
                       <td>{log.offer}</td>
                       <td>{new Date(log.clickedAt).toLocaleString()}</td>
-                      <td className={log.gymResponse === "Yes" ? "font-bold text-[#22c55e]" : log.gymResponse === "No" ? "font-bold text-red-300" : "text-white/45"}>{log.gymResponse}</td>
+                      <td className={log.gymResponse&&["Purchased","Active"].includes(log.gymResponse) ? "font-bold text-[#22c55e]" : log.gymResponse&&["Not Purchased","Inactive"].includes(log.gymResponse) ? "font-bold text-red-300" : "text-white/45"}>{log.gymResponse ?? "—"}</td>
                       <td>{log.gymConfirmedAt ? new Date(log.gymConfirmedAt).toLocaleString() : "—"}</td>
                     </tr>
                   ))}

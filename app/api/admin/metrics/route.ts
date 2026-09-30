@@ -12,7 +12,8 @@ export async function DELETE() {
 
   const clearedAt = new Date();
   const deleted = await db.$transaction(async transaction => {
-    const result = await transaction.landingEvent.deleteMany();
+    const conversionLinks = await transaction.gymConversionReviewLink.deleteMany();
+    const events = await transaction.landingEvent.deleteMany();
     await transaction.landingEvent.create({
       data: {
         eventType: "METRICS_RESET",
@@ -23,8 +24,8 @@ export async function DELETE() {
         createdAt: clearedAt,
       },
     });
-    return result.count;
+    return { events: events.count, conversionLinks: conversionLinks.count };
   });
 
-  return NextResponse.json({ ok: true, deleted, clearedAt: clearedAt.toISOString() });
+  return NextResponse.json({ ok: true, deletedEvents: deleted.events, deletedConversionLinks: deleted.conversionLinks, clearedAt: clearedAt.toISOString() });
 }
