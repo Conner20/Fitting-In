@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import GymConversionReview from "@/components/GymConversionReview";
 import { getConversionReview } from "@/lib/conversion-review";
 
-export const metadata: Metadata = { title: "Review referrals", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Confirm referrals", robots: { index: false, follow: false } };
 
 export default async function ReferralReviewPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

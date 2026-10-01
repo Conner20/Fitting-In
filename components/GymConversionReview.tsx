@@ -43,8 +43,8 @@ export default function GymConversionReview({ token, gymName, expiresAt, initial
     <section className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-[#111411] shadow-2xl">
       <header className="border-b border-white/10 p-6 sm:p-8">
         <p className="text-sm font-black text-[#22c55e]">Fitting In</p>
-        <h1 className="mt-2 text-3xl font-black">Review referrals for {gymName}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">Confirm whether each person purchased the day pass or membership they selected.</p>
+        <h1 className="mt-2 text-3xl font-black">Confirm referrals for {gymName}</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">Review each referral and confirm whether they purchased the selected day pass or membership, or whether their existing membership is still active.</p>
         <p className="mt-3 text-xs text-white/40">This secure link expires {new Date(expiresAt).toLocaleString()}.</p>
       </header>
 
@@ -71,7 +71,7 @@ export default function GymConversionReview({ token, gymName, expiresAt, initial
           {confirmedRows.length ? <table className="w-full min-w-[760px] text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-white/45"><tr><th className="p-4">User email</th><th>Offer</th><th>Clicked</th><th className="pr-4">Confirmed</th></tr></thead>
             <tbody>{visibleConfirmedRows.map(row => <tr key={row.id} className="border-t border-white/10"><td className="p-4 font-semibold">{row.email}</td><td className="font-semibold">{row.offer}</td><td>{new Date(row.clickedAt).toLocaleString()}</td><td className="pr-4">{row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : "Confirmed"}</td></tr>)}</tbody>
-          </table> : <p className="p-6 text-center text-sm text-white/50">No previous conversion confirmations.</p>}
+          </table> : <p className="p-6 text-center text-sm text-white/50">No previous confirmations.</p>}
         </div>
         {confirmedRows.length > PAGE_SIZE && <div className="mt-4 flex items-center justify-end gap-3 text-sm"><button type="button" disabled={historyPage === 1} onClick={() => setHistoryPage(page => Math.max(1, page - 1))} className="rounded-full border border-white/15 px-4 py-2 font-bold disabled:opacity-35">Previous</button><span className="text-white/55">Page {historyPage} of {pageCount}</span><button type="button" disabled={historyPage === pageCount} onClick={() => setHistoryPage(page => Math.min(pageCount, page + 1))} className="rounded-full border border-white/15 px-4 py-2 font-bold disabled:opacity-35">Next</button></div>}
       </details>
