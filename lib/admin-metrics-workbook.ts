@@ -1,14 +1,7 @@
 import ExcelJS from "exceljs";
-import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
-import { hasAdminAccessByEmail } from "@/lib/admin";
 import { db } from "@/prisma/client";
 import { membershipChargeForPeriod, membershipContractEnd, membershipTermsFromMetadata } from "@/lib/membership-attribution";
 import { cleanMembershipOptions, recurringMonthlyPrice } from "@/lib/memberships";
-
-export const dynamic = "force-dynamic";
-export const maxDuration = 60;
 
 const day = (date: Date) => date.toISOString().slice(0, 10);
 const actor = (event: { userId: string | null; visitorId: string }) => event.userId ? `user:${event.userId}` : `visitor:${event.visitorId}`;
@@ -20,10 +13,7 @@ function formatSheet(sheet: ExcelJS.Worksheet) {
   sheet.columns.forEach(column => { let width = String(column.header || "").length + 2; column.eachCell?.({ includeEmpty: false }, cell => { width = Math.min(45, Math.max(width, String(cell.value ?? "").length + 2)); }); column.width = Math.max(12, width); });
 }
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email || !(await hasAdminAccessByEmail(session.user.email))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+export async function buildAdminMetricsWorkbook() {
   const [events, users, gyms, latestReset] = await Promise.all([
     db.landingEvent.findMany({ where: { eventType: { not: "METRICS_RESET" } }, select: { id: true, eventType: true, visitorId: true, visitId: true, path: true, gymId: true, userId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "asc" } }),
     db.user.findMany({ where: { emailVerified: { not: null } }, select: { id: true, email: true, role: true, isAdmin: true, createdAt: true, emailVerified: true, lastLoginAt: true, deletedAt: true, gymAccesses: { select: { gym: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } }),
@@ -212,16 +202,5 @@ export async function GET() {
   for (const gym of gyms) { const access = gym.access[0]; claims.addRow({ Gym: gym.name, Claimed: access ? "Yes" : "No", "Claimed by": access?.user.email ?? "", "Claimed at": access?.createdAt.toISOString() ?? "", "Assigned by": access?.assignedByEmail ?? "", "Last updated": gym.updatedAt.toISOString() }); }
   formatSheet(claims);
 
-  const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-  const sections = workbook.worksheets.map(sheet => {
-    const rows: string[] = [`${csvCell("Section")},${csvCell(sheet.name)}`];
-    sheet.eachRow({ includeEmpty: true }, row => {
-      const values = Array.from({ length: sheet.columnCount }, (_, index) => row.getCell(index + 1).value);
-      rows.push(values.map(csvCell).join(","));
-    });
-    return rows.join("\r\n");
-  });
-  const csv = `\uFEFF${sections.join("\r\n\r\n")}`;
-  const filename = `fitting-in-metrics-${day(new Date())}.csv`;
-  return new NextResponse(csv, { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${filename}"`, "Cache-Control": "private, no-store" } });
+  return workbook;
 }
