@@ -41,7 +41,7 @@ authenticated, short-lived presigned URLs from `/api/uploads/r2`.
 
 ### Google Sheets metrics sync
 
-The production route `/api/cron/google-sheets` rebuilds the managed Google Sheet tabs from PostgreSQL. The Sheet is a one-way reporting copy: editing it never changes application data. The service-account email must have Editor access to the spreadsheet; human viewers can be granted Viewer access. Vercel Hobby runs a free daily fallback at 04:00 UTC. The free Cloudflare Worker in `cloudflare/` calls the same protected route every 15 minutes.
+The production route `/api/cron/google-sheets` rebuilds one filterable `Fitting In Metrics` sheet from PostgreSQL. Its `Section` column identifies the original dataset, and all underlying records remain available in the consolidated table. The Sheet is a one-way reporting copy: editing it never changes application data, and edits to the managed sheet are replaced at the next sync. The service-account email must have Editor access to the spreadsheet; human viewers can be granted Viewer access. Vercel Hobby runs a free daily fallback at 04:00 UTC. The free Cloudflare Worker in `cloudflare/` calls the same protected route every 15 minutes.
 
 ### UploadThing to R2 migration
 

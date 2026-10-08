@@ -13,6 +13,70 @@ function formatSheet(sheet: ExcelJS.Worksheet) {
   sheet.columns.forEach(column => { let width = String(column.header || "").length + 2; column.eachCell?.({ includeEmpty: false }, cell => { width = Math.min(45, Math.max(width, String(cell.value ?? "").length + 2)); }); column.width = Math.max(12, width); });
 }
 
+const MASTER_SHEET_NAME = "Fitting In Metrics";
+
+function exportedCellValue(cell: ExcelJS.Cell): string | number | boolean {
+  const value = cell.value;
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
+  if (value instanceof Date) return value.toISOString();
+  return cell.text || String(value);
+}
+
+function consolidateWorkbook(source: ExcelJS.Workbook) {
+  const sourceSheets = [...source.worksheets];
+  const encounteredHeaders: string[] = [];
+  const encountered = new Set<string>();
+  const headersBySheet = new Map<ExcelJS.Worksheet, string[]>();
+
+  for (const sheet of sourceSheets) {
+    const headers = Array.from({ length: sheet.columnCount }, (_, index) => sheet.getRow(1).getCell(index + 1).text.trim());
+    const duplicates = headers.filter((header, index) => header && headers.indexOf(header) !== index);
+    if (duplicates.length) throw new Error(`Duplicate columns in ${sheet.name}: ${[...new Set(duplicates)].join(", ")}`);
+    headersBySheet.set(sheet, headers);
+    for (const header of headers) {
+      if (!header || encountered.has(header)) continue;
+      encountered.add(header);
+      encounteredHeaders.push(header);
+    }
+  }
+
+  const priorityHeaders = [
+    "Date", "Timestamp", "Confirmed at", "Clicked at", "Confirmation timestamp",
+    "Gym", "Gym ID", "User", "User email", "Email", "User ID", "Event type", "Type", "Offer",
+  ];
+  const orderedHeaders = [
+    ...priorityHeaders.filter(header => encountered.has(header)),
+    ...encounteredHeaders.filter(header => !priorityHeaders.includes(header)),
+  ];
+  const target = new ExcelJS.Workbook();
+  target.creator = source.creator;
+  target.created = source.created;
+  target.modified = source.modified;
+  const master = target.addWorksheet(MASTER_SHEET_NAME);
+  const outputHeaders = ["Section", "Source row", ...orderedHeaders];
+  master.columns = outputHeaders.map(header => ({ header, key: header }));
+  const outputIndex = new Map(outputHeaders.map((header, index) => [header, index]));
+
+  for (const sourceSheet of sourceSheets) {
+    const sourceHeaders = headersBySheet.get(sourceSheet)!;
+    for (let rowNumber = 2; rowNumber <= sourceSheet.rowCount; rowNumber += 1) {
+      const sourceRow = sourceSheet.getRow(rowNumber);
+      if (!sourceRow.hasValues) continue;
+      const values: (string | number | boolean)[] = Array(outputHeaders.length).fill("");
+      values[0] = sourceSheet.name;
+      values[1] = rowNumber - 1;
+      sourceHeaders.forEach((header, columnIndex) => {
+        if (!header) return;
+        values[outputIndex.get(header)!] = exportedCellValue(sourceRow.getCell(columnIndex + 1));
+      });
+      master.addRow(values);
+    }
+  }
+  formatSheet(master);
+  return target;
+}
+
 export async function buildAdminMetricsWorkbook() {
   const [events, users, gyms, latestReset] = await Promise.all([
     db.landingEvent.findMany({ where: { eventType: { not: "METRICS_RESET" } }, select: { id: true, eventType: true, visitorId: true, visitId: true, path: true, gymId: true, userId: true, metadata: true, durationMs: true, createdAt: true, gym: { select: { name: true } }, user: { select: { email: true } } }, orderBy: { createdAt: "asc" } }),
@@ -202,5 +266,5 @@ export async function buildAdminMetricsWorkbook() {
   for (const gym of gyms) { const access = gym.access[0]; claims.addRow({ Gym: gym.name, Claimed: access ? "Yes" : "No", "Claimed by": access?.user.email ?? "", "Claimed at": access?.createdAt.toISOString() ?? "", "Assigned by": access?.assignedByEmail ?? "", "Last updated": gym.updatedAt.toISOString() }); }
   formatSheet(claims);
 
-  return workbook;
+  return consolidateWorkbook(workbook);
 }
