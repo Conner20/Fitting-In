@@ -5,11 +5,6 @@ import { buildAdminMetricsWorkbook } from "@/lib/admin-metrics-workbook";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const GOOGLE_SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
-const LEGACY_MANAGED_SHEETS = [
-  "Overview", "Audit notes", "Daily metrics", "Raw events", "Users", "Gym demand", "Daily gym demand",
-  "Claim activity", "Financial ledger", "Unclaimed gym opportunity", "Filter usage", "Daily filter usage",
-  "Popular cities", "Daily city activity", "Gym claims",
-];
 
 const base64url = (value: string | Buffer) => Buffer.from(value).toString("base64url");
 const quoteSheet = (title: string) => `'${title.replace(/'/g, "''")}'`;
@@ -117,21 +112,6 @@ export async function syncAdminMetricsToGoogleSheets() {
     metadata = await googleRequest<SpreadsheetMetadata>(`${baseUrl}?fields=sheets.properties`, token);
   }
 
-  const generatedTitles = new Set(sheets.map(sheet => sheet.title));
-  const legacySheetIds = (metadata.sheets ?? []).flatMap(sheet => {
-    const properties = sheet.properties;
-    return properties?.sheetId !== undefined && properties.title && LEGACY_MANAGED_SHEETS.includes(properties.title) && !generatedTitles.has(properties.title)
-      ? [properties.sheetId]
-      : [];
-  });
-  if (legacySheetIds.length) {
-    await googleRequest(`${baseUrl}:batchUpdate`, token, {
-      method: "POST",
-      body: JSON.stringify({ requests: legacySheetIds.map(sheetId => ({ deleteSheet: { sheetId } })) }),
-    });
-    metadata = await googleRequest<SpreadsheetMetadata>(`${baseUrl}?fields=sheets.properties`, token);
-  }
-
   const propertiesByTitle = new Map((metadata.sheets ?? []).flatMap(sheet => sheet.properties?.title && sheet.properties.sheetId !== undefined ? [[sheet.properties.title, sheet.properties] as const] : []));
   const formatRequests = sheets.flatMap(sheet => {
     const properties = propertiesByTitle.get(sheet.title);
@@ -139,11 +119,8 @@ export async function syncAdminMetricsToGoogleSheets() {
     const rowCount = Math.max(properties.gridProperties?.rowCount ?? 0, sheet.rows, 1_000);
     const columnCount = Math.max(properties.gridProperties?.columnCount ?? 0, sheet.columns, 26);
     return [
-      { updateSheetProperties: { properties: { sheetId: properties.sheetId, gridProperties: { rowCount, columnCount, frozenRowCount: 1, frozenColumnCount: Math.min(2, sheet.columns) } }, fields: "gridProperties(rowCount,columnCount,frozenRowCount,frozenColumnCount)" } },
-      { repeatCell: { range: { sheetId: properties.sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: sheet.columns }, cell: { userEnteredFormat: { backgroundColor: { red: 0.133, green: 0.773, blue: 0.369 }, textFormat: { bold: true, foregroundColor: { red: 0, green: 0, blue: 0 } }, wrapStrategy: "WRAP", verticalAlignment: "MIDDLE" } }, fields: "userEnteredFormat(backgroundColor,textFormat,wrapStrategy,verticalAlignment)" } },
-      { updateDimensionProperties: { range: { sheetId: properties.sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 190 }, fields: "pixelSize" } },
-      { updateDimensionProperties: { range: { sheetId: properties.sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 85 }, fields: "pixelSize" } },
-      { updateDimensionProperties: { range: { sheetId: properties.sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: sheet.columns }, properties: { pixelSize: 150 }, fields: "pixelSize" } },
+      { updateSheetProperties: { properties: { sheetId: properties.sheetId, gridProperties: { rowCount, columnCount, frozenRowCount: 1 } }, fields: "gridProperties(rowCount,columnCount,frozenRowCount)" } },
+      { repeatCell: { range: { sheetId: properties.sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: sheet.columns }, cell: { userEnteredFormat: { backgroundColor: { red: 0.133, green: 0.773, blue: 0.369 }, textFormat: { bold: true, foregroundColor: { red: 0, green: 0, blue: 0 } } } }, fields: "userEnteredFormat(backgroundColor,textFormat)" } },
       { setBasicFilter: { filter: { range: { sheetId: properties.sheetId, startRowIndex: 0, endRowIndex: sheet.rows, startColumnIndex: 0, endColumnIndex: sheet.columns } } } },
     ];
   });
